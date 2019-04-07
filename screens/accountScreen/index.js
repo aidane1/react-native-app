@@ -23,7 +23,6 @@ const height = Dimensions.get('window').height; //full height
 
 class CourseIconBlock extends React.Component {
     render() {
-        console.log(this.props.children);
         return (
             <View style={[styles.icon, boxShadows.boxShadow2, {backgroundColor: this.props.color || "#ffaaaa"}]}>
                 {this.props.children}
@@ -89,7 +88,6 @@ export default class AccountScreen extends React.Component {
     constructor(props) {
         super(props);
         this.props = props;
-        // console.log(this.props.navigation);
     }
     _navigateToPage = (page) => {
         this.props.navigation.navigate(page);
@@ -102,7 +100,7 @@ export default class AccountScreen extends React.Component {
     render() {
         return (
             <View style={styles.container}>
-                <HeaderBar iconLeft={<TouchableWithoutFeedback onPress={() => this.props.navigation.navigate('Home')}><LeftIcon size={28}></LeftIcon></TouchableWithoutFeedback>} iconRight={<EmptyIcon width={28} height={32}></EmptyIcon>} width={width} height={60} title="Account"></HeaderBar>
+                <HeaderBar iconLeft={<TouchableWithoutFeedback onPress={() => this.props.navigation.goBack()}><LeftIcon size={28}></LeftIcon></TouchableWithoutFeedback>} iconRight={<EmptyIcon width={28} height={32}></EmptyIcon>} width={width} height={60} title="Account"></HeaderBar>
                 <View style={styles.bodyHolder}>
                     <ScrollView>
                         <ButtonSection>

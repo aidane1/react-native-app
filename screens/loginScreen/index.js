@@ -245,6 +245,7 @@ function constructSchoolObject(serverData) {
         schedule,
         blockNames: serverData.blockNames,
         spareName: serverData.spareName,
+        dayTitles: serverData.dayTitles,
         id: serverData._id,
     }
 }

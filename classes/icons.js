@@ -9,6 +9,21 @@ class IconBlock {
 
     }
 }
+
+export class CloseIcon extends React.Component {
+    render() {
+        return (
+            <AntDesign color="white" name="closecircleo" size={16} {...this.props}></AntDesign>
+        )
+    }
+}
+export class RefreshIcon extends React.Component {
+    render() {
+        return (
+            <Ionicons name="ios-refresh" color="white" size={16} {...this.props}></Ionicons>
+        )
+    }
+}
 export class HomeIcon extends React.Component {
     render() {
         return (<FontAwesome color="white"  name="home" size={16} {...this.props}></FontAwesome>)
@@ -64,6 +79,18 @@ export class LeftIcon extends React.Component {
 export class RightIcon extends React.Component {
     render() {
         return (<Entypo color="white" name="chevron-right" size={16} {...this.props}></Entypo>)
+    }
+}
+
+export class DownIcon extends React.Component {
+    render() {
+        return (<Entypo color="white" name="chevron-down" size={16} {...this.props}></Entypo>)
+    }
+}
+
+export class UpIcon extends React.Component {
+    render() {
+        return (<Entypo color="white" name="chevron-up" size={16} {...this.props}></Entypo>)
     }
 }
 
@@ -130,5 +157,140 @@ export class BlockColoursIcon extends React.Component {
 export class BlockNamesIcon extends React.Component {
     render() {
         return (<FontAwesome color="white" name="pencil-square" size={16} {...this.props}></FontAwesome>)
+    }
+}
+export class SocialsIcon extends React.Component {
+    render() {
+        return (<Entypo color="white" name="map" size={16} {...this.props}></Entypo>)
+    }
+}
+export class LanguageIcon extends React.Component {
+    render() {
+        return (<FontAwesome color="white" name="book" size={16} {...this.props}></FontAwesome>)
+    }
+}
+export class ScienceIcon extends React.Component {
+    render() {
+        return (<MaterialCommunityIcons color="white" name="beaker" size={16} {...this.props}></MaterialCommunityIcons>)
+    }
+}
+export class MathIcon extends React.Component {
+    render() {
+        return (<Ionicons color="white" name="ios-calculator" size={16} {...this.props}></Ionicons>)
+    }
+}
+export class AppliedSkillsIcon extends React.Component {
+    render() {
+        return (<FontAwesome color="white" name="gears" size={16} {...this.props}></FontAwesome>)
+    }
+}
+export class CareerAndPlanningIcon extends React.Component {
+    render() {
+        return (<Entypo color="white" name="briefcase" size={16} {...this.props}></Entypo>)
+    }
+}
+export class EnglishIcon extends React.Component {
+    render() {
+        return (<Entypo color="white" name="open-book" size={16} {...this.props}></Entypo>)
+    }
+}
+export class PhysicalEducationIcon extends React.Component {
+    render() {
+        return (<Ionicons color="white" name="ios-basketball" size={16} {...this.props}></Ionicons>)
+    }
+}
+export class OtherIcon extends React.Component {
+    render() {
+        return (<FontAwesome color="white" name="question" size={16} {...this.props}></FontAwesome>)
+    }
+}
+export class NotApplicableIcon extends React.Component {
+    render() {
+        return (<MaterialCommunityIcons color="white" name="file-hidden" size={16} {...this.props}></MaterialCommunityIcons>)
+    }
+}
+export class FineArtsIcon extends React.Component {
+    render() {
+        return (<FontAwesome color="white" name="paint-brush" size={16} {...this.props}></FontAwesome>)
+    }
+}
+export class InfoTechIcon extends React.Component {
+    render() {
+        return (<MaterialIcons color="white" name="computer" size={16} {...this.props}></MaterialIcons>)
+    }
+}
+
+export class GenericIcon extends React.Component {
+    render() {
+        switch (this.props.icon) {
+            case "SocialsIcon":
+                return (<SocialsIcon {...this.props}></SocialsIcon>)
+            case "LanguageIcon":
+                return (<LanguageIcon {...this.props}></LanguageIcon>)
+            case "ScienceIcon":
+                return (<ScienceIcon {...this.props}></ScienceIcon>)
+            case "MathIcon":
+                return (<MathIcon {...this.props}></MathIcon>)
+            case "AppliedSkillsIcon":
+                return (<AppliedSkillsIcon {...this.props}></AppliedSkillsIcon>)
+            case "CareerAndPlanningIcon":
+                return (<CareerAndPlanningIcon {...this.props}></CareerAndPlanningIcon>)
+            case "EnglishIcon":
+                return (<EnglishIcon {...this.props}></EnglishIcon>)
+            case "PhysicalEducationIcon":
+                return (<PhysicalEducationIcon {...this.props}></PhysicalEducationIcon>)
+            case "OtherIcon":
+                return (<OtherIcon {...this.props}></OtherIcon>)
+            case "NotApplicableIcon":
+                return (<NotApplicableIcon {...this.props}></NotApplicableIcon>)
+            case "FineArtsIcon":
+                return (<FineArtsIcon {...this.props}></FineArtsIcon>)
+            case "InfoTechIcon":
+                return (<InfoTechIcon {...this.props}></InfoTechIcon>);
+            default:
+                return (<OtherIcon {...this.props}></OtherIcon>);
+        }
+    }
+}
+
+export class SchoolIcons {
+    constructor() {
+        this.icons = {
+            "socialstudies": ["SocialsIcon", "#FFF176"],
+            "language": ["LanguageIcon", "#4a79c4"],
+            "science": ["ScienceIcon", "#81c784"],
+            "math": ["MathIcon", "#f44242"],
+            "appliedskills": ["AppliedSkillsIcon", "orange"],
+            "careerandplanning": ["CareerAndPlanningIcon", "#ffbae6"],
+            "english": ["EnglishIcon", "#89cff0"],
+            "physicaleducation": ["PhysicalEducationIcon", "#ccc"],
+            "other": ["OtherIcon", "white"],
+            "na": ["NotApplicableIcon", "white"],
+            "finearts": ["FineArtsIcon", "#d291ff"],
+            "infotech.": ["InfoTechIcon", "#52c97a"]
+        }   
+    }
+    static getIcon = (icon) => {
+        let icons = {
+            "socialstudies": ["SocialsIcon", "#FFF176"],
+            "language": ["LanguageIcon", "#4a79c4"],
+            "science": ["ScienceIcon", "#81c784"],
+            "math": ["MathIcon", "#f44242"],
+            "appliedskills": ["AppliedSkillsIcon", "orange"],
+            "careerandplanning": ["CareerAndPlanningIcon", "#ffbae6"],
+            "english": ["EnglishIcon", "#89cff0"],
+            "physicaleducation": ["PhysicalEducationIcon", "#ccc"],
+            "other": ["OtherIcon", "white"],
+            "na": ["NotApplicableIcon", "white"],
+            "finearts": ["FineArtsIcon", "#d291ff"],
+            "infotech.": ["InfoTechIcon", "#52c97a"]
+        }   
+        icon = icon.toLowerCase();
+        icon = icon.split(" ").join("");
+        if (icons[icon]) {
+            return icons[icon];
+        } else {
+            return icons["other"];
+        }
     }
 }

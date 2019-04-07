@@ -5,15 +5,15 @@ import LoadingScreen from "../screens/loadingScreen/index";
 import AccountScreen from "../screens/accountScreen/index";
 import CoursesScreen from "../screens/coursesScreen/index";
 
-import { createAppContainer, createStackNavigator } from 'react-navigation';
+import { createAppContainer, createStackNavigator, createSwitchNavigator } from 'react-navigation';
 
 const MainNavigator = createStackNavigator(
     {
-        Home: {screen: HomeScreen},
-        Login: {screen: LoginScreen},
-        Loading: {screen: LoadingScreen},
-        Account: {screen: AccountScreen},
-        Courses: {screen: CoursesScreen},
+        Home: {screen: HomeScreen, lazy: true},
+        Login: {screen: LoginScreen, lazy: true},
+        Loading: {screen: LoadingScreen, lazy: true},
+        Account: {screen: AccountScreen, lazy: true},
+        Courses: {screen: CoursesScreen, lazy: true},
     },
     {
         initialRouteName: "Loading",

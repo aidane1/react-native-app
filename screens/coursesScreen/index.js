@@ -3,16 +3,23 @@ import {
   StyleSheet,
   View,
   Dimensions,
-  ActivityIndicator,
+  Text,
   TouchableWithoutFeedback,
-  Text
 } from 'react-native';
 
 import HeaderBar from "../../components/header";
 
-import { LeftIcon, RightIcon, EmptyIcon, CourseIcon, EventsIcon, LogoutIcon, NotesIcon, AssignmentsIcon, SchoolAssignmentsIcon, BeforeSchoolIcon, LunchTimeIcon, AfterSchoolIcon } from "../../classes/icons";
+import { LeftIcon, DownIcon, UpIcon, EmptyIcon, SchoolIcons, GenericIcon, CloseIcon} from "../../classes/icons";
+
+import { User } from "../../classes/user";
+
+import { Courses } from "../../classes/courses";
+
+import { Semesters } from "../../classes/semesters";
 
 import { ScrollView } from 'react-native-gesture-handler';
+
+import { WebBrowser, LinearGradient } from 'expo';
 
 import { boxShadows } from "../../constants/boxShadows";
 
@@ -20,45 +27,54 @@ import Touchable from 'react-native-platform-touchable';
 
 import Collapsible from 'react-native-collapsible';
 
-import Accordion from 'react-native-collapsible/Accordion';
 
 const width = Dimensions.get('window').width; //full width
 const height = Dimensions.get('window').height; //full height
 
-let sections = [
-    {
-        title: "Science",
-        content: [
-            {course: "Physics 12", teacher: "Mr. Austin", block: "A"},
-            {course: "Physics 12", teacher: "Mr. Austin", block: "A"},
-            {course: "Physics 12", teacher: "Mr. Austin", block: "A"}
-        ],
-    },
-    {
-        title: "Second",
-        content: [
-            {course: "Physics 12", teacher: "Mr. Austin", block: "A"},
-            {course: "Physics 12", teacher: "Mr. Austin", block: "A"},
-            {course: "Physics 12", teacher: "Mr. Austin", block: "A"}
-        ]
+//ruleset: {block: [a]}
+function checkIfAllowed(course, ruleset) {
+    for (var key in ruleset) {
+        for (var i = 0; i < ruleset[key].length; i++) {
+            if (course[key] == ruleset[key][i]) {
+                return false;
+            }
+        }
     }
-]
+    return true;
+}
 
 class CourseSelectable extends React.Component {
     constructor(props) {
         super(props);
         this.props = props;
     }
+    handleClick = () => {
+        this.props.parent.addBlock({semester: this.props.semester, course: this.props.course, teacher: this.props.teacher, block: this.props.block, id: this.props.id});
+    }
+
     render() {
         return (
-            <View style={[styles.courseSelectable, (this.props.even ? styles.even : styles.odd), (!this.props.even ? boxShadows.boxShadow1 : {})]}>
-                <View style={styles.verticalStack}>
-                    <Text style={styles.course}>{this.props.course}</Text>
-                    <Text style={styles.teacher}>{this.props.teacher}</Text>
+            <Touchable onPress={this.handleClick}>
+                <View style={[styles.courseSelectable, (this.props.even ? styles.even : styles.odd)]}>
+                    <View style={styles.verticalStack}>
+                        <Text style={styles.course}>{this.props.course}</Text>
+                        <Text style={styles.teacher}>{this.props.teacher}</Text>
+                    </View>
+                    <View style={styles.rightItem}> 
+                        <Text style={styles.block}>Block {this.props.block}</Text>
+                    </View>
                 </View>
-                <View style={styles.rightItem}> 
-                    <Text style={styles.block}>Block {this.props.block}</Text>
-                </View>
+            </Touchable>
+        )
+    }
+}
+
+
+class CourseIcon extends React.Component {
+    render() {
+        return (
+            <View style={[styles.icon, {backgroundColor: this.props.color}, boxShadows.boxShadow2]}>
+                {this.props.children}
             </View>
         )
     }
@@ -71,23 +87,31 @@ class CollapsableSection extends React.Component {
         this.state = {
             collapsed: true
         }
-        console.log(this.props.section.content);
     }
     _switchState = () => {
         this.setState({collapsed: !this.state.collapsed});
     }
     render() {
+        let icon = SchoolIcons.getIcon(this.props.section.title);
         return (
             <View>
                 <Touchable onPress={this._switchState}>
-                    <View style={styles.sectionHeader}>
-                        <Text>{this.props.section.title}</Text>
+                    <View style={[styles.sectionHeader]}>
+                        <CourseIcon color={icon[1]}>
+                            <GenericIcon icon={icon[0]} color="black" size={20}></GenericIcon>
+                        </CourseIcon>
+                        <Text style={styles.sectionHeaderText}>{this.props.section.title}</Text>
+                        {
+                            this.state.collapsed ? <DownIcon color="black" size={18} /> : <UpIcon color="black" size={18}/>
+                        }
                     </View>
                 </Touchable>
                 <Collapsible collapsed={this.state.collapsed}>
                    {
                        this.props.section.content.map((x, index) => {
-                            return (<CourseSelectable key={`course_${index}`} {...x} even={index%2==0} />)
+                            if (checkIfAllowed(x, this.props.ruleset)) {
+                                return (<CourseSelectable parent={this.props.parent} key={`course_${index}`} {...x} even={index%2==0} />)   
+                            }
                        })
                    } 
                 </Collapsible>
@@ -97,26 +121,60 @@ class CollapsableSection extends React.Component {
 }
 
 class CourseSemesterList extends React.Component {
+
+    addBlock = (block) => {
+        //adds to parent
+        this.props.parent.addBlock(block);
+        //adds the block to the display
+        let courses = this.state.courses;
+        courses[block.block] = block;
+        //adds the block to the ruleset
+        let blocks = this.state.ruleset.block;
+        if (blocks.indexOf(block.block) < 0) {
+            blocks.push(block.block);
+        }
+        this.setState({courses, ruleset: {block: blocks}});
+    }
+    removeBlock = (block) => {
+        //removes from parent
+        this.props.parent.removeBlock(block);
+        //removes the block from the display
+        let courses = this.state.courses;
+        delete courses[block.block]
+        //removes the block from the ruleset
+        let blocks = this.state.ruleset.block;
+        let index = blocks.indexOf(block.block);
+        if (index > -1) {
+            blocks.splice(index, 1);
+        }
+        this.setState({courses, ruleset: {block: blocks}});
+    }
+
     constructor(props) {
         super(props);
         this.props = props;
+        let existingBlocks = [];
+        let existingCourses = {};
+        for (var key in this.props.existing) {
+            if (this.props.existing[key].isReal) {
+                existingBlocks.push(key);
+                existingCourses[key] = this.props.existing[key];
+            }
+        }
+        this.state = {
+            ruleset: {
+                block: existingBlocks
+            },
+            courses: existingCourses
+        } 
+        
         this.sections = [];
         let coursesMap = {};
         for (var i = 0; i < this.props.courses.length; i++) {
             if (coursesMap[this.props.courses[i].category]) {
-                coursesMap[this.props.courses[i].category].push({
-                    course: this.props.courses[i].course,
-                    teacher: this.props.courses[i].teacher,
-                    block: this.props.courses[i].block,
-                })
+                coursesMap[this.props.courses[i].category].push(this.props.courses[i])
             } else {
-                coursesMap[this.props.courses[i].category] = [
-                    {
-                        course: this.props.courses[i].course,
-                        teacher: this.props.courses[i].teacher,
-                        block: this.props.courses[i].block,
-                    }
-                ]
+                coursesMap[this.props.courses[i].category] = [this.props.courses[i]]
             }
         }
         for (var key in coursesMap) {
@@ -127,25 +185,184 @@ class CourseSemesterList extends React.Component {
         }
     }
     render() {
+        
         return (
             <View>
                 {
                     this.sections.map((x, index) => {
-                        return (<CollapsableSection section={x} key={`section_${index}`}/>)
+                        return (<CollapsableSection ruleset={this.state.ruleset} parent={this} section={x} key={`section_${index}`}/>)
                     })
                 }
+                <UserCourses parent={this} courses={this.state.courses} />
             </View>
         )
     } 
 }
 
+class UserCourses extends React.Component {
+    render() {
+        let blocks = [];
+        let allBlocks = global.school.blockNames;
+        allBlocks.sort((a, b) => {
+            return a[0].localeCompare(b[0]);
+        });
+        for (var i = 0; i < allBlocks.length; i++) {
+            if (allBlocks[i][1] == "changing") {
+                if (this.props.courses[allBlocks[i][0]]) {
+                    this.props.courses[allBlocks[i][0]].isReal = true;
+                    blocks.push(<UserCourseBlock parent={this.props.parent} course={this.props.courses[allBlocks[i][0]]} key={`courseBlock_${i}`}></UserCourseBlock>)
+                } else {
+                    let course = {course: global.school.spareName, teacher: "Free", block: allBlocks[i][0], isReal: false}
+                    blocks.push(<UserCourseBlock course={course} key={`courseBlock_${i}`}></UserCourseBlock>)
+                }
+            }
+        }
+        return (
+            <View style={styles.userCourses}>
+                {blocks}
+            </View>
+        )
+    }
+}
 
+class UserCourseBlock extends React.Component {
+    handleClick = () => {
+        this.props.parent.removeBlock(this.props.course);
+    }
+    render() {
+        if (this.props.course.isReal) {
+            return (
+                <View style={[styles.userBlock, boxShadows.boxShadow3]}>
+                    <View style={styles.verticalStack}>
+                        <Text style={styles.userBlockCourse}>{this.props.course.course}</Text>
+                        <Text style={styles.userBlockTeacher}>{this.props.course.teacher}</Text>
+                    </View>
+                    <View style={styles.rightItem}> 
+                        <Text style={styles.userBlockBlock}>block {this.props.course.block}</Text>
+                        <Touchable onPress={this.handleClick}>
+                            <CloseIcon style={styles.closeIcon} color="red"></CloseIcon>
+                        </Touchable>
+                    </View>
+                    
+                </View>
+            )
+        } else {
+            return (
+                <View style={[styles.userBlock, boxShadows.boxShadow3]}>
+                    <View style={styles.verticalStack}>
+                        <Text style={styles.userBlockCourse}>{this.props.course.course}</Text>
+                        <Text style={styles.userBlockTeacher}>{this.props.course.teacher}</Text>
+                    </View>
+                    <View style={styles.rightItem}> 
+                        <Text style={styles.userBlockBlock}>block {this.props.course.block}</Text>
+                        <CloseIcon style={styles.closeIcon} color="white"></CloseIcon>
+                    </View>
+                </View>
+            )
+        }
+    }
+}
+
+class SemesterTabBarButton extends React.Component {
+    constructor(props) {
+        super(props);
+    }
+    handleClick = () => {
+        this.props.bar.setState({selectedIndex: this.props.index});
+        this.props.scrollView.current.scrollTo({x: width*this.props.index, y: 0, animated: true});
+        // this.props.scrollView.scrollTo({x: width, y: 0, animated: true});
+    }
+    render() {
+        if (this.props.selected) {
+            return (
+                <Touchable onPress={this.handleClick}>
+                    <View style={[styles.semesterButton, styles.selectedTabButton]}>
+                        <Text style={styles.semesterText}>
+                            {this.props.semester}
+                        </Text>
+                    </View>
+                </Touchable>
+                
+            )
+        } else {
+            return (
+                <Touchable onPress={this.handleClick}>
+                    <View style={styles.semesterButton}>
+                        <Text style={styles.semesterText}>
+                            {this.props.semester}
+                        </Text>
+                    </View>
+                </Touchable>
+            )
+        }
+    }
+}
+class SemesterTabBar extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            selectedIndex: 0
+        }
+    }
+    render() {
+        return (
+            <View>
+                <ScrollView horizontal={true} bounces={false} showsHorizontalScrollIndicator={false}>
+                    {
+                        this.props.semesters.map((x, index) => {
+                            return (<SemesterTabBarButton semester={x} key={`semester_${index}`} index={index} scrollView={this.props.scrollView} bar={this} selected={this.state.selectedIndex==index}></SemesterTabBarButton>)
+                        })
+                    }
+                </ScrollView>
+            </View>
+        )
+    }
+}
 
 export default class CoursesScreen extends React.Component {
+    addBlock = (block) => {
+        try {
+            this.semesterMap[block.semester][block.block] = block;
+        } catch(e) {
+            console.log(e);
+        }
+    }
+    removeBlock = (block) => {
+        try {
+            this.semesterMap[block.semester][block.block].isReal = false;
+        } catch(e) {
+            console.log(e);
+        }
+    }
+    finished = async () => {
+        try {
+            let finalCourses = [];
+            for (var key in this.semesterMap) {
+                for (var block in this.semesterMap[key]) {
+                    if (this.semesterMap[key][block].isReal && !this.semesterMap[key][block].constant) {
+                        finalCourses.push(this.semesterMap[key][block].id);
+                    }
+                }
+            }
+            global.user.courses = finalCourses;
+            await User._saveToStorage(global.user);
+            let userCourses = await Courses._retrieveCoursesById(user.courses);
+            let semesterMap = await Semesters._createSemesterMap(userCourses, school.blockNames);
+            let currentCourseMap = await Semesters._createCoursesOnDate(userCourses, global.school.blockNames, global.currentSemesters);
+            global.currentCourseMap = currentCourseMap;
+            global.semesterMap = semesterMap;
+            global.userCourses = userCourses;
+            this.props.navigation.goBack();
+        } catch(e) {
+            console.log(e);
+            this.props.navigation.goBack();
+        }   
+    }
     constructor(props) {
         super(props);
         this.props  = props;
         let courses = global.courses;
+        let semesters = global.semesters;
         let courseSemesterMap = {};
         for (var i = 0; i < courses.length; i++) {
             if (courseSemesterMap[courses[i].semester]) {
@@ -154,16 +371,24 @@ export default class CoursesScreen extends React.Component {
                 courseSemesterMap[courses[i].semester] = [courses[i]];
             }
         }
+        this.semesterMap = global.semesterMap;
         this.slides = [];
+        this.semesters = [];
         for (var key in courseSemesterMap) {
+            for (var i = 0; i < semesters.length; i++) {
+                if (semesters[i].id == key) {
+                    this.semesters.push(semesters[i].name);
+                }
+            }
             this.slides.push(
                 <View key={key} style={styles.bodySlide}>
                     <ScrollView>
-                        <CourseSemesterList courses={courseSemesterMap[key]}></CourseSemesterList>
+                        <CourseSemesterList parent={this} courses={courseSemesterMap[key]} existing={this.semesterMap[key]}></CourseSemesterList>
                     </ScrollView>
                 </View>
             )
         }
+        this.scrollView = React.createRef();
     }
     static navigationOptions = ({navigation}) => {
         return {
@@ -174,15 +399,20 @@ export default class CoursesScreen extends React.Component {
     render() {
         return (
             <View style={styles.container}>
-                <HeaderBar iconLeft={<TouchableWithoutFeedback onPress={() => this.props.navigation.navigate('Home')}><LeftIcon size={28}></LeftIcon></TouchableWithoutFeedback>} iconRight={<EmptyIcon width={28} height={32}></EmptyIcon>} width={width} height={60} title="Courses"></HeaderBar>  
+                <HeaderBar iconLeft={<Touchable onPress={this.finished}><LeftIcon size={28}></LeftIcon></Touchable>} iconRight={<EmptyIcon width={28} height={32}></EmptyIcon>} width={width} height={60} title="Courses"></HeaderBar>  
                 <View style={styles.bodyHolder}>
-                    <ScrollView horizontal={true} style={styles.slideView} scrollEnabled={false}>
+                    <ScrollView ref={this.scrollView} horizontal={true} style={styles.slideView} scrollEnabled={false}>
                         {
-                            this.slides.map((x, index) => {
+                            this.slides.map((x) => {
                                 return x;
                             })
                         }
                     </ScrollView>
+                </View>
+                <View style={[boxShadows.boxShadow7, {zIndex: 5}]}>
+                    <LinearGradient start={{x: 0, y: 0}} end={{x:1, y:0}} style={[{width: width, height: 45}]} colors={["rgb(0,153,153)", ", rgb(0,130,209)"]}>
+                        <SemesterTabBar scrollView={this.scrollView} semesters={this.semesters}></SemesterTabBar>
+                    </LinearGradient>
                 </View>
             </View>
         )
@@ -205,6 +435,7 @@ const styles = StyleSheet.create({
   bodySlide: {
     width: width,
     flexGrow: 1,
+    backgroundColor: "#f0f0f0",
   },
   scrollBack: {
     width: width,
@@ -217,8 +448,10 @@ const styles = StyleSheet.create({
     height: 60,
     backgroundColor: "#f0f0f0",
     flexDirection: "row",
-    justifyContent: "flex-start",
+    justifyContent: "space-between",
     alignItems: "center",
+    paddingRight: 20,
+    paddingLeft: 10,
   },
   courseSelectable: {
     width: width,
@@ -232,9 +465,6 @@ const styles = StyleSheet.create({
   },
   verticalStack: {
     flexDirection: "column",
-  },
-  rightItem: {
-
   },
   course: {
     fontSize: 16,
@@ -254,7 +484,71 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   odd: {
-    backgroundColor: "#f0f0f0",
+    backgroundColor: "#fafafa",
     zIndex: 5,
+  },
+  semesterButton: {
+    minWidth: width/3,
+    height: 45,
+    flexGrow: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  semesterText: {
+    fontSize: 14,
+    color: "white",
+  },
+  selectedTabButton: {
+    backgroundColor: "rgba(255,255,255,0.4)",
+  },
+  icon: {
+    width: 35,
+    height: 35,
+    margin: 7.5,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 5,
+  },
+  sectionHeaderText: {
+      fontSize: 17,
+  },
+  userCourses: {
+    width,
+    marginTop: 15,
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "flex-start",
+  },
+  userBlock: {
+    width: width*0.95,
+    padding: 10,
+    marginTop: 5,
+    marginBottom: 10,
+    backgroundColor: "white",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  userBlockCourse: {
+    fontSize: 16,
+    fontWeight: "700"
+  },
+  userBlockTeacher: {
+    fontSize: 16,
+    color: "#444",
+    fontWeight: "300"
+  },
+  userBlockBlock: {
+    fontSize: 14,
+    fontWeight: "300",
+  },
+  rightItem: {
+      flexDirection: "row",
+      alignItems: "center"
+  },
+  closeIcon: {
+      padding: 10,
   }
 });

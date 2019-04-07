@@ -44,7 +44,6 @@ export default class LoadingScreen extends React.Component {
                 let dates = Semesters._startAndEndDate();
                 [currentSemesters, semesterMap, dayMap, dates, allCourses, allSemesters] = await Promise.all([currentSemesters, semesterMap, dayMap, dates, allCourses, allSemesters]);
                 let currentCourseMap = await Semesters._createCoursesOnDate(userCourses, school.blockNames, currentSemesters);
-
                 //set global props
                 global.user = user;
                 global.currentSemesters = currentSemesters;
@@ -58,11 +57,11 @@ export default class LoadingScreen extends React.Component {
                 global.semesters = allSemesters;
                 //end global props
 
-                this.props.navigation.navigate("Courses");
+                this.props.navigation.replace("Home");
             }
         } catch(e) {
             console.log(e);
-            this.props.navigation.navigate("Login");
+            this.props.navigation.replace("Login");
         }
     }
     render() {

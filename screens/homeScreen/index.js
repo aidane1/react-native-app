@@ -27,7 +27,9 @@ import ScheduleScreenTile from "./scheduleIndex";
 
 import TabBar from "../../components/tabBar";
 
-import {AccountIcon, EmptyIcon} from "../../classes/icons";
+import Touchable from 'react-native-platform-touchable';
+
+import { AccountIcon, EmptyIcon, RefreshIcon } from "../../classes/icons";
 
 const width = Dimensions.get('window').width; //full width
 const height = Dimensions.get('window').height; //full height
@@ -71,7 +73,7 @@ export default class HomeScreen extends React.Component {
 
     return (
       <View style={styles.container}>
-        <HeaderBar iconLeft={<TouchableWithoutFeedback onPress={() => this.props.navigation.navigate('Account')}><AccountIcon size={28}></AccountIcon></TouchableWithoutFeedback>} iconRight={<EmptyIcon width={28} height={32}></EmptyIcon>} width={width} height={60} title="Home"></HeaderBar>
+        <HeaderBar iconLeft={<Touchable onPress={() => this.props.navigation.navigate('Account')}><AccountIcon size={28} style={{paddingLeft: 10, paddingRight: 10, paddingTop: 10}}></AccountIcon></Touchable>} iconRight={<Touchable onPress={() => this.props.navigation.replace("Home")}><RefreshIcon size={28} style={{paddingLeft: 10, paddingRight: 10, paddingTop: 10}}></RefreshIcon></Touchable>} width={width} height={60} title="Home"></HeaderBar>
         <View style={styles.bodyHolder}>
           <ScrollView horizontal={true} style={styles.slideView} scrollEnabled={false}  ref={(component) => {this._scrollMain = component}}>
             <View style={styles.bodySlide}>

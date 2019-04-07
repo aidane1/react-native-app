@@ -18,6 +18,7 @@ export class School {
         this.schedule =  school.schedule;
         this.spareName = school.spareName;
         this.id = school.id;
+        this.dayTitles = school.dayTitles;
     }
     toString() {
         return {
@@ -25,12 +26,14 @@ export class School {
             schedule: this.schedule,
             spareName: this.spareName,
             id: this.id,
+            dayTitles: this.dayTitles
         }
     }
 
     static _saveToStorage = async (school) => {
         try {
             await AsyncStorage.setItem("school", JSON.stringify(school));
+            let test = await School._retrieveFromStorage();
             return school;
         } catch(e) {
             return school;
@@ -42,6 +45,7 @@ export class School {
             storageSchool = JSON.parse(storageSchool);
             return new School(storageSchool);
         } catch(e) {
+            console.log(e);
             return {};
         }
     }

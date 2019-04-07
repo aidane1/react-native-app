@@ -1,4 +1,5 @@
 import React from 'react';
+
 import {
   Image,
   Platform,
@@ -11,6 +12,12 @@ import {
   AsyncStorage,
   Button
 } from 'react-native';
+
+import Modal from "react-native-modal";
+
+import Touchable from 'react-native-platform-touchable';
+
+import {boxShadows} from '../../constants/boxShadows';
 
 const width = Dimensions.get('window').width; //full width
 const height = Dimensions.get('window').height; //full height
@@ -74,7 +81,7 @@ class CalendarMonth extends React.Component {
                             <View key={`week_${index1}`} style={styles.calendarWeek}>
                                 {
                                     y.map((z, index2) => {
-                                        return (<CalendarDay titles={[["Day 1", "Day 2", "Day 3", "Day 4", "Day 5"]]} key={`day_${index1}_${index2}`} day={z}></CalendarDay>)
+                                        return (<CalendarDay modal={this.props.modal} titles={[["Day 1", "Day 2", "Day 3", "Day 4", "Day 5"]]} key={`day_${index1}_${index2}`} day={z}></CalendarDay>)
                                     })
                                 }
                             </View>
@@ -91,31 +98,62 @@ class CalendarDay extends React.Component {
         super(props);
         this.props = props;
     }
+    handleClick = () => {
+        this.props.modal.current.setState({modalShown: true});
+    }
     render() {
         if (this.props.day.isInMonth && this.props.day.scheduleWeek !== undefined && this.props.day.scheduleDay !== undefined) {
-            return (
-                <View style={[styles.calendarDay, styles.fullDay]}>
-                    <Text style={styles.calendarDate}>{this.props.day.date.getDate()}</Text>
-                    {
-                        (() => {
-                            if (this.props.day.dayDisplayed) {
-                                return (<Text style={styles.calendarTitle}>{this.props.titles[this.props.day.scheduleWeek][this.props.day.scheduleDay]}</Text>);
-                            } else {
-                                return (<Text style={styles.calendarTitle}> </Text>);
+            if (this.props.day.events.length > 0) {
+                return (
+                    <Touchable onPress={this.handleClick}>
+                        <View style={[styles.calendarDay, styles.fullDay]}>
+                            <Text style={styles.calendarDate}>{this.props.day.date.getDate()}</Text>
+                            {
+                                (() => {
+                                    if (this.props.day.dayDisplayed) {
+                                        return (<Text style={styles.calendarTitle}>{this.props.titles[this.props.day.scheduleWeek][this.props.day.scheduleDay]}</Text>);
+                                    } else {
+                                        return (<Text style={styles.calendarTitle}> </Text>);
+                                    }
+                                })()
                             }
-                        })()
-                    }
-                    {
-                        (() => {
-                            if (this.props.day.events.length > 0) {
-                                return (<View style={styles.hasEvents}></View>)
-                            } else {
-                                return (<View style={styles.noEvents}></View>)
+                            {
+                                (() => {
+                                    if (this.props.day.events.length > 0) {
+                                        return (<View style={styles.hasEvents}></View>)
+                                    } else {
+                                        return (<View style={styles.noEvents}></View>)
+                                    }
+                                })()
                             }
-                        })()
-                    }
-                </View>
-            )
+                        </View>
+                    </Touchable>
+                )
+            } else {
+                return (
+                    <View style={[styles.calendarDay, styles.fullDay]}>
+                        <Text style={styles.calendarDate}>{this.props.day.date.getDate()}</Text>
+                        {
+                            (() => {
+                                if (this.props.day.dayDisplayed) {
+                                    return (<Text style={styles.calendarTitle}>{this.props.titles[this.props.day.scheduleWeek][this.props.day.scheduleDay]}</Text>);
+                                } else {
+                                    return (<Text style={styles.calendarTitle}> </Text>);
+                                }
+                            })()
+                        }
+                        {
+                            (() => {
+                                if (this.props.day.events.length > 0) {
+                                    return (<View style={styles.hasEvents}></View>)
+                                } else {
+                                    return (<View style={styles.noEvents}></View>)
+                                }
+                            })()
+                        }
+                    </View>
+                )   
+            }
         } else {
             return (
                 <View style={[styles.calendarDay, styles.emptyDay]}>
@@ -126,6 +164,32 @@ class CalendarDay extends React.Component {
     }
 }
 
+class ModalSelect extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            modalShown: false
+        }
+    }
+    _toggleModal = () => this.setState({ modalShown: !this.state.modalShown });
+    render() {
+        return(
+            <View style={styles.modalHolder}>
+                <Modal
+                    style={{margin: 0}}
+                    onBackdropPress={() => this.setState({ modalShown: false })}
+                    isVisible={this.state.modalShown}
+                    animationIn={"slideInRight"}
+                    animationOut={"slideOutRight"}
+                    backdropOpacity={0.4}>
+                    <View style={[styles.sidebar, boxShadows.boxShadow5]}>
+
+                    </View>
+                </Modal>
+            </View>
+        )
+    }
+}
 
 export default class CalendarScreenTile extends React.Component {
     constructor(props) {
@@ -137,19 +201,27 @@ export default class CalendarScreenTile extends React.Component {
         for (var i = 0; i <= numMonths; i++) {
             this.months.push(new Date(this.startDate.getFullYear(), this.startDate.getMonth()+i));
         }
+        this.modal = React.createRef();
+    }
+    openModal = () => {
+        this.modal.current.setState({modalShown: true});
     }
     render() {
-        
         return (
-            <ScrollView style={styles.scrollBack}>
+            <View>
+                <ScrollView style={styles.scrollBack}>
                 {
-                    this.months.map((month, index) => {
-                        return (
-                            <CalendarMonth key={`month_${index}`} date={month} dayMap={this.props.dayMap}></CalendarMonth>
-                        )
-                    })
-                }
-            </ScrollView>
+                        this.months.map((month, index) => {
+                            return (
+                                <CalendarMonth key={`month_${index}`} date={month} dayMap={this.props.dayMap} modal={this.modal}></CalendarMonth>
+                            )
+                        })
+                    }
+                </ScrollView>
+                <ModalSelect ref={this.modal}>
+
+                </ModalSelect>
+            </View>
         )
     }
 }
@@ -216,4 +288,12 @@ const styles = StyleSheet.create({
         marginLeft: 10,
         marginRight: 10,
     },
+    sidebar: {
+        width: width*0.7,
+        minWidth: 280,
+        height: height,
+        backgroundColor: "white",
+        position: "absolute",
+        right: 0,
+    }
 });
