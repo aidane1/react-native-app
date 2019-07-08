@@ -3,8 +3,13 @@ import {
   StyleSheet,
   View,
   Dimensions,
-  ActivityIndicator
+  ActivityIndicator,
+  Image
 } from 'react-native';
+
+import {AppLoading} from "expo";
+
+// import {Asset} from "react-native-unimodules";
 
 import { Course, Courses } from "../../classes/courses";
 
@@ -26,6 +31,20 @@ import {StackActions, NavigationActions} from 'react-navigation';
 
 const width = Dimensions.get('window').width; //full width
 const height = Dimensions.get('window').height; //full height
+
+// function cacheImages(images) {
+//     return images.map(image => {
+//         if (typeof image === 'string') {
+//             return Image.prefetch(image);
+//         } else {
+//             return Asset.fromModule(image).downloadAsync();
+//         }
+//     });
+// }
+
+// function cacheFonts(fonts) {
+//     return fonts.map(font => Font.loadAsync(font));
+// }
 
 export default class LoadingScreen extends React.Component {
     static navigationOptions = {
@@ -59,7 +78,7 @@ export default class LoadingScreen extends React.Component {
                 global.dayMap = school["dayMap"];
                 global.school = school;
                 global.dates = dates;
-                global.courseInfoCourse = userCourses[0];
+                global.courseInfoCourse = "_";
                 // global.currentCourseMap = currentCourseMap;
                 global.courses = allCourses;
                 global.semesters = allSemesters;
@@ -73,9 +92,9 @@ export default class LoadingScreen extends React.Component {
                 global.blocksCourseMap = {};
                 const resetAction = StackActions.reset({
                     index: 0,
-                    actions: [NavigationActions.navigate({ routeName: 'CourseInfo' })],
+                    actions: [NavigationActions.navigate({ routeName: 'Home' })],
                 });
-                this.props.navigation.dispatch(resetAction);
+                // this.props.navigation.dispatch(resetAction);
             }
         } catch(e) {
             console.log(e);
@@ -85,7 +104,7 @@ export default class LoadingScreen extends React.Component {
     render() {
         return (
             <View style={styles.container}>
-                <ActivityIndicator size="large" color="#0000ff" />
+                <Image source={require("../../assets/splash.png")} style={{width, height}}></Image>
             </View>
         )
     }

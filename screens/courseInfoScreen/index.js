@@ -29,7 +29,7 @@ import { TextField } from 'react-native-material-textfield';
 
 import {ImagePicker, Camera, Permissions, Constants, LinearGradient} from 'expo';
 
-
+import ApexAPI from "../../http/api";
 
 
 
@@ -159,36 +159,60 @@ class UploadedImage extends React.Component {
     }
 }
 
+const mimetypes = {
+    ".jpg": "image/jpeg",
+    ".png": "image/png",
+}
+
+function sendResourseToServer(resource) {
+    return fetch("https://www.apexschools.co/api/v1/resources?base64=true", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "x-api-key": global.user["x-api-key"],
+            "x-id-key": global.user["x-id-key"],
+            "school": global.user["school"],
+        },
+        body: JSON.stringify(resource),
+    })
+}
 
 class AssignmentModal extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            isBackdropVisible: true,
+            isBackdropVisible: false,
             images: [],
         }
     }
     launchCameraRoll = async () => {
         let result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.All,
+            base64: true,
+            exif: true,
+            quality: 0.1,
         });
         if (result.uri) {
             this.setState(state => ({
                 images: [...state.images, result],
             }));
-            console.log(result);
-            ImgToBase64.getBase64String(result.uri)
-                .then(res => {
-                    console.log(res);
-                })
-                .catch(e => {
-                    console.log(e);
-                })
+            result.path = `/courses/${global.courseInfoCourse.id}/resources`
+            sendResourseToServer(result)
+                .then(res => res.json())
+                .then(json => {
+                    console.log(json);
+                });
+            // let extension = result.uri.split(".")[1];
+            // extension = "." + extension;
+            // let serverString = `data:${mimetypes[extension]};base64,${result.base64}`;
         }
     }
     launchCamera = async () => {
         let result = await ImagePicker.launchCameraAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.All,
+            base64: true,
+            exif: true,
+            quality: 0.1,
         });
         if (result.uri) {
             this.setState(state => ({
