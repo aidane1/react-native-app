@@ -11,19 +11,28 @@ import {
   AsyncStorage
 } from 'react-native';
 
+import Touchable from 'react-native-platform-touchable';
+
+import { Course, Courses } from "../../classes/courses";
+
 import { WebBrowser, LinearGradient } from 'expo';
+
 import { Ionicons } from '@expo/vector-icons';
+
+import { SchoolIcons, GenericIcon } from "../../classes/icons";
+
+import { boxShadows } from "../../constants/boxShadows";
 
 const width = Dimensions.get('window').width; //full width
 const height = Dimensions.get('window').height; //full height
 
 class CourseIcon extends React.Component {
   render() {
-    return (
-      <View style={[styles.icon, {backgroundColor: "#ffaaaa"}]}>
-        <Ionicons name={this.props.icon} size={20} color="black" />
-      </View>
-    )
+      return (
+          <View style={[styles.icon, {backgroundColor: this.props.color}, boxShadows.boxShadow2]}>
+              {this.props.children}
+          </View>
+      )
   }
 }
 
@@ -33,7 +42,7 @@ class DayList extends React.Component {
     let rowLists = [];
     for (var i = 0; i < list.length; i++) {
       rowLists.push(
-        <CourseRow last={i==list.length-1} key={"courseRow_" + i.toString()} {...list[i]}></CourseRow>
+        <CourseRow _navigateToPage={this.props._navigateToPage} last={i==list.length-1} key={"courseRow_" + i.toString()} {...list[i]}></CourseRow>
       )
     }
     return (
@@ -46,65 +55,78 @@ class DayList extends React.Component {
 
 class CourseRow extends React.Component {
   render() {
+    let icon = SchoolIcons.getIcon(this.props.category);
     if (this.props.last) {
       return (
-        <View style={[styles.courseRow]}>
-          <CourseIcon icon="ios-beaker"></CourseIcon>
-          <View style={[styles.courseRowInfo, {borderBottomColor: "rgba(0,0,0,0)"}]}>
-            <View style={styles.courseRowStack}>
-              <View>
-                <Text style={styles.courseRowCourse}>
-                  {this.props.course}
-                </Text>
+        <Touchable onPress={() => this.props.id != "_" ? this.props._navigateToPage("CourseInfo", this.props.id) : () => {}}>
+          <View style={[styles.courseRow]}>
+            <CourseIcon color={icon[1]}>
+                <GenericIcon icon={icon[0]} color="black" size={20}></GenericIcon>
+            </CourseIcon>
+            <View style={[styles.courseRowInfo, {borderBottomColor: "rgba(0,0,0,0)"}]}>
+              <View style={styles.courseRowStack}>
+                <View>
+                  <Text style={styles.courseRowCourse}>
+                    {this.props.course}
+                  </Text>
+                </View>
+                <View>
+                  <Text style={styles.courseRowTeacher}>
+                    {this.props.teacher}
+                  </Text>
+                </View>
               </View>
               <View>
-                <Text style={styles.courseRowTeacher}>
-                  {this.props.teacher}
+                <Text style={styles.courseRowTime}>
+                    {this.props.time}
                 </Text>
               </View>
-            </View>
-            <View>
-              <Text style={styles.courseRowTime}>
-                  {this.props.time}
-              </Text>
             </View>
           </View>
-        </View>
+        </Touchable>
       )
     } else {
       return (
-        <View style={styles.courseRow}>
-          <CourseIcon icon="ios-beaker"></CourseIcon>
-          <View style={styles.courseRowInfo}>
-            <View style={styles.courseRowStack}>
-              <View>
-                <Text style={styles.courseRowCourse}>
-                  {this.props.course.course}
-                </Text>
+        <Touchable onPress={() => this.props.id != "_" ? this.props._navigateToPage("CourseInfo", this.props.id) : () => {}}>
+          <View style={[styles.courseRow]}>
+            <CourseIcon color={icon[1]}>
+                <GenericIcon icon={icon[0]} color="black" size={20}></GenericIcon>
+            </CourseIcon>
+            <View style={[styles.courseRowInfo]}>
+              <View style={styles.courseRowStack}>
+                <View>
+                  <Text style={styles.courseRowCourse}>
+                    {this.props.course}
+                  </Text>
+                </View>
+                <View>
+                  <Text style={styles.courseRowTeacher}>
+                    {this.props.teacher}
+                  </Text>
+                </View>
               </View>
               <View>
-                <Text style={styles.courseRowTeacher}>
-                  {this.props.course.teacher}
+                <Text style={styles.courseRowTime}>
+                    {this.props.time}
                 </Text>
               </View>
-            </View>
-            <View>
-              <Text style={styles.courseRowTime}>
-                  {this.props.time}
-              </Text>
             </View>
           </View>
-        </View>
+        </Touchable>
       )
     }
   }
 }
 
 export default class LinksScreenTile extends React.Component {
-  static navigationOptions = {
-    title: 'Courses',
-  };
+  constructor(props)  {
+    super(props);
 
+  }
+  _navigateToPage = async (page, id) => {
+      globalThis.courseInfoCourse = await Courses._retrieveCourseById(id);
+      this.props.navigation.navigate(page);
+  }
   render() {
     return (
       <ScrollView style={styles.scrollBack}  bounces={false}>
@@ -113,7 +135,7 @@ export default class LinksScreenTile extends React.Component {
             Today
           </Text>
         </View>
-        <DayList courses={this.props.courseList}></DayList>
+        <DayList courses={this.props.courseList} _navigateToPage={this._navigateToPage}></DayList>
       </ScrollView>
     );
   }

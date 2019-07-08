@@ -57,10 +57,10 @@ export class Semesters {
                     }
                     let currentSemester = {};
                     for (var j = 0; j < blocks.length; j++) {
-                        if (blocks[j][1] == "changing") {
-                            currentSemester[blocks[j][0]] = new Course({course: "LC's", block: blocks[j][0]});
+                        if (blocks[j].is_constant) {
+                            currentSemester[blocks[j]._id] = new Course({constant: true, course: blocks[j].block, block: blocks[j]._id});
                         } else {
-                            currentSemester[blocks[j][0]] = new Course({constant: true, course: blocks[j][0], block: blocks[j][0]});
+                            currentSemester[blocks[j]._id] = new Course({course: "LC's", block: blocks[j]._id});
                         }
                     }
                     for (var j = 0; j < currentSemesterList.length; j++) {
@@ -104,7 +104,7 @@ export class Semesters {
             let currentDate = new Date();
             let semesters = await Semesters._retrieveFromStorage();
             let currentSemesters = [];
-            for (var i = 0; i < 3; i++) {
+            for (var i = 0; i < semesters.length; i++) {
                 if (semesters[i].startDate.getTime() < currentDate.getTime() && semesters[i].endDate.getTime() > currentDate.getTime()) {
                     currentSemesters.push(semesters[i]);
                 }

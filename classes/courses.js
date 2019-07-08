@@ -1,13 +1,12 @@
 
 import { AsyncStorage } from "react-native";
 
-import { Semester, Semesters } from "./semesters";
 
 export class Course {
     constructor(courseObject) {
         this.course = "Spare";
         this.id = "_";
-        this.block = "A";
+        this.block = "_";
         this.teacher = "Free";
         this.category = "other";
         this.school = "_";

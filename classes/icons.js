@@ -10,10 +10,59 @@ class IconBlock {
     }
 }
 
+export class XIcon extends React.Component {
+    render() {
+        return (
+            <Entypo color="white" name="cross" size={16} {...this.props}></Entypo>
+        )
+    }
+}
+export class CameraIcon extends React.Component {
+    render() {
+        return (
+            <Entypo color="white" name="camera" size={16} {...this.props}></Entypo>
+        )
+    }
+}
+export class PhotoIcon extends React.Component {
+    render() {
+        return (
+            <FontAwesome color="white" name="photo" size={16} {...this.props}></FontAwesome>
+        )
+    }
+}
 export class CloseIcon extends React.Component {
     render() {
         return (
             <AntDesign color="white" name="closecircleo" size={16} {...this.props}></AntDesign>
+        )
+    }
+}
+export class CheckBoxFilledIcon extends React.Component {
+    render() {
+        return (
+            <FontAwesome color="white" name="check-circle" {...this.props}></FontAwesome>
+        )
+    }
+}
+export class CheckBoxOpenIcon extends React.Component {
+    render() {
+        return (
+            <FontAwesome color="white" name="circle-o" {...this.props}></FontAwesome>
+        )
+    }
+}
+export class PlusIcon extends React.Component {
+    render() {
+        return (
+            <FontAwesome color="white" name="plus" size={16} {...this.props}></FontAwesome>
+        )
+    }
+}
+export class ConfirmIcon extends React.Component {
+    render() {
+        return (
+            <FontAwesome color="white" name="check-circle" {...this.props}></FontAwesome>
         )
     }
 }

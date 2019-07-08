@@ -7,26 +7,22 @@ import { AsyncStorage } from "react-native";
 
 export class School {
     constructor(school) {
-        this.blockNames = school.blockNames;
-        for (var i = 0; i < school.schedule.length; i++) {
-            for (var key in school.schedule[i]) {
-                for (var j = 0; j < school.schedule[i][key][j].length; i++) {
-                    school.schedule[i][key][j] = new DayBlock(school.schedule[i][key][j]);
-                }
-            }
-        }
+        this.blocks = school.blocks;
+        this.dayMap = school.dayMap;
         this.schedule =  school.schedule;
         this.spareName = school.spareName;
         this.id = school.id;
         this.dayTitles = school.dayTitles;
+        this.rawSchedule = school.rawSchedule;
     }
     toString() {
         return {
-            blockNames: this.blockNames,
+            blocks: this.blocks,
             schedule: this.schedule,
             spareName: this.spareName,
             id: this.id,
-            dayTitles: this.dayTitles
+            dayTitles: this.dayTitles,
+            rawSchedule: this.rawSchedule,
         }
     }
 

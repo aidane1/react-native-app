@@ -4,9 +4,10 @@ import { AsyncStorage } from "react-native";
 export class User {
     constructor(user) {
         this.username = user.username;
-        this.id = user.id;
-        this.courses = user.courses;
         this.password = user.password;
+        this["x-api-key"] = user["x-api-key"];
+        this["x-id-key"] = user["x-id-key"];
+        this.courses = user.courses;
         this.school = user.school;
     }
     toString() {
@@ -14,7 +15,8 @@ export class User {
             username: this.username,
             password: this.password,
             courses: this.courses,
-            id: this.id,
+            "x-api-key": this["x-api-key"],
+            "x-id-key": this["x-id-key"],
             school: this.school
         }
     }

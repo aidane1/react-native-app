@@ -9,7 +9,7 @@ import {
 
 import HeaderBar from "../../components/header";
 
-import { LeftIcon, DownIcon, UpIcon, EmptyIcon, SchoolIcons, GenericIcon, CloseIcon} from "../../classes/icons";
+import { LeftIcon, ConfirmIcon, DownIcon, UpIcon, EmptyIcon, SchoolIcons, GenericIcon, CloseIcon} from "../../classes/icons";
 
 import { User } from "../../classes/user";
 
@@ -26,6 +26,8 @@ import { boxShadows } from "../../constants/boxShadows";
 import Touchable from 'react-native-platform-touchable';
 
 import Collapsible from 'react-native-collapsible';
+
+import {StackActions, NavigationActions} from 'react-navigation';    
 
 
 const width = Dimensions.get('window').width; //full width
@@ -53,6 +55,7 @@ class CourseSelectable extends React.Component {
     }
 
     render() {
+        let block = global.school.blocks.filter(block => block._id == this.props.block);
         return (
             <Touchable onPress={this.handleClick}>
                 <View style={[styles.courseSelectable, (this.props.even ? styles.even : styles.odd)]}>
@@ -61,7 +64,7 @@ class CourseSelectable extends React.Component {
                         <Text style={styles.teacher}>{this.props.teacher}</Text>
                     </View>
                     <View style={styles.rightItem}> 
-                        <Text style={styles.block}>Block {this.props.block}</Text>
+                        <Text style={styles.block}>Block {block.length > 0 ? block[0].block : ""}</Text>
                     </View>
                 </View>
             </Touchable>
@@ -202,18 +205,18 @@ class CourseSemesterList extends React.Component {
 class UserCourses extends React.Component {
     render() {
         let blocks = [];
-        let allBlocks = global.school.blockNames;
+        let allBlocks = global.school.blocks;
         allBlocks.sort((a, b) => {
-            return a[0].localeCompare(b[0]);
+            return a.block.localeCompare(b.block);
         });
         for (var i = 0; i < allBlocks.length; i++) {
-            if (allBlocks[i][1] == "changing") {
-                if (this.props.courses[allBlocks[i][0]]) {
-                    this.props.courses[allBlocks[i][0]].isReal = true;
-                    blocks.push(<UserCourseBlock parent={this.props.parent} course={this.props.courses[allBlocks[i][0]]} key={`courseBlock_${i}`}></UserCourseBlock>)
+            if (!allBlocks[i].is_constant) {
+                if (this.props.courses[allBlocks[i]._id]) {
+                    this.props.courses[allBlocks[i]._id].isReal = true;
+                    blocks.push(<UserCourseBlock parent={this.props.parent} block={allBlocks[i]} course={this.props.courses[allBlocks[i]._id]} key={`courseBlock_${i}`}></UserCourseBlock>)
                 } else {
-                    let course = {course: global.school.spareName, teacher: "Free", block: allBlocks[i][0], isReal: false}
-                    blocks.push(<UserCourseBlock course={course} key={`courseBlock_${i}`}></UserCourseBlock>)
+                    let course = {course: global.school.spareName, teacher: "Free", block: allBlocks[i]._id, isReal: false}
+                    blocks.push(<UserCourseBlock course={course} block={allBlocks[i]} key={`courseBlock_${i}`}></UserCourseBlock>)
                 }
             }
         }
@@ -238,7 +241,7 @@ class UserCourseBlock extends React.Component {
                         <Text style={styles.userBlockTeacher}>{this.props.course.teacher}</Text>
                     </View>
                     <View style={styles.rightItem}> 
-                        <Text style={styles.userBlockBlock}>block {this.props.course.block}</Text>
+                        <Text style={styles.userBlockBlock}>block {this.props.block.block}</Text>
                         <Touchable onPress={this.handleClick}>
                             <CloseIcon style={styles.closeIcon} color="red"></CloseIcon>
                         </Touchable>
@@ -254,7 +257,7 @@ class UserCourseBlock extends React.Component {
                         <Text style={styles.userBlockTeacher}>{this.props.course.teacher}</Text>
                     </View>
                     <View style={styles.rightItem}> 
-                        <Text style={styles.userBlockBlock}>block {this.props.course.block}</Text>
+                        <Text style={styles.userBlockBlock}>block {this.props.block.block}</Text>
                         <CloseIcon style={styles.closeIcon} color="white"></CloseIcon>
                     </View>
                 </View>
@@ -347,12 +350,16 @@ export default class CoursesScreen extends React.Component {
             global.user.courses = finalCourses;
             await User._saveToStorage(global.user);
             let userCourses = await Courses._retrieveCoursesById(user.courses);
-            let semesterMap = await Semesters._createSemesterMap(userCourses, school.blockNames);
-            let currentCourseMap = await Semesters._createCoursesOnDate(userCourses, global.school.blockNames, global.currentSemesters);
+            let semesterMap = await Semesters._createSemesterMap(userCourses, school.blocks);
+            let currentCourseMap = await Semesters._createCoursesOnDate(userCourses, global.school.blocks, global.currentSemesters);
             global.currentCourseMap = currentCourseMap;
             global.semesterMap = semesterMap;
             global.userCourses = userCourses;
-            this.props.navigation.goBack();
+            const resetAction = StackActions.reset({
+                index: 0,
+                actions: [NavigationActions.navigate({ routeName: 'Home' })],
+            });
+            this.props.navigation.dispatch(resetAction);
         } catch(e) {
             console.log(e);
             this.props.navigation.goBack();
@@ -399,7 +406,7 @@ export default class CoursesScreen extends React.Component {
     render() {
         return (
             <View style={styles.container}>
-                <HeaderBar iconLeft={<Touchable onPress={this.finished}><LeftIcon size={28}></LeftIcon></Touchable>} iconRight={<EmptyIcon width={28} height={32}></EmptyIcon>} width={width} height={60} title="Courses"></HeaderBar>  
+                <HeaderBar iconLeft={<Touchable onPress={() => this.props.navigation.goBack()}><LeftIcon size={28}></LeftIcon></Touchable>} iconRight={<Touchable onPress={this.finished}><ConfirmIcon size={28}></ConfirmIcon></Touchable>} width={width} height={60} title="Courses"></HeaderBar>  
                 <View style={styles.bodyHolder}>
                     <ScrollView ref={this.scrollView} horizontal={true} style={styles.slideView} scrollEnabled={false}>
                         {

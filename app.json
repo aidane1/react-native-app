@@ -23,8 +23,14 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.AidanEglin.schoolr"
+    },
+    "android": {
+      "package": "com.AidanEglin.schoolr"
     },
     "description": ""
-  }
+  },
+  "name": "schoolr",
+  "displayName": "schoolr"
 }

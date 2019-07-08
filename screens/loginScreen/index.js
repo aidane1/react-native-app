@@ -37,6 +37,8 @@ import { User } from "../../classes/user";
 
 import Touchable from 'react-native-platform-touchable';
 
+import ApexAPI from "../../http/api";
+
 const width = Dimensions.get('window').width; //full width
 const height = Dimensions.get('window').height; //full height
 
@@ -126,7 +128,7 @@ class SchoolInput extends React.Component {
         this.props = props;
         this.props.schools = this.props.schools || [];
         this.state = {
-            schoolID: "_",
+            id: this.props.id,
             schoolIndex: 0,
         }
     }
@@ -197,55 +199,13 @@ function constructEventList(serverData) {
 }
 
 function constructSchoolObject(serverData) {
-    let schedule = [];
-    if (!serverData.constantBlocks) {
-        let blockSchedule = serverData.blockOrder;
-        for (var i = 0; i < blockSchedule.length; i++) {
-            let currentWeek = {};
-            for (var key in blockSchedule[i]) {
-                let currentDay = [];
-                for (var j = 0; j < blockSchedule[i][key].length; j++) {
-                    let currentBlock = new DayBlock({
-                        block: blockSchedule[i][key][j][0],
-                        constant: blockSchedule[i][key][j][5] == "constant",
-                        startHour: blockSchedule[i][key][j][1],
-                        startMinute: blockSchedule[i][key][j][2],
-                        endHour: blockSchedule[i][key][j][3],
-                        endMinute: blockSchedule[i][key][j][4],
-                    });
-                    currentDay.push(currentBlock);
-                }
-                currentWeek[key] = (currentDay);
-            }
-            schedule.push(currentWeek);
-        }
-    } else {
-        let blockSchedule = serverData.constantBlockSchedule.schedule;
-        for (var i = 0; i < blockSchedule.length; i++) {
-            let currentWeek = {};
-            for (var key in blockSchedule[i]) {
-                let currentDay = [];
-                for (var j = 0; j < blockSchedule[i][key].length; j++) {
-                    let currentBlock = new DayBlock({
-                        block: blockSchedule[i][key][j][0],
-                        constant: blockSchedule[i][key][j][1] == "constant",
-                        startHour: serverData.constantBlockSchedule.blockSchedule[j][0],
-                        startMinute: serverData.constantBlockSchedule.blockSchedule[j][1],
-                        endHour: serverData.constantBlockSchedule.blockSchedule[j][2],
-                        endMinute: serverData.constantBlockSchedule.blockSchedule[j][3],
-                    });
-                    currentDay.push(currentBlock);
-                }
-                currentWeek[key] = (currentDay);
-            }
-            schedule.push(currentWeek);
-        }
-    }  
     return {
-        schedule,
-        blockNames: serverData.blockNames,
-        spareName: serverData.spareName,
-        dayTitles: serverData.dayTitles,
+        schedule: serverData.schedule,
+        rawSchedule: serverData.rawSchedule,
+        dayMap: serverData["year_day_object"],
+        blocks: serverData["blocks"],
+        spareName: serverData["spare_name"],
+        dayTitles: serverData["day_titles"],
         id: serverData._id,
     }
 }
@@ -271,22 +231,25 @@ class LoginButton extends React.Component {
         let password = this.props.inputs[1].current.state.text;
         let school = this.props.inputs[2].current.state.id;
         this.setState({username, password, school});
-        fetch(`http://159.65.72.108:15651/UserInfo?schoolId=${school}&username=${username}&password=${password}`)
+        ApexAPI.authenticate(username, password, school)
             .then(res => res.json())
             .then(async (response) => {
-                response.user.password = password;
-                await Courses._saveToStorage(constructCourseList(response.courses));
-                await Days._saveToStorage(constructDayMap(response.dayMap));
-                await Semesters._saveToStorage(constructSemesterList(response.semesters));
-                await Events._saveToStorage(constructEventList(response.events));
-                await School._saveToStorage(constructSchoolObject(response.school));
-                await User._saveToStorage(constructUserObject(response.user));
+                // console.log(response.body.courses);
+
+                // response.user.password = password;
+                await Courses._saveToStorage(constructCourseList(response.body.courses));
+                // await Days._saveToStorage(constructDayMap(response.dayMap));
+                await Semesters._saveToStorage(constructSemesterList(response.body.semesters));
+                await Events._saveToStorage(constructEventList(response.body.events));
+                await School._saveToStorage(constructSchoolObject(response.body.school));
+                await User._saveToStorage(constructUserObject({username: response.body.username, password, "x-api-key": response.body["api_key"], "x-id-key": response.body["_id"], courses: [], school}));
                 await User._setLoginState(true);
                 this.props.navigation.navigate("Loading");
             })
-            .catch((e) => {
+            .catch(e => {
+                console.log(e);
                 this.props.navigation.navigate("Login");
-            });
+            }) 
     }
     
     render() {
@@ -330,7 +293,7 @@ class SchoolPicker extends React.Component {
                         onValueChange={(itemValue, itemIndex) => {
                             let currentSchool = this.props.schools[0];
                             for (var i = 0; i < this.props.schools.length; i++) {
-                                if (this.props.schools[i].id == itemValue) {
+                                if (this.props.schools[i]._id == itemValue) {
                                     currentSchool = this.props.schools[i];
                                 }
                             }
@@ -339,7 +302,7 @@ class SchoolPicker extends React.Component {
                         }}>
                         {
                             this.props.schools.map((y) => {
-                                return (<Picker.Item key={y.id} label={y.name + ` (${y.district})`} value={y.id}></Picker.Item>)
+                                return (<Picker.Item key={y._id} label={y.name + ` (${y.district || "No District"})`} value={y._id}></Picker.Item>)
                             })
                         }
                     </Picker>
@@ -392,10 +355,15 @@ export default class LoginScreen extends React.Component {
         this.modal.current.setState({modalShown: true});
     }
     componentDidMount() {
-        fetch("http://159.65.72.108:15651/schoolList")
+        ApexAPI.getSchoolList()
             .then(res => res.json())
-            .then((response) => {
-                this.setState({schools: response});
+            .then(res => {
+                if (res.status == "error") {
+                    res.setState({schools: []});
+                } else {
+                    this.school.current.setState({id: res.body[0] ? res.body[0]._id : "_"});
+                    this.setState({schools: res.body});
+                }
             })
             .catch(e => this.setState({schools: []}));
     }

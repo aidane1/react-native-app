@@ -33,7 +33,7 @@ class TabButton extends React.Component {
                 <TouchableWithoutFeedback onPress={this.handleClick}>
                 <View style={[styles.tabButton, styles.selectedTabButton, boxShadows.boxShadow7]}>
                     <View style={styles.tabBarIcon}>
-                        {[<ScheduleIcon></ScheduleIcon>, <HomeIcon></HomeIcon>, <CoursesIcon></CoursesIcon>, <CalendarIcon></CalendarIcon>][["Schedule", "Home", "Courses", "Calendar"].indexOf(this.props.title)] || <HomeIcon></HomeIcon>}
+                        {[<ScheduleIcon></ScheduleIcon>, <HomeIcon></HomeIcon>, <CoursesIcon></CoursesIcon>][["Schedule", "Home", "Courses"].indexOf(this.props.title)] || <HomeIcon></HomeIcon>}
                     </View>
                     <Text style={styles.tabButtonText}>
                         {this.props.title}
@@ -46,7 +46,7 @@ class TabButton extends React.Component {
                 <TouchableWithoutFeedback onPress={this.handleClick}>
                 <View style={[styles.tabButton]}>
                     <View style={styles.tabBarIcon}>
-                    {[<ScheduleIcon></ScheduleIcon>, <HomeIcon></HomeIcon>, <CoursesIcon></CoursesIcon>, <CalendarIcon></CalendarIcon>][["Schedule", "Home", "Courses", "Calendar"].indexOf(this.props.title)] || <HomeIcon></HomeIcon>}
+                    {[<ScheduleIcon></ScheduleIcon>, <HomeIcon></HomeIcon>, <CoursesIcon></CoursesIcon>][["Schedule", "Home", "Courses"].indexOf(this.props.title)] || <HomeIcon></HomeIcon>}
                     </View>
                     <Text style={styles.tabButtonText}>
                         {this.props.title}
@@ -86,7 +86,7 @@ export default class TabBar extends React.Component {
         return (
         <View style={[{width: width, height: 45, zIndex: 5}, boxShadows.boxShadow7]}>
             <LinearGradient start={{x: 0, y: 0}} end={{x:1, y:0}} style={[{width: width, height: 45}]} colors={["rgb(0,153,153)", ", rgb(0,130,209)"]}>
-                <TabBarButtons selectedIndex={this.state.selectedIndex} tabs={["Schedule", "Home", "Courses", "Calendar"]} tapFunction={this.props.tapFunction} self={this}>
+                <TabBarButtons selectedIndex={this.state.selectedIndex} tabs={["Home", "Courses", "Schedule", "Calendar"]} tapFunction={this.props.tapFunction} self={this}>
 
                 </TabBarButtons>
             </LinearGradient>
@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
         height: "100%",
     },
     tabButton: {
-        width: "25%",
+        width: "33.33%",
         height: "100%",
         flexDirection: "column",
         justifyContent: "center",

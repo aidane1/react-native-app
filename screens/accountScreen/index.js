@@ -10,7 +10,7 @@ import {
 
 import HeaderBar from "../../components/header";
 
-import { LeftIcon, RightIcon, EmptyIcon, CourseIcon, EventsIcon, LogoutIcon, NotesIcon, AssignmentsIcon, SchoolAssignmentsIcon, BeforeSchoolIcon, LunchTimeIcon, AfterSchoolIcon } from "../../classes/icons";
+import { LeftIcon, CalendarIcon, RightIcon, EmptyIcon, CourseIcon, EventsIcon, LogoutIcon, NotesIcon, AssignmentsIcon, SchoolAssignmentsIcon, BeforeSchoolIcon, LunchTimeIcon, AfterSchoolIcon } from "../../classes/icons";
 
 import { ScrollView } from 'react-native-gesture-handler';
 
@@ -100,15 +100,16 @@ export default class AccountScreen extends React.Component {
     render() {
         return (
             <View style={styles.container}>
-                <HeaderBar iconLeft={<TouchableWithoutFeedback onPress={() => this.props.navigation.goBack()}><LeftIcon size={28}></LeftIcon></TouchableWithoutFeedback>} iconRight={<EmptyIcon width={28} height={32}></EmptyIcon>} width={width} height={60} title="Account"></HeaderBar>
+                <HeaderBar iconLeft={<Touchable onPress={() => this.props.navigation.goBack()}><LeftIcon size={28}></LeftIcon></Touchable>} iconRight={<EmptyIcon width={28} height={32}></EmptyIcon>} width={width} height={60} title="Account"></HeaderBar>
                 <View style={styles.bodyHolder}>
                     <ScrollView>
                         <ButtonSection>
                             <CourseRow color={"#ef8b8b"} icon={<CourseIcon size={20} color={"black"}></CourseIcon>} text={"Courses"} last={false} onPress={() => this._navigateToPage("Courses")}></CourseRow>
-                            <CourseRow color={"#f2cc98"} icon={<EventsIcon size={20} color={"black"}></EventsIcon>} text={"Events"} last={false}></CourseRow>
-                            <CourseRow color={"#ffffad"} icon={<LogoutIcon size={20} color={"black"}></LogoutIcon>} text={"Login"} last={true}></CourseRow>
+                            <CourseRow color={"#f2cc98"} icon={<EventsIcon size={20} color={"black"}></EventsIcon>} text={"Events"} last={false} onPress={() => this._navigateToPage("Events")}></CourseRow>
+                            <CourseRow color={"#ffffad"} icon={<LogoutIcon size={20} color={"black"}></LogoutIcon>} text={"Login"} last={true} onPress={() => this._navigateToPage("Login")}></CourseRow>
                         </ButtonSection>
                         <ButtonSection>
+                            <CourseRow color={"#fffec9"} icon={<CalendarIcon size={20} color={"black"}></CalendarIcon>} text={"Calendar"} last={false} onPress={() => this._navigateToPage("Calendar")}></CourseRow>
                             <CourseRow color={"#afffad"} icon={<NotesIcon size={20} color={"black"}></NotesIcon>} text={"Notes"} last={false}></CourseRow>
                             <CourseRow color={"#b1f9ed"} icon={<AssignmentsIcon size={20} color={"black"}></AssignmentsIcon>} text={"Assignments"} last={true}></CourseRow>
                         </ButtonSection>
