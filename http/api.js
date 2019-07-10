@@ -20,7 +20,8 @@ class ApexAPI {
             headers: {
                 "Content-Type": "application/json",
                 ...this.headers,
-            }
+            },
+            body: JSON.stringify(body),
         })
     }
     put(path, body) {
@@ -29,7 +30,8 @@ class ApexAPI {
             headers: {
                 "Content-Type": "application/json",
                 ...this.headers,
-            }
+            },
+            body: JSON.stringify(body),
         })
     }
     delete (path) {

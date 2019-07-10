@@ -31,6 +31,8 @@ import { Semester, Semesters } from "../../classes/semesters";
 
 import { Event, Events } from "../../classes/events";
 
+import { Topic, Topics } from "../../classes/topics";
+
 import { School, DayBlock } from "../../classes/school";
 
 import { User } from "../../classes/user";
@@ -216,6 +218,16 @@ function constructUserObject(serverData) {
     return user;
 }
 
+function constructTopicList(serverData) {
+    let topics = [];
+    for (var i = 0; i < serverData.length; i++) {
+        serverData[i].id = serverData[i]._id;
+        let current = new Topic(serverData[i]);
+        topics.push(current);
+    }
+    return topics;
+}
+
 class LoginButton extends React.Component {
     constructor(props) {
         super(props);
@@ -241,6 +253,7 @@ class LoginButton extends React.Component {
                 // await Days._saveToStorage(constructDayMap(response.dayMap));
                 await Semesters._saveToStorage(constructSemesterList(response.body.semesters));
                 await Events._saveToStorage(constructEventList(response.body.events));
+                await Topics._saveToStorage(constructTopicList(response.body.topics));
                 await School._saveToStorage(constructSchoolObject(response.body.school));
                 await User._saveToStorage(constructUserObject({username: response.body.username, password, "x-api-key": response.body["api_key"], "x-id-key": response.body["_id"], courses: [], school}));
                 await User._setLoginState(true);

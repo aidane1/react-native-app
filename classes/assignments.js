@@ -11,7 +11,8 @@ export class Assignment {
         this.dueDate = courseObject.dueDate || "";
         this.date = courseObject.date || "";
         this.referenceCourse = courseObject.referenceCourse || "_";
-        this.resources = courseObject.resources || "_";
+        this.resources = courseObject.resources || [];
+        this.responseResources = courseObject.responseResources || [];
     }
     toJson() {
         return {
@@ -22,12 +23,47 @@ export class Assignment {
             dueDate: this.dueDate,
             date: this.date,
             referenceCourse: this.referenceCourse,
-            resources: this.resources
+            resources: this.resources,
+            responseResources: this.responseResources,
         }
     }
 }
 
 export class Assignments {
+    static _retrieveCompletedFromStorage = async () => {
+        try {
+            let completed = await AsyncStorage.getItem("completedAssignments");
+            completed = JSON.parse(completed) || [];
+            return completed;
+        } catch(e) {
+            console.log(e);
+            return [];
+        }
+    }
+    static _addCompletedToStorage = async (id) => {
+        try {
+            let completed = await AsyncStorage.getItem("completedAssignments");
+            completed = JSON.parse(completed) || [];
+            completed.push(id);
+            await AsyncStorage.setItem("completedAssignments", JSON.stringify(completed));
+        } catch(e) {
+            console.log(e);
+            return [];
+        }
+    }
+    static _removeCompletedToStorage = async (id) => {
+        try {
+            let completed = await AsyncStorage.getItem("completedAssignments");
+            completed = JSON.parse(completed) || [];
+            completed = completed.filter(id => {
+                return id !== id;
+            })
+            await AsyncStorage.setItem("completedAssignments", JSON.stringify(completed));
+        } catch(e) {
+            console.log(e);
+            return [];
+        }
+    }
     static _saveToStorage = async (assignments) => {
         try {
             await AsyncStorage.setItem("assignments", JSON.stringify(assignments));
@@ -82,24 +118,19 @@ export class Assignments {
             return [];
         }
     }
-    static _formTopicMap = (assignments) => {
+    static _formTopicMap = (assignments, topics) => {
         try {
             let topicsMap = {};
+            for (var i = 0; i < topics.length; i++) {
+                topicsMap[topics[i].id] = [];
+            }
+            topicsMap["_"] = [];
             for (var i = 0; i < assignments.length; i++) {
-                if (assignments[i].topic._id) {
-                    if (topicsMap[assignments[i].topic._id]) {
-                        topicsMap[assignments[i].topic._id].push(assignments[i]);
-                    } else {
-                        topicsMap[assignments[i].topic._id] = [assignments[i]];
-                    }
-                } else {
-                    if (topicsMap[assignments[i].topic]) {
-                        topicsMap[assignments[i].topic].push(assignments[i]);
-                    } else {
-                        topicsMap[assignments[i].topic] = [assignments[i]];
-                    }
+                if (topicsMap[assignments[i].topic]) {
+                    topicsMap[assignments[i].topic].push(assignments[i]);
                 }
             }
+            delete topicsMap["_"];
             return topicsMap;
         } catch(e) {
             console.log(e);

@@ -31,6 +31,8 @@ import { AccountIcon, EmptyIcon, RefreshIcon } from "../../classes/icons";
 
 import {Assignment, Assignments } from "../../classes/assignments";
 
+import {Topic, Topics } from "../../classes/topics";
+
 import ApexAPI from "../../http/api";
 
 
@@ -123,11 +125,25 @@ export default class HomeScreen extends React.Component {
   componentDidMount() {
     let api = new ApexAPI({"x-api-key": global.user["x-api-key"], "school": global.user["school"], "x-id-key": global.user["x-id-key"]});
     if (global.user.courses.length) {
-      api.get(`assignments?populate=resources,topic&reference_course=${global.user.courses.join(",")}`)
+      api.get(`topics?reference_course=${global.user.courses.join(",")}`)
         .then(res => res.json())
-        .then(data => {
+        .then(async data => {
           if (data.status == "ok") {
-            Assignments._saveToStorage(data.body.map(assignment => {
+            await Topics._saveToStorage(data.body.map(topic => {
+              return {
+                topic: topic.topic,
+                course: topic.reference_course,
+                id: topic._id,
+              }
+            }));
+            global.topics = await Topics._retrieveFromStorage();
+          }
+        });
+      api.get(`assignments?populate=resources,response_resources&reference_course=${global.user.courses.join(",")}`)
+        .then(res => res.json())
+        .then(async data => {
+          if (data.status == "ok") {
+            await Assignments._saveToStorage(data.body.map(assignment => {
               return {
                 topic: assignment.topic || "_",
                 id: assignment._id,
@@ -136,9 +152,11 @@ export default class HomeScreen extends React.Component {
                 dueDate: assignment.due_date,
                 date: assignment.date,
                 referenceCourse: assignment.reference_course,
-                resources: assignment.resources
+                resources: assignment.resources || [],
+                responseResources: assignment.response_resources || [],
               }
             }));
+            global.assignments = await Assignments._retrieveFromStorage();
           }
         })
         .catch(e => {

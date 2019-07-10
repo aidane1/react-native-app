@@ -7,9 +7,11 @@ import {
   Image
 } from 'react-native';
 
-import {AppLoading} from "expo";
+// import {AppLoading} from "expo";
 
-// import {Asset} from "react-native-unimodules";
+import * as Font from "expo-font";
+
+import { Asset } from "expo-asset";
 
 import { Course, Courses } from "../../classes/courses";
 
@@ -27,28 +29,42 @@ import { Day, Days } from "../../classes/days";
 
 import { AsyncStorage } from "react-native";
 
-import {StackActions, NavigationActions} from 'react-navigation';    
+import { Topic, Topics } from "../../classes/topics";
+
+import {StackActions, NavigationActions} from 'react-navigation';
+
+import { Ionicons, Entypo, AntDesign, FontAwesome, MaterialIcons, Feather, MaterialCommunityIcons} from '@expo/vector-icons';
 
 const width = Dimensions.get('window').width; //full width
 const height = Dimensions.get('window').height; //full height
 
-// function cacheImages(images) {
-//     return images.map(image => {
-//         if (typeof image === 'string') {
-//             return Image.prefetch(image);
-//         } else {
-//             return Asset.fromModule(image).downloadAsync();
-//         }
-//     });
-// }
+function cacheImages(images) {
+    return images.map(image => {
+        if (typeof image === 'string') {
+            return Image.prefetch(image);
+        } else {
+            return Asset.fromModule(image).downloadAsync();
+        }
+    });
+}
 
-// function cacheFonts(fonts) {
-//     return fonts.map(font => Font.loadAsync(font));
-// }
+function cacheFonts(fonts) {
+    return fonts.map(font => Font.loadAsync(font));
+}
+
 
 export default class LoadingScreen extends React.Component {
     static navigationOptions = {
         header: null,
+    }
+    async _loadAssetsAsync() {
+        const imageAssets = cacheImages([
+            require("../../assets/logo_transparent.png"),
+            require("../../assets/splash.png"),
+        ]);
+        const fontAssets = cacheFonts([FontAwesome.font, Ionicons.font, Entypo.font]);
+        await Promise.all([...imageAssets, ...fontAssets]);
+        return true;
     }
     async componentDidMount() {
         try {
@@ -60,6 +76,7 @@ export default class LoadingScreen extends React.Component {
                 let currentSemesters = await Semesters._currentSemesters();
                 let userCourses = await Courses._retrieveCoursesById(user.courses);
                 let allAssignments = await Assignments._retrieveFromStorage();
+                let completedAssignments = await Assignments._retrieveCompletedFromStorage();
                 // console.log(userCourses);
                 let allCourses = await Courses._retrieveFromStorage();
                 let allSemesters = await Semesters._retrieveFromStorage();
@@ -68,10 +85,12 @@ export default class LoadingScreen extends React.Component {
                 let dayMap = await Days._retrieveFromStorage();
                 let dates = await Semesters._startAndEndDate();
                 let events = await Events._retrieveFromStorage();
+                let allTopics = await Topics._retrieveFromStorage();
                 let currentCourseMap = await Semesters._createCoursesOnDate(userCourses, school.blocks, currentSemesters);
                 //set global props
                 global.user = user;
                 global.assignments = allAssignments;
+                global.completedAssignments = completedAssignments;
                 // global.currentSemesters = currentSemesters;
                 // global.userCourses = userCourses;
                 global.semesterMap = semesterMap;
@@ -81,6 +100,7 @@ export default class LoadingScreen extends React.Component {
                 global.courseInfoCourse = "_";
                 // global.currentCourseMap = currentCourseMap;
                 global.courses = allCourses;
+                global.topics = allTopics;
                 global.semesters = allSemesters;
                 //end global props
 
@@ -94,7 +114,9 @@ export default class LoadingScreen extends React.Component {
                     index: 0,
                     actions: [NavigationActions.navigate({ routeName: 'Home' })],
                 });
-                // this.props.navigation.dispatch(resetAction);
+                
+                await this._loadAssetsAsync();
+                this.props.navigation.dispatch(resetAction);
             }
         } catch(e) {
             console.log(e);

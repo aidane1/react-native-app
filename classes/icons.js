@@ -1,4 +1,4 @@
-import { Ionicons, Entypo, AntDesign, FontAwesome, MaterialIcons, EvilIcons, Feather, MaterialCommunityIcons} from '@expo/vector-icons';
+import { Ionicons, Entypo, AntDesign, FontAwesome, MaterialIcons, Feather, MaterialCommunityIcons} from '@expo/vector-icons';
 import React from 'react';
 import {
     View,
@@ -7,6 +7,14 @@ import {
 class IconBlock {
     constructor(icon) {
 
+    }
+}
+
+export class TrashIcon extends React.Component {
+    render() {
+        return (
+            <FontAwesome color="white" name="trash-o" size={16} {...this.props}></FontAwesome> 
+        )
     }
 }
 

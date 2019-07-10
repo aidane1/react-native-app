@@ -3,15 +3,19 @@ import {
   StyleSheet,
   View,
   Dimensions,
-  ActivityIndicator,
   TouchableWithoutFeedback,
   Text,
-  Image
+  Image,
+  Animated,
+  Modal as ReactModal,
+  Keyboard,
+  Easing
 } from 'react-native';
+
 
 import HeaderBar from "../../components/header";
 
-import { LeftIcon, PlusIcon, CheckBoxFilledIcon, EmptyIcon, CheckBoxOpenIcon, XIcon, CameraIcon, PhotoIcon, AssignmentsIcon, SchoolAssignmentsIcon, BeforeSchoolIcon, LunchTimeIcon, AfterSchoolIcon } from "../../classes/icons";
+import { LeftIcon, PlusIcon, CheckBoxFilledIcon, EmptyIcon, CheckBoxOpenIcon, XIcon, CameraIcon, PhotoIcon, TrashIcon, SchoolAssignmentsIcon, BeforeSchoolIcon, LunchTimeIcon, AfterSchoolIcon } from "../../classes/icons";
 
 import { ScrollView } from 'react-native-gesture-handler';
 
@@ -19,61 +23,147 @@ import { boxShadows } from "../../constants/boxShadows";
 
 import { Assignment, Assignments } from "../../classes/assignments";
 
+import {Topic, Topics } from "../../classes/topics";
+
 import Touchable from 'react-native-platform-touchable';
 
 import Modal from "react-native-modal";
 
-import ImgToBase64 from 'react-native-image-base64';
-
 import { TextField } from 'react-native-material-textfield';
 
-import {ImagePicker, Camera, Permissions, Constants, LinearGradient} from 'expo';
-
 import ApexAPI from "../../http/api";
+
+import { Dropdown } from 'react-native-material-dropdown';
+
+import moment from "moment";
+
+import ImageViewer from 'react-native-image-zoom-viewer';
+
+import ImageBar from "../../components/imagePicker";
 
 
 
 const width = Dimensions.get('window').width; //full width
 const height = Dimensions.get('window').height; //full height
 
+class CheckButton extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            completed: global.completedAssignments.indexOf(this.props.assignment.id) >= 0,
+            scaleVal: new Animated.Value(1),
+        }
+    }
+    handleClick = () => {
+        
+        if (this.state.completed) {
+            global.completedAssignments = global.completedAssignments.filter(id => {
+                return id !== this.props.assignment.id;
+            })
+            Assignments._removeCompletedToStorage(this.props.assignment.id);
+            this.setState({completed: false});
+        } else {
+            global.completedAssignments.push(this.props.assignment.id);
+            Assignments._addCompletedToStorage(this.props.assignment.id);
+            this.setState({completed: true});
+        }
+    }
+    handlePressIn = () => {
+        Animated.timing(
+            this.state.scaleVal,
+            {
+                toValue: 1.05,
+                duration: 100,
+            }
+        ).start();
+    }
+    handlePressOut = () => {
+        Animated.timing(
+            this.state.scaleVal,
+            {
+                toValue: 1,
+                duration: 100,
+            }
+        ).start();
+    }
+    render() {
+        let {scaleVal} = this.state;
+        return (
+            <TouchableWithoutFeedback onPressIn={this.handlePressIn} onPressOut={this.handlePressOut} onPress={this.handleClick}  hitSlop={{top: 10, bottom: 10, left: 10, right: 0}}>
+                <Animated.View style={{paddingTop: 10, paddingBottom: 10, paddingLeft: 20, paddingRight: 20, transform: [{scale: scaleVal}]}}>
+                    {
+                        this.state.completed ?
+                        <CheckBoxFilledIcon size={40} color={"#558de8"}></CheckBoxFilledIcon>
+                        :
+                        <CheckBoxOpenIcon size={40} color={"#558de8"}></CheckBoxOpenIcon>
+                    }
+                </Animated.View>
+            </TouchableWithoutFeedback>
+        )
+    }
+}
+
+class TopicDropDown extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            topic: "_",
+            topicType: "id",
+        }
+    }
+    updateTopic = (topic) => {
+        this.setState({topic, topicType: topic == "__new__" ? "string" : "id"});
+        this.props.handleInput({topic: this.state});
+    }
+    handleTextInput = (text) => {
+        this.props.handleInput({topic: {topic: text["topic"], topicType: "string"}});
+        this.setState({topic: text["topic"], topicType: "string"});
+    }
+    render() {
+        let topicsList = Topics._MakeCourseTopicList(this.props.course, global.topics);
+        let data = [...topicsList.map(topic => {return {label: topic.topic, value: topic.id}}), {label: "No Topic", value: "_"}, {label: "New Topic", value: "__new__"}];
+          return (
+            this.state.topicType == "id" ? 
+            <View>
+                <Dropdown
+                    label='Topic'
+                    onChangeText={this.updateTopic}
+                    animationDuration={100}
+                    data={data}
+                />
+            </View>
+            :
+            <ModalInput focused={true} stateKey="topic" handleInput={this.handleTextInput} label="New Topic" multiline={false}>
+
+            </ModalInput>
+          );
+    }
+}
 
 class AssignmentRow extends React.Component {
     constructor(props) {
         super(props);
-        this.state = {
-            "completed": false,
-        }
-    }
-    handleClick = () => {
-        this.setState(state => ({
-            completed: !state.completed,
-        }));
     }
     render() {
         return (
             <View style={this.props.last ? styles.assignmentRowLast : styles.assignmentRow}>
                 <View style={styles.assignmentCompleted}>
-                    <Touchable onPress={this.handleClick}>
-                        {
-                            this.state.completed ?
-                            <CheckBoxFilledIcon size={40} color={"#558de8"}></CheckBoxFilledIcon>
-                            :
-                            <CheckBoxOpenIcon size={40} color={"#558de8"}></CheckBoxOpenIcon>
-                        }
-                    </Touchable>
+                    <CheckButton assignment={this.props.assignment}></CheckButton>
                 </View>
-                <View style={styles.assignmentInfo}>
-                    <View style={styles.assignmentTitle}>
-                        <Text style={{fontSize: 16, }}>
-                            {this.props.assignment.assignmentTitle}
-                        </Text>    
+                <TouchableWithoutFeedback onPress={() => {this.props.openAssignment(this.props.assignment)}} style={{width: 0, flexGrow: 1, flexDirection: "row"}}>
+                    <View style={styles.assignmentInfo}>
+                        <View style={styles.assignmentTitle}>
+                            <Text style={{fontSize: 16}} numberOfLines={1}>
+                                {this.props.assignment.assignmentTitle}
+                            </Text>    
+                        </View>
+                        <View style={styles.assignmentDue} numberOfLines={1}>
+                            <Text style={{fontSize: 14, color: "rgb(190,190,190)"}}>
+                                {this.props.assignment.dueDate}
+                            </Text>
+                        </View>
                     </View>
-                    <View style={styles.assignmentDue}>
-                        <Text style={{fontSize: 14, color: "rgb(190,190,190)"}}>
-                            {this.props.assignment.dueDate}
-                        </Text>
-                    </View>
-                </View>
+                </TouchableWithoutFeedback>
             </View>
         )
     }
@@ -93,7 +183,7 @@ class AssignmentBubble extends React.Component {
                 {
                     this.props.assignments.map((assignment, index, array) => {
                         return (
-                            <AssignmentRow key={"assignment_" + index} last={index==array.length-1} assignment={assignment} completed={this.props.completedAssignments}></AssignmentRow>
+                            <AssignmentRow openAssignment={this.props.openAssignment} closeAssignment={this.props.closeAssignment} key={"assignment_" + index} last={index==array.length-1} assignment={assignment} completed={this.props.completedAssignments}></AssignmentRow>
                         )
                     })
                 }
@@ -104,14 +194,55 @@ class AssignmentBubble extends React.Component {
 class CreateButton extends React.Component {
     constructor(props) {
         super(props);
+        this.state = {
+            scaleVal: new Animated.Value(1),
+        }
+    }
+    handleClick = () => {
+        Animated.timing(
+            this.state.scaleVal,
+            {
+                toValue: 1.05,
+                duration: 100,
+            }
+        ).start();
+    }
+    handlePressOut = () => {
+        Animated.timing(
+            this.state.scaleVal,
+            {
+                toValue: 1,
+                duration: 100,
+            }
+        ).start();
+    }
+    render() {
+        let {scaleVal} = this.state;
+        return (
+            <Touchable onPressIn={this.handleClick} onPressOut={this.handlePressOut} onPress={this.props.onPress} hitSlop={{top: 20, left: 20, bottom: 20, right: 20}}>
+                <Animated.View style={[styles.createButton, boxShadows.boxShadow2, {transform: [{scale: scaleVal}]}]}>
+                    <PlusIcon size={20} style={{paddingTop: 2}}></PlusIcon>
+                    <Text style={{color: "white", fontSize: 16}}>Create</Text>
+                </Animated.View>
+            </Touchable>
+        )
+    }
+}
+
+class ConfirmButton extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            disabled: true,
+        }
     }
     render() {
         return (
+            this.state.disabled ? 
+            <Text style={styles.confirmButton }>Create</Text>
+            :
             <Touchable onPress={this.props.onPress}>
-                <View style={[styles.createButton, boxShadows.boxShadow2]}>
-                    <PlusIcon size={20} style={{paddingTop: 2}}></PlusIcon>
-                    <Text style={{color: "white", fontSize: 16}}>Create</Text>
-                </View>
+                <Text style={styles.confirmButtonAllowed}>Create</Text>
             </Touchable>
         )
     }
@@ -123,15 +254,25 @@ class ModalInput extends React.Component {
         this.state = {
             value: "",
         }
+        this.TextField = React.createRef();
+    }
+    componentDidMount() {
+        if (this.props.focused) {
+            this.TextField.current.focus();
+        }
     }
     updateText = (value) => {
+        let info = {};
+        info[this.props.stateKey] = value;
+        this.props.handleInput(info);
         this.setState({value});
     }
     render() {
         return (
             <TextField
+                ref={this.TextField}
                 label={this.props.label}
-                multiline={true}
+                multiline={this.props.multiline !== undefined ? this.props.multiline : true}
                 value={this.state.value}
                 onChangeText={(value) => this.updateText(value)}>
             </TextField>
@@ -139,30 +280,6 @@ class ModalInput extends React.Component {
     }
 }
 
-class UploadedImage extends React.Component {
-    constructor(props) {
-        super(props);
-    }
-    render() {
-        return (
-            <View style={styles.uploadedImage}>
-                <Image source={{uri: this.props.image.uri}} style={{width: this.props.image.width/this.props.image.height*250, height: 250}}>
-
-                </Image>
-                <View style={styles.uploadedImageHeader}>
-                    <LinearGradient colors={["rgba(66, 166, 109, 1)", "rgba(66, 166, 109, 0)"]} style={{height: 70}}>
-
-                    </LinearGradient>
-                </View>
-            </View>
-        )
-    }
-}
-
-const mimetypes = {
-    ".jpg": "image/jpeg",
-    ".png": "image/png",
-}
 
 function sendResourseToServer(resource) {
     return fetch("https://www.apexschools.co/api/v1/resources?base64=true", {
@@ -177,68 +294,334 @@ function sendResourseToServer(resource) {
     })
 }
 
+class ImageViewerModal extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            isBackdropVisible: false,
+            index: 0,
+            images: [
+                {
+                    "url": "https://www.apexschools.co/info/5d1d2f28c7563c6ce08a960b/courses/5d216334eeb4d72ef19de8dc/resources/5d24f5ef288dda6d00eefcc8/1562703343368.jpg",
+                },
+                {
+                    "url": "https://www.apexschools.co/info/5d1d2f28c7563c6ce08a960b/courses/5d216334eeb4d72ef19de8dc/resources/5d24f5f7288dda6d00eefcca/1562703351641.jpg",
+                },
+            ],
+        }
+    }
+    swipeDown = () => {
+        this.setState({isBackdropVisible: false});
+    }
+    render() {
+        return (
+            <View>
+                <ReactModal
+                    visible={this.state.isBackdropVisible}
+                    transparent={true}
+                    onRequestClose={() => this.setState({ modalVisible: false })}>
+                    <ImageViewer 
+                        onSwipeDown={this.swipeDown}
+                        enableSwipeDown={true}
+                        enablePreload={true}
+                        index={this.state.index}
+                        imageUrls={this.state.images}>
+                    </ImageViewer>
+                </ReactModal>
+            </View>
+        )
+    }
+}
+
+class DisplayAssignmentModal extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            isBackdropVisible: false,
+            shouldOpenImageModal: false,
+            images: [],
+            imageURLs: [],
+            imageIndex: 0,
+            assignment: {
+                assignmentTitle: "",
+                dueDate: new Date(),
+                topic: "_",
+                assignmentNotes: "",
+                resources: [],
+                id: "_",
+            },
+        }
+    }
+    modalHide = () => {
+        if (this.state.shouldOpenImageModal) {
+            this.props.imageViewer.current.setState({isBackdropVisible: true, images: this.state.imageURLs, index: this.state.imageIndex});
+        }
+    }
+    openImageViewer = (resources, index) => {
+        let urls = resources.map(resource => {
+            return {url: `https://www.apexschools.co${resource.path}`};
+        });
+        this.setState({shouldOpenImageModal: true, isBackdropVisible: false, imageURLs: urls, imageIndex: index});
+    }
+    pushResultImage = async (resource) => {
+        let api = new ApexAPI(global.user);
+        api.put(`assignments/${this.state.assignment.id}?updateMethods=$push&$push=response_resources`, {
+            response_resources: resource._id,
+        });
+    }
+    imageFunction = async (result) => {
+        if (result.uri) {            
+            result.path = `/courses/${global.courseInfoCourse.id}/resources`
+            sendResourseToServer(result)
+                .then(res => res.json())
+                .then(json => {
+                    if (json.status == "ok") {
+                        this.state.images.push(json.body);
+                        this.setState({images: this.state.images});
+                        this.pushResultImage(json.body);
+                    }
+                });
+        }
+    }
+    render() {
+        let topicsMap = Topics._makeTopicMap(global.topics);
+        return (
+            <View>
+                <Modal
+                    onModalHide={this.modalHide}
+                    animationIn="zoomIn"
+                    animationOut="zoomOut"
+                    isVisible={this.state.isBackdropVisible} 
+                    onBackdropPress={() => this.setState({isBackdropVisible: false})}
+                    propagateSwipe={true}>
+                        <View style={styles.displayAssignment}>
+                            <View style={styles.assignmentModalHeader}>
+                                <Text style={{color: "#174ea6", fontSize: 16}}>Assignment</Text>
+                                <Touchable onPress={this.props.parent.closeAssignment} hitSlop={{top: 20, left: 20, bottom: 20, right: 20}}>
+                                    <XIcon size={30} color="black"></XIcon>
+                                </Touchable>
+                            </View>
+                            <View style={[styles.displayAssignmentModalBody, {height: 0, flexGrow: 1}]}>
+                                <ScrollView>
+                                    <View style={styles.modalBodySection}>
+                                        <Text style={styles.modalBodySectionHeader}>Title</Text>
+                                        <Text style={styles.modalBodySectionContent}>{this.state.assignment.assignmentTitle}</Text>
+                                    </View>
+                                    <View style={styles.modalBodySection}>
+                                        <Text style={styles.modalBodySectionHeader}>Topic</Text>
+                                        <Text style={styles.modalBodySectionContent}>{this.state.assignment.topic == "_" ? "No Topic" : topicsMap[this.state.assignment.topic].topic}</Text>
+                                    </View>
+                                    <View style={styles.modalBodySection}>
+                                        <Text style={styles.modalBodySectionHeader}>Due</Text>
+                                        <Text style={styles.modalBodySectionContent}>{this.state.assignment.dueDate}</Text>
+                                    </View>
+                                    <View style={styles.modalBodySection}>
+                                        <Text style={styles.modalBodySectionHeader}>Notes</Text>
+                                        <Text style={styles.modalBodySectionContent}>{this.state.assignment.assignmentNotes}</Text>
+                                    </View>
+                                    <View style={styles.modalBodySection}>
+                                        <Text style={styles.modalBodySectionHeader}>Date Created</Text>
+                                        <Text style={styles.modalBodySectionContent}>{moment(this.state.assignment.date).format("MMMM Do YYYY, h:mm:ss a")}</Text>
+                                    </View>
+                                    <View style={styles.modalBodySection}>
+                                        <Text style={[styles.modalBodySectionHeader, {marginBottom: 10}]}>Images</Text>
+                                        <View style={{flexDirection: "column", alignItems: "center"}}>
+                                            {
+                                                this.state.assignment.resources.map((resource, index, array) => {
+                                                    return (
+                                                        <Touchable key={"image_" + index} onPress={() => {this.openImageViewer(array, index)}}>
+                                                            <Image source={{uri: `https://www.apexschools.co${resource.path}`}} style={{width: 200, height: resource.height/resource.width*200, marginTop: 10, marginBottom: 10}}></Image>
+                                                        </Touchable>
+                                                    )
+                                                })
+                                            }
+                                        </View>
+                                    </View>
+                                    <View style={[styles.modalBodySection]}>
+                                        <Text style={[styles.modalBodySectionHeader, {marginBottom: 20}]}>Response Images</Text>
+                                        <View style={{flexDirection: "column", alignItems: "center"}}>
+                                            {
+                                                this.state.images.map((resource, index, array) => {
+                                                    return (
+                                                        <Touchable key={"image_" + index} onPress={() => {this.openImageViewer(array, index)}}>
+                                                            <Image source={{uri: `https://www.apexschools.co${resource.path}`}} style={{width: 200, height: resource.height/resource.width*200, marginTop: 10, marginBottom: 10}}></Image>
+                                                        </Touchable>
+                                                    )
+                                                })
+                                            }
+                                        </View>
+                                        <ImageBar displayImages={false} imageFunction={this.imageFunction}></ImageBar>
+                                    </View>
+                                </ScrollView>
+                            </View>
+                        </View>
+                </Modal>
+            </View>
+        )
+    }
+}
+
+
+
+
+
+
+
 class AssignmentModal extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
             isBackdropVisible: false,
             images: [],
+            imageIDs: [],
+            topics: Topics._MakeCourseTopicList(global.courseInfoCourse.id, global.topics),
+            assignment: "",
+            notes: "",
+            due: "",
+            topic: {
+                topicType: "id",
+                topic: "_",
+            },
+            keyboardHeight: new Animated.Value(0),
         }
+        this.assignment = React.createRef();
+        this.notes = React.createRef();
+        this.due = React.createRef();
+        this.topic = React.createRef();
+        this.create = React.createRef();
     }
-    launchCameraRoll = async () => {
-        let result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.All,
-            base64: true,
-            exif: true,
-            quality: 0.1,
-        });
-        if (result.uri) {
-            this.setState(state => ({
-                images: [...state.images, result],
-            }));
+    componentWillMount () {
+        this.keyboardWillShowSub = Keyboard.addListener('keyboardWillShow', this.keyboardWillShow);
+        this.keyboardWillHideSub = Keyboard.addListener('keyboardWillHide', this.keyboardWillHide);
+    }
+    componentWillUnmount() {
+        this.keyboardWillShowSub.remove();
+        this.keyboardWillHideSub.remove();
+    }
+    keyboardWillShow = (event) => {
+        Animated.timing(
+            this.state.keyboardHeight,
+            {
+                toValue: -100,
+                easing: Easing.bezier(.46,.52,.57,1.02),
+                duration: 250,
+            }
+        ).start();
+    }
+    keyboardWillHide = (event) => {
+        Animated.timing(
+            this.state.keyboardHeight,
+            {
+                toValue: 0,
+                easing: Easing.bezier(.46,.52,.57,1.02),
+                duration: 250,
+            }
+        ).start();
+    }
+    handleInput = (info) => {
+        this.setState(info, () => {
+            if (this.state.assignment && this.state.topic && this.state.due) {
+                this.create.current.setState({disabled: false});
+            }
+        })
+    }
+
+    
+    imageFunction = (result) => {
+        if (result.uri) {            
             result.path = `/courses/${global.courseInfoCourse.id}/resources`
             sendResourseToServer(result)
                 .then(res => res.json())
                 .then(json => {
-                    console.log(json);
+                    if (json.status == "ok") {
+                        this.state.imageIDs.push(json.body);
+                    }
                 });
-            // let extension = result.uri.split(".")[1];
-            // extension = "." + extension;
-            // let serverString = `data:${mimetypes[extension]};base64,${result.base64}`;
         }
     }
-    launchCamera = async () => {
-        let result = await ImagePicker.launchCameraAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.All,
-            base64: true,
-            exif: true,
-            quality: 0.1,
-        });
-        if (result.uri) {
-            this.setState(state => ({
-                images: [...state.images, result],
-            }));
+    
+    
+    createAssignment() {
+        let api = new ApexAPI(global.user); 
+        let postObject = {
+            assignment_title: this.state.assignment,
+            due_date: this.state.due,
+            assignment_notes: this.state.notes,
+            reference_course: global.courseInfoCourse.id,
+            resources: this.state.imageIDs.map(image => image._id),
+        }
+        if (this.state.topic.topicType == "id" && this.state.topic.topic != "_") {
+            postObject.topic = this.state.topic.topic;
+        }
+        api.post("assignments?populate=resources", postObject)
+            .then(res => res.json())
+            .then(async res => {
+                this.setState({isBackdropVisible: false, images: [], imageIDs: []});
+                if (res.status == "ok") {
+                    let assignment = {
+                        topic: res.body.topic || "_",
+                        id: res.body._id,
+                        assignmentTitle: res.body.assignment_title,
+                        assignmentNotes: res.body.assignment_notes,
+                        dueDate: res.body.due_date,
+                        date: res.body.date,
+                        referenceCourse: res.body.reference_course,
+                        resources: res.body.resources
+                      }
+                    assignment = new Assignment(assignment);
+                    let assignments = [...this.props.parent.state.assignments];
+                    assignments.push(assignment);
+                    global.assignments.push(assignment);
+                    let storageAssignments = await Assignments._retrieveFromStorage();
+                    storageAssignments.push(assignment);
+                    await Assignments._saveToStorage(storageAssignments);
+                    this.props.parent.setState({assignments});
+                }  
+            })
+    }
+    onPress = () => {
+        this.create.current.setState({disabled: true});
+        if (this.state.assignment && this.state.due && this.state.topic) {
+            let api = new ApexAPI(global.user);
+            if (this.state.topic.topicType == "string") {
+                api.post("topics", {
+                    topic: this.state.topic.topic,
+                    reference_course: global.courseInfoCourse.id,
+                })
+                    .then(res => res.json())
+                    .then(async res => {
+                        if (res.status == "ok") {
+                            this.state.topic = {
+                                topicType: "id",
+                                topic: res.body._id,
+                            }
+                            let topic = {
+                                topic: res.body.topic,
+                                id: res.body._id,
+                                course: res.body.reference_course
+                            }
+                            topic = new Topic(topic);
+                            global.topics.push(topic);
+                            let storageTopics = await Topics._retrieveFromStorage();
+                            storageTopics.push(topic);
+                            await Topics._saveToStorage(storageTopics);
+                            this.createAssignment();
+                        }
+                    });
+            } else {
+                this.createAssignment();
+            }
         }
     }
-    componentDidMount() {
-        this.getPermissionAsync();
-    }
-    getCameraPermissions = async () => {
-        let { status } = await Permissions.askAsync(Permissions.CAMERA);
-        if (status !== 'granted') {
-            alert('Sorry, we need camera permissions to make this work!');
-        }
-    }
-    getCameraRollPermissions = async () => {
-        let { status } = await Permissions.askAsync(Permissions.CAMERA_ROLL);
-        if (status !== 'granted') {
-            alert('Sorry, we need camera roll permissions to make this work!');
-        }
-    }
-    getPermissionAsync = async () => {
-        if (Constants.platform.ios) {
-            await this.getCameraPermissions();
-            await this.getCameraRollPermissions();
+    handleClear = () => {
+        this.assignment.current.setState({value: ""});
+        this.due.current.setState({value: ""});
+        this.notes.current.setState({value: ""});
+        this.images = [];
+        this.imageIDs = [];
+        this.topic = {
+            topic: "_",
+            topicType: "id",
         }
     }
     render() {
@@ -250,53 +633,33 @@ class AssignmentModal extends React.Component {
                     isVisible={this.state.isBackdropVisible} 
                     onBackdropPress={() => this.setState({isBackdropVisible: false})}
                     propagateSwipe={true}>
-                    <View style={styles.newAssignmentModal}>
-                        <View style={styles.assignmentModalHeader}>
-                            <Text style={{color: "#174ea6", fontSize: 16}}>Assignment</Text>
-                            <Touchable onPress={this.props.parent.closeModal}>
-                                <XIcon size={30} color="black"></XIcon>
-                            </Touchable>
+                    <Animated.View style={{position: "relative", top: this.state.keyboardHeight}}>
+                        <View style={styles.newAssignmentModal}>
+                            <View style={styles.assignmentModalHeader}>
+                                <Text style={{color: "#174ea6", fontSize: 16}}>Assignment</Text>
+                                <Touchable onPress={this.props.parent.closeModal} hitSlop={{top: 20, left: 20, bottom: 20, right: 20}}>
+                                    <XIcon size={30} color="black"></XIcon>
+                                </Touchable>
+                            </View>
+                            <View style={styles.assignmentModalBody}>
+                                <ScrollView style={{padding: 20}}>
+                                    <Text style={{color: "rgb(190,190,190)", fontSize: 14, fontWeight: "500"}}>For {this.props.course.course}</Text>
+                                    <ModalInput handleInput={this.handleInput} ref={this.assignment} style={{marginTop: 30}} label="Assignment" stateKey={"assignment"}></ModalInput>
+                                    <ModalInput handleInput={this.handleInput} ref={this.notes} style={{marginTop: 30}} label="Instructions/Notes" stateKey={"notes"}></ModalInput>
+                                    <ModalInput multiline={false} handleInput={this.handleInput} ref={this.due} style={{marginTop: 30}} label="Due" stateKey={"due"}></ModalInput>
+                                    <TopicDropDown course={this.props.parent.course.id} handleInput={this.handleInput} ref={this.top} topics={this.state.topics}></TopicDropDown>
+                                    <Text style={{marginTop: 30, marginBottom: 10, fontSize: 12, color: "rgba(0,0,0,0.38)"}}>Images</Text>
+                                    <ImageBar imageFunction={this.imageFunction}></ImageBar>
+                                </ScrollView>
+                            </View>
+                            <View style={styles.assignmentModalFooter}>
+                                <Touchable onPress={this.handleClear}>
+                                    <TrashIcon color="black" size={26} style={{marginRight: 30, padding: 20}}></TrashIcon>
+                                </Touchable>
+                                <ConfirmButton ref={this.create} onPress={this.onPress}></ConfirmButton>
+                            </View>
                         </View>
-                        <View style={styles.assignmentModalBody}>
-                            <ScrollView style={{padding: 20}}>
-                                <Text style={{color: "rgb(190,190,190)", fontSize: 14, fontWeight: "500"}}>For {this.props.course.course}</Text>
-                                <ModalInput label="Assignment"></ModalInput>
-                                <ModalInput label="Instructions/Notes"></ModalInput>
-                                <ModalInput label="Due"></ModalInput>
-                                <Text>Images</Text>
-                                <View style={styles.imageHolder}>
-                                    <View style={styles.imageHolderHeader}>
-                                        <View style={styles.imageUploadTypes}>
-                                            <Touchable onPress={() => this.launchCamera()}>
-                                                <View style={{flexDirection: "row", alignItems: "center", padding: 5}}>
-                                                    <CameraIcon color="black"></CameraIcon>
-                                                    <Text style={{color: "#4c4e53", marginLeft: 10}}>Take Photo</Text>
-                                                </View>
-                                            </Touchable>
-                                            <Touchable onPress={() => this.launchCameraRoll()}>
-                                                <View style={{flexDirection: "row", alignItems: "center", padding: 5}}>
-                                                    <PhotoIcon color="black"></PhotoIcon>
-                                                    <Text style={{color: "#4c4e53", marginLeft: 10}}>Camera Roll</Text>
-                                                </View>
-                                            </Touchable>
-                                        </View>
-                                    </View>
-                                    <View style={styles.imageHolderBody}>
-                                        {
-                                            this.state.images.map((image, index) => {
-                                                return (
-                                                    <UploadedImage key={"image_" + index} image={image}></UploadedImage>
-                                                )
-                                            })
-                                        }
-                                    </View>
-                                </View>
-                            </ScrollView>
-                        </View>
-                        <View style={styles.assignmentModalFooter}>
-                            
-                        </View>
-                    </View>
+                    </Animated.View>
                 </Modal>
             </View>
         )
@@ -308,9 +671,12 @@ export default class CourseInfoScreen extends React.Component {
         super(props);
         this.props = props;
         this.course = global.courseInfoCourse;
-        this.assignments = Assignments._retrieveAssignmentsByCourse(global.assignments, this.course.id);
-        this.topicsMap = Assignments._formTopicMap(this.assignments);
+        this.state = {
+            assignments: Assignments._retrieveAssignmentsByCourse(global.assignments, this.course.id),
+        }
         this.modal = React.createRef();
+        this.displayModal = React.createRef();
+        this.imageViewerModal = React.createRef();
     }
     static navigationOptions = ({navigation}) => {
         return {
@@ -323,7 +689,19 @@ export default class CourseInfoScreen extends React.Component {
     closeModal = () => {
         this.modal.current.setState({isBackdropVisible: false});
     }
+    openAssignment = (assignment) => {
+        this.displayModal.current.setState({images: assignment.responseResources, shouldOpenImageModal: false, assignment, isBackdropVisible: true});
+    }
+    closeAssignment = () => {
+        this.displayModal.current.setState({shouldOpenImageModal: false, isBackdropVisible: false});
+    }
+    closeImageViewer = () => {
+
+    }
     render() {
+        let topicsList = Topics._MakeCourseTopicList(this.course.id, global.topics);
+        let topicsMap = Topics._makeTopicMap(topicsList);
+        let assignmentsMap = Assignments._formTopicMap(this.state.assignments, topicsList);
         return (
             <View style={styles.container}>
                 <HeaderBar iconLeft={<Touchable onPress={() => this.props.navigation.goBack()}><LeftIcon size={28}></LeftIcon></Touchable>} iconRight={<EmptyIcon width={28} height={32}></EmptyIcon>} width={width} height={60} title={this.course.course}></HeaderBar>
@@ -340,14 +718,16 @@ export default class CourseInfoScreen extends React.Component {
                         <View style={styles.optionContent}>
                             <CreateButton onPress={this.openModal}></CreateButton>
                             {
-                                Object.keys(this.topicsMap).map((topic, index) => {
-                                    return <AssignmentBubble key={"topic_" + index} assignments={this.topicsMap[topic]} completedAssignments={[]} title={topic=="_" ? "No Topic" : this.topicsMap[topic][0].topic.topic}></AssignmentBubble>
+                                Object.keys(assignmentsMap).map((topic, index) => {
+                                    return <AssignmentBubble openAssignment={this.openAssignment} closeAssignment={this.closeAssignment} key={"topic_" + index} assignments={assignmentsMap[topic]} title={topic=="_" ? "No Topic" : topicsMap[topic].topic}></AssignmentBubble>
                                 })
                             }
                         </View>
                     </ScrollView>
                 </View>
                 <AssignmentModal ref={this.modal} parent={this} course={this.course}></AssignmentModal>
+                <DisplayAssignmentModal imageViewer={this.imageViewerModal} ref={this.displayModal} parent={this}></DisplayAssignmentModal>
+                <ImageViewerModal ref={this.imageViewerModal} parent={this}></ImageViewerModal>
             </View>
         )
     }
@@ -361,7 +741,7 @@ const styles = StyleSheet.create({
     },
     bodyHolder: {
         zIndex: 1,
-        flexGrow: 1,
+        height: height-60,
     },
     infoHolder: {
         backgroundColor: "white",
@@ -406,7 +786,6 @@ const styles = StyleSheet.create({
         paddingLeft: 12,
         paddingRight: 12,
         borderRadius: 10,
-
     },
     assignmentBubbleHeader: {
         paddingBottom: 12,
@@ -417,31 +796,33 @@ const styles = StyleSheet.create({
         height: 70,
         borderBottomColor: "rgb(210,210,210)",
         borderBottomWidth: StyleSheet.hairlineWidth,
-        paddingLeft: 15,
+        paddingLeft: 0,
         paddingRight: 5,
         flexDirection: "row",
         justifyContent: "flex-start",
-        alignItems: "center"
+        alignItems: "center",
     },
     assignmentRowLast: {
         height: 70,
-        paddingLeft: 15,
         paddingRight: 5,
         flexDirection: "row",
         justifyContent: "flex-start",
-        alignItems: "center"
+        alignItems: "center",
     },
     assignmentInfo: {
-        marginLeft: 15,
+        width: 0,
+        flexGrow: 1,
     },
     assignmentTitle: {
         marginBottom: 5,
+        flexDirection: "row",
     },
     newAssignmentModal: {
         borderRadius: 8,
         height: height*0.9,
         backgroundColor: "white",
         overflow: "hidden",
+        flexDirection: "column",
     },
     assignmentModalHeader: {
         flexDirection: "row",
@@ -455,39 +836,56 @@ const styles = StyleSheet.create({
         borderBottomWidth: StyleSheet.hairlineWidth*2,
     },
     assignmentModalFooter: {
-        height: 50,
+        flexGrow: 1,
+        padding: 20,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "flex-end",
     },
     assignmentModalBody: {
-        flexGrow: 1,
+        height: height*0.9-60-70,
     },
-    imageHolder: {
-        backgroundColor: "#f1f0ef",
-        padding: 10,
-    },
-    imageHolderHeader: {
-
-    },
-    imageUploadTypes: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-    }, 
-    imageHolderBody: {
-        flexDirection: "column",
-        
-    },
-    uploadedImage: {
-        backgroundColor: "black",
-        flexDirection: "row",
-        justifyContent: "center",
-        borderRadius: 8,
+    
+    confirmButton: {
+        width: 100,
+        textAlign: "center",
+        paddingTop: 10,
+        paddingBottom: 10,
+        backgroundColor: "#ddd",
+        color: "#aaa",
+        borderRadius: 3,
         overflow: "hidden",
-        marginTop: 15,
     },
-    uploadedImageHeader: {
-        position: "absolute",
-        top: 0,
-        left: 0,
-        right: 0,
-        height: 70,
+    confirmButtonAllowed: {
+        width: 100,
+        textAlign: "center",
+        paddingTop: 10,
+        paddingBottom: 10,
+        backgroundColor: "#174ea6",
+        color: "white",
+        borderRadius: 3,
+        overflow: "hidden",
+    },
+    displayAssignment: {
+        height: height*0.5,
+        backgroundColor: "white",
+        overflow: "hidden",
+        flexDirection: "column",
+    },
+    modalBodySection: {
+       paddingLeft: 30,
+       marginTop: 25,
+       marginBottom: 10,
+       paddingRight: 30,
+    },
+    modalBodySectionHeader: {
+        color: "#174ea6",
+        fontSize: 18,
+        fontWeight: "500",
+    },
+    modalBodySectionContent: {
+        fontSize: 14,
+        marginLeft: 10,
+        marginTop: 5,
     }
 })
