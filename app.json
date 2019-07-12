@@ -13,7 +13,7 @@
     "icon": "./assets/icon.png",
     "splash": {
       "image": "./assets/splash.png",
-      "resizeMode": "contain",
+      "resizeMode": "cover",
       "backgroundColor": "#ffffff"
     },
     "updates": {
@@ -24,7 +24,11 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.AidanEglin.schoolr"
+      "bundleIdentifier": "com.AidanEglin.schoolr",
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app uses the camera to take pictures of your schedule, notes, and assignments",
+        "NSPhotoLibraryUsageDescription": "This app uses the camera roll to upload photos of assignments and notes"
+      }
     },
     "android": {
       "package": "com.AidanEglin.schoolr"

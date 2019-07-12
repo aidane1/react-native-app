@@ -21,6 +21,8 @@ import { Semester, Semesters } from "../../classes/semesters";
 
 import { Assignment, Assignments } from "../../classes/assignments";
 
+import { Note, Notes } from "../../classes/notes";
+
 import { School } from "../../classes/school";
 
 import { User } from "../../classes/user";
@@ -54,6 +56,9 @@ function cacheFonts(fonts) {
 
 
 export default class LoadingScreen extends React.Component {
+    constructor(props) {
+        super(props);
+    }
     static navigationOptions = {
         header: null,
     }
@@ -77,7 +82,7 @@ export default class LoadingScreen extends React.Component {
                 let userCourses = await Courses._retrieveCoursesById(user.courses);
                 let allAssignments = await Assignments._retrieveFromStorage();
                 let completedAssignments = await Assignments._retrieveCompletedFromStorage();
-                // console.log(userCourses);
+                let allNotes = await Notes._retrieveFromStorage();
                 let allCourses = await Courses._retrieveFromStorage();
                 let allSemesters = await Semesters._retrieveFromStorage();
                 let school = await School._retrieveFromStorage();
@@ -87,34 +92,24 @@ export default class LoadingScreen extends React.Component {
                 let events = await Events._retrieveFromStorage();
                 let allTopics = await Topics._retrieveFromStorage();
                 let currentCourseMap = await Semesters._createCoursesOnDate(userCourses, school.blocks, currentSemesters);
-                //set global props
                 global.user = user;
-                global.assignments = allAssignments;
+                global.assignments = allAssignments || [];
+                global.notes = allNotes || [];
                 global.completedAssignments = completedAssignments;
-                // global.currentSemesters = currentSemesters;
-                // global.userCourses = userCourses;
                 global.semesterMap = semesterMap;
                 global.dayMap = school["dayMap"];
                 global.school = school;
                 global.dates = dates;
                 global.courseInfoCourse = "_";
-                // global.currentCourseMap = currentCourseMap;
                 global.courses = allCourses;
                 global.topics = allTopics;
                 global.semesters = allSemesters;
-                //end global props
-
-                //re-doing everything slowly to work better
-                    // global.courses = allCourses;
-                // just the users courses
                 global.userCourseMap = {};
-                // courses related to all available blocks
                 global.blocksCourseMap = {};
                 const resetAction = StackActions.reset({
                     index: 0,
                     actions: [NavigationActions.navigate({ routeName: 'Home' })],
                 });
-                
                 await this._loadAssetsAsync();
                 this.props.navigation.dispatch(resetAction);
             }

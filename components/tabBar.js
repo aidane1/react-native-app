@@ -13,11 +13,13 @@ import {
   Button
 } from 'react-native';
 
-import { LinearGradient } from 'expo';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import {HomeIcon, CoursesIcon, ScheduleIcon, CalendarIcon} from "../classes/icons";
 
 import { boxShadows } from '../constants/boxShadows';
+
+import { ifIphoneX } from 'react-native-iphone-x-helper';
 
 const width = Dimensions.get('window').width; //full width
 const height = Dimensions.get('window').height; //full height
@@ -84,8 +86,8 @@ export default class TabBar extends React.Component {
     }
     render() {
         return (
-        <View style={[{width: width, height: 45, zIndex: 5}, boxShadows.boxShadow7]}>
-            <LinearGradient start={{x: 0, y: 0}} end={{x:1, y:0}} style={[{width: width, height: 45}]} colors={["rgb(0,153,153)", ", rgb(0,130,209)"]}>
+        <View style={[{width: width, ...ifIphoneX({height: 60}, {height: 45}), zIndex: 5}, boxShadows.boxShadow7]}>
+            <LinearGradient start={{x: 0, y: 0}} end={{x:1, y:0}} style={[{width: width, ...ifIphoneX({height: 60}, {height: 45})}]} colors={["rgb(0,153,153)", ", rgb(0,130,209)"]}>
                 <TabBarButtons selectedIndex={this.state.selectedIndex} tabs={["Home", "Courses", "Schedule", "Calendar"]} tapFunction={this.props.tapFunction} self={this}>
 
                 </TabBarButtons>
@@ -106,6 +108,12 @@ const styles = StyleSheet.create({
     tabButton: {
         width: "33.33%",
         height: "100%",
+        ...ifIphoneX({
+            height: 60,
+            paddingBottom: 15,
+        },{
+            height: 45,
+        }),
         flexDirection: "column",
         justifyContent: "center",
     },

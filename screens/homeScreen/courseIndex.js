@@ -15,8 +15,6 @@ import Touchable from 'react-native-platform-touchable';
 
 import { Course, Courses } from "../../classes/courses";
 
-import { WebBrowser, LinearGradient } from 'expo';
-
 import { Ionicons } from '@expo/vector-icons';
 
 import { SchoolIcons, GenericIcon } from "../../classes/icons";

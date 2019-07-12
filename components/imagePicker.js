@@ -18,7 +18,11 @@ import {  CameraIcon, PhotoIcon } from "../classes/icons";
 import Touchable from 'react-native-platform-touchable';
 
 
-import {ImagePicker, Camera, Permissions, Constants} from 'expo';
+import {ImagePicker, Camera} from 'expo';
+
+import Constants from 'expo-constants';
+
+import * as Permissions from 'expo-permissions';
 
 
 class UploadedImage extends React.Component {
@@ -44,9 +48,6 @@ export default class ImageBar extends React.Component {
             images: [],
         }
     }
-    componentDidMount() {
-        this.getPermissionAsync();
-    }
     getCameraPermissions = async () => {
         let { status } = await Permissions.askAsync(Permissions.CAMERA);
         if (status !== 'granted') {
@@ -65,28 +66,46 @@ export default class ImageBar extends React.Component {
             await this.getCameraRollPermissions();
         }
     }
+    clearImages = () => {
+        this.setState({images: []});
+    }
     launchCameraRoll = async () => {
-        let result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.All,
-            base64: true,
-            exif: true,
-            quality: 0.1,
-        });
-        this.props.imageFunction(result);
-        if (result.uri) {
-            this.setState(state => ({
-                images: [...state.images, result],
-            }));
+        try {
+            await this.getPermissionAsync();
+            let result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.All,
+                base64: true,
+                exif: true,
+                quality: 0.1,
+            });
+            this.props.imageFunction(result);
+            if (result.uri) {
+                this.setState(state => ({
+                    images: [...state.images, result],
+                }));
+            }
+        } catch(e) {
+            console.log(e);
         }
     }
     launchCamera = async () => {
-        let result = await ImagePicker.launchCameraAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.All,
-            base64: true,
-            exif: true,
-            quality: 0.1,
-        });
-        this.props.imageFunction(result);
+        try {
+            await this.getPermissionAsync();
+            let result = await ImagePicker.launchCameraAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.All,
+                base64: true,
+                exif: true,
+                quality: 0.1,
+            });
+            this.props.imageFunction(result);
+            if (result.uri) {
+                this.setState(state => ({
+                    images: [...state.images, result],
+                }));
+            }
+        } catch(e) {
+            console.log(e);
+        }
     }
 
     render() {
@@ -110,9 +129,12 @@ export default class ImageBar extends React.Component {
                 </View>
                 <View style={styles.imageHolderBody}>
                     {
-                        this.state.images.filter((image) => this.props.displayImages).map((image, index) => {
+                        this.state.images.map((image, index) => {
                             return (
+                                this.props.displayImages ? 
                                 <UploadedImage key={"image_" + index} image={image}></UploadedImage>
+                                : 
+                                <View key={"image_" + index}></View>
                             )
                         })
                     }

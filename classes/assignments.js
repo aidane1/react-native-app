@@ -9,7 +9,7 @@ export class Assignment {
         this.assignmentTitle = courseObject.assignmentTitle || "";
         this.assignmentNotes = courseObject.assignmentNotes || "";
         this.dueDate = courseObject.dueDate || "";
-        this.date = courseObject.date || "";
+        this.date = new Date(courseObject.date) || new Date();
         this.referenceCourse = courseObject.referenceCourse || "_";
         this.resources = courseObject.resources || [];
         this.responseResources = courseObject.responseResources || [];
@@ -75,7 +75,7 @@ export class Assignments {
     static _retrieveFromStorage = async () => {
         try {
             let storageAssignments = await AsyncStorage.getItem("assignments");
-            storageAssignments = JSON.parse(storageAssignments);
+            storageAssignments = JSON.parse(storageAssignments) || [];
             let assignments = [];
             for (var i = 0; i < storageAssignments.length; i++) {
                 let assignment = new Assignment(storageAssignments[i]);
@@ -130,7 +130,9 @@ export class Assignments {
                     topicsMap[assignments[i].topic].push(assignments[i]);
                 }
             }
-            delete topicsMap["_"];
+            if (topicsMap["_"].length == 0) {
+                delete topicsMap["_"];
+            }
             return topicsMap;
         } catch(e) {
             console.log(e);

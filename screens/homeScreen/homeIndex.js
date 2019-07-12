@@ -12,7 +12,9 @@ import {
   Button
 } from 'react-native';
 
-import { WebBrowser, LinearGradient } from 'expo';
+import { WebBrowser } from 'expo';
+
+import { LinearGradient } from 'expo-linear-gradient';
 
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 

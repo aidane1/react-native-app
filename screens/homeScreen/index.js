@@ -13,8 +13,6 @@ import {
   Button
 } from 'react-native';
 
-import { LinearGradient } from 'expo';
-
 import HeaderBar from "../../components/header";
 
 import HomeScreenTile from "./homeIndex";
@@ -31,10 +29,13 @@ import { AccountIcon, EmptyIcon, RefreshIcon } from "../../classes/icons";
 
 import {Assignment, Assignments } from "../../classes/assignments";
 
+import {Note, Notes } from "../../classes/notes";
+
 import {Topic, Topics } from "../../classes/topics";
 
 import ApexAPI from "../../http/api";
 
+import { ifIphoneX } from 'react-native-iphone-x-helper'
 
 
 const width = Dimensions.get('window').width; //full width
@@ -162,8 +163,27 @@ export default class HomeScreen extends React.Component {
         .catch(e => {
           console.log(e);
         });
+      api.get(`notes?populate=resources&reference_course=${global.user.courses.join(",")}`)
+      .then(res => res.json())
+      .then(async data => {
+        if (data.status == "ok") {
+          await Notes._saveToStorage(data.body.map(note => {
+            return {
+              topic: note.topic || "_",
+              id: note._id,
+              note: note.note,
+              date: note.date,
+              referenceCourse: note.reference_course,
+              resources: note.resources || [],
+            }
+          }));
+          global.notes = await Notes._retrieveFromStorage();
+        }
+      })
+      .catch(e => {
+        console.log(e);
+      });
     }
-    
   }
   render() {
     return (
@@ -198,7 +218,11 @@ const styles = StyleSheet.create({
     flexDirection: 'column'
   }, 
   bodyHolder: {
-    height: height-60-45,
+    ...ifIphoneX({
+      height: height-80-60
+    }, {
+      height: height-60-45,
+    }),
     zIndex: 1,
   },
   slideView: {

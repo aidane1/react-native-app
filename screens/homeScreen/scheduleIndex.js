@@ -13,8 +13,6 @@ import { ScrollView } from 'react-native-gesture-handler';
 
 import { boxShadows } from '../../constants/boxShadows';
 
-import { LinearGradient } from 'expo';
-
 const width = Dimensions.get('window').width; //full width
 const height = Dimensions.get('window').height; //full height
 

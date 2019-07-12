@@ -9,6 +9,10 @@ export class User {
         this["x-id-key"] = user["x-id-key"];
         this.courses = user.courses;
         this.school = user.school;
+        this.id = user.id;
+        this.firstName = user.firstName;
+        this.lastName = user.lastName;
+        this.studentNumber = user.studentNumber;
     }
     toString() {
         return {
@@ -17,7 +21,11 @@ export class User {
             courses: this.courses,
             "x-api-key": this["x-api-key"],
             "x-id-key": this["x-id-key"],
-            school: this.school
+            school: this.school,
+            id: this.id,
+            firstName: this.firstName,
+            lastName: this.lastName,
+            studentNumber: this.studentNumber,
         }
     }
     static _saveToStorage = async (user) => {

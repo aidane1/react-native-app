@@ -10,12 +10,14 @@ import {
   View,
   Dimensions,
   Picker,
-  Keyboard
+  Keyboard,
+  Animated,
+  Easing
 } from 'react-native';
 
 import Modal from "react-native-modal";
 
-import { WebBrowser, LinearGradient } from 'expo';
+import {LinearGradient} from "expo-linear-gradient";
 
 import { Input } from 'react-native-elements';
 
@@ -41,6 +43,8 @@ import Touchable from 'react-native-platform-touchable';
 
 import ApexAPI from "../../http/api";
 
+import {StackActions, NavigationActions} from 'react-navigation';
+
 const width = Dimensions.get('window').width; //full width
 const height = Dimensions.get('window').height; //full height
 
@@ -54,6 +58,7 @@ class UsernameInput extends React.Component {
     }
     enterText = (text) => {
         this.setState({text: text});
+        this.props.updateText({username: text});
     }
     onFocus = () => {
         this.setState({focused: true});
@@ -94,6 +99,7 @@ class PasswordInput extends React.Component {
     }
     enterText = (text) => {
         this.setState({text: text});
+        this.props.updateText({password: text});
     }
     onFocus = () => {
         this.setState({focused: true});
@@ -213,7 +219,6 @@ function constructSchoolObject(serverData) {
 }
 
 function constructUserObject(serverData) {
-    serverData.id = serverData._id;
     let user = new User(serverData);
     return user;
 }
@@ -236,28 +241,33 @@ class LoginButton extends React.Component {
             username: "",
             password: "",
             school: "",
+            active: false,
         }
     }
     handleClick = () => {
         let username = this.props.inputs[0].current.state.text;
         let password = this.props.inputs[1].current.state.text;
         let school = this.props.inputs[2].current.state.id;
-        this.setState({username, password, school});
+        this.setState({username, password, school, active: false});
         ApexAPI.authenticate(username, password, school)
             .then(res => res.json())
             .then(async (response) => {
-                // console.log(response.body.courses);
-
-                // response.user.password = password;
-                await Courses._saveToStorage(constructCourseList(response.body.courses));
-                // await Days._saveToStorage(constructDayMap(response.dayMap));
-                await Semesters._saveToStorage(constructSemesterList(response.body.semesters));
-                await Events._saveToStorage(constructEventList(response.body.events));
-                await Topics._saveToStorage(constructTopicList(response.body.topics));
-                await School._saveToStorage(constructSchoolObject(response.body.school));
-                await User._saveToStorage(constructUserObject({username: response.body.username, password, "x-api-key": response.body["api_key"], "x-id-key": response.body["_id"], courses: [], school}));
-                await User._setLoginState(true);
-                this.props.navigation.navigate("Loading");
+                if (response.status == "ok") {
+                    await Courses._saveToStorage(constructCourseList(response.body.courses));
+                    await Semesters._saveToStorage(constructSemesterList(response.body.semesters));
+                    await Events._saveToStorage(constructEventList(response.body.events));
+                    await Topics._saveToStorage(constructTopicList(response.body.topics));
+                    await School._saveToStorage(constructSchoolObject(response.body.school));
+                    await User._saveToStorage(constructUserObject({id: response.body.user._id, firstName: response.body.user.first_name, lastName: response.body.user.last_name, student_number: response.body.user.student_id, username: response.body.username, password, "x-api-key": response.body["api_key"], "x-id-key": response.body["_id"], courses: response.body.user.courses, school}));
+                    await User._setLoginState(true);
+                    const resetAction = StackActions.reset({
+                        index: 0,
+                        actions: [NavigationActions.navigate({ routeName: 'Loading' })],
+                    });
+                    this.props.navigation.dispatch(resetAction);
+                } else {
+                    this.props.navigation.navigate("Login");
+                }
             })
             .catch(e => {
                 console.log(e);
@@ -267,6 +277,7 @@ class LoginButton extends React.Component {
     
     render() {
         return (
+            this.state.active ? 
             <Touchable onPress={this.handleClick}>
                 <View style={[styles.loginButton, boxShadows.boxShadow3]}>
                     <Text style={styles.loginButtonText}>
@@ -274,6 +285,12 @@ class LoginButton extends React.Component {
                     </Text>
                 </View>
             </Touchable>
+            : 
+            <View style={[styles.loginButtonInactive, boxShadows.boxShadow3]}>
+                <Text style={styles.loginButtonText}>
+                    LOGIN
+                </Text>
+            </View>
         )
     }
 }
@@ -359,15 +376,21 @@ export default class LoginScreen extends React.Component {
         this.password = React.createRef();
         this.school = React.createRef();
         this.modal = React.createRef();
+        this.loginButton = React.createRef();
         this.state = {
             isLoadingComplete: false,
             schools: [],
+            height: new Animated.Value(0),
+            username: "",
+            password: "",
         }
     }
     openModal = () => {
         this.modal.current.setState({modalShown: true});
     }
     componentDidMount() {
+        this.keyboardWillShowSub = Keyboard.addListener('keyboardWillShow', this.keyboardWillShow);
+        this.keyboardWillHideSub = Keyboard.addListener('keyboardWillHide', this.keyboardWillHide);
         ApexAPI.getSchoolList()
             .then(res => res.json())
             .then(res => {
@@ -380,19 +403,55 @@ export default class LoginScreen extends React.Component {
             })
             .catch(e => this.setState({schools: []}));
     }
+    componentWillUnmount() {
+        this.keyboardWillShowSub.remove();
+        this.keyboardWillHideSub.remove();
+    }
+    keyboardWillShow = (event) => {
+        Animated.timing(
+            this.state.height,
+            {
+                toValue: -100,
+                easing: Easing.bezier(.2,.73,.33,.99),
+                duration: 250,
+                delay: 0,
+            }
+        ).start();
+    }
+    keyboardWillHide = (event) => {
+        Animated.timing(
+            this.state.height,
+            {
+                toValue: 0,
+                easing: Easing.bezier(.2,.73,.33,.99),
+                duration: 250,
+                delay: 0,
+            }
+        ).start();
+    }
+    updateText = (text) => {
+        this.state[Object.keys(text)[0]] = text[Object.keys(text)[0]];
+        if (this.state.username && this.state.password) {
+            this.loginButton.current.setState({active: true});
+        } else {
+            this.loginButton.current.setState({active: false});
+        }
+    }
     render() {
         return (
             <View style={styles.container}>
-                <LinearGradient style={styles.container} colors={["#ffc371", "#ff5f6d"]} start={{x:1,y:0}} end={{x:0, y:1}}>
-                    <View style={styles.imageContainer}>
-                        <Image source={require('../../assets/logo_transparent.png')} style={styles.logo}/>
-                    </View>
-                    <UsernameInput name="username" ref={this.username}></UsernameInput>
-                    <PasswordInput name="password" ref={this.password}></PasswordInput>
-                    <Touchable onPress={this.openModal}>
-                        <SchoolInput name="school" ref={this.school} schools={this.state.schools}></SchoolInput>
-                    </Touchable>
-                    <LoginButton navigation={this.props.navigation} inputs={[this.username, this.password, this.school]}></LoginButton>
+                <LinearGradient style={{flexGrow: 1, flexDirection: "column"}} colors={["#ffc371", "#ff5f6d"]} start={{x:1,y:0}} end={{x:0, y:1}}>
+                    <Animated.View style={{width, flexDirection: "column", alignItems: "center", position: "relative", top: this.state.height}}>
+                        <View style={styles.imageContainer}>
+                            <Image source={require('../../assets/logo_transparent.png')} style={styles.logo}/>
+                        </View>
+                        <UsernameInput updateText={this.updateText} name="username" ref={this.username}></UsernameInput>
+                        <PasswordInput updateText={this.updateText} name="password" ref={this.password}></PasswordInput>
+                        <Touchable onPress={this.openModal}>
+                            <SchoolInput name="school" ref={this.school} schools={this.state.schools}></SchoolInput>
+                        </Touchable>
+                        <LoginButton ref={this.loginButton} navigation={this.props.navigation} inputs={[this.username, this.password, this.school]}></LoginButton>
+                    </Animated.View>
                 </LinearGradient>
                 <ModalSelect name="modal" ref={this.modal} display={this.school} schools={this.state.schools}></ModalSelect>
             </View>
@@ -402,8 +461,8 @@ export default class LoginScreen extends React.Component {
 
 const styles = StyleSheet.create({
     container: {
-        width: width,
         flexGrow: 1,
+        width: width,
         flexDirection: "column",
         alignItems: "center",
     },
@@ -449,6 +508,15 @@ const styles = StyleSheet.create({
         backgroundColor: "#775fff",
         justifyContent: "center",
         alignItems: "center",
+    },
+    loginButtonInactive: {
+        marginTop: 30,
+        width: width*0.95,
+        height: 35,
+        backgroundColor: "#a1a1a1",
+        justifyContent: "center",
+        alignItems: "center",
+        opacity: 0.5,
     },
     loginButtonText: {
         color: "white",

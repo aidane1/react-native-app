@@ -19,7 +19,8 @@ import { Semesters } from "../../classes/semesters";
 
 import { ScrollView } from 'react-native-gesture-handler';
 
-import { WebBrowser, LinearGradient } from 'expo';
+
+import {LinearGradient} from "expo-linear-gradient"
 
 import { boxShadows } from "../../constants/boxShadows";
 
@@ -29,6 +30,9 @@ import Collapsible from 'react-native-collapsible';
 
 import {StackActions, NavigationActions} from 'react-navigation';    
 
+import { ifIphoneX } from 'react-native-iphone-x-helper'
+
+import ApexAPI from "../../http/api";
 
 const width = Dimensions.get('window').width; //full width
 const height = Dimensions.get('window').height; //full height
@@ -347,7 +351,15 @@ export default class CoursesScreen extends React.Component {
                     }
                 }
             }
+            let api = new ApexAPI(global.user);
             global.user.courses = finalCourses;
+            api.put(`users/${global.user.id}`, {
+                courses: global.user.courses,
+            })
+            .then(data => data.json())
+            .then(data => {
+                console.log(data);
+            });
             await User._saveToStorage(global.user);
             let userCourses = await Courses._retrieveCoursesById(user.courses);
             let semesterMap = await Semesters._createSemesterMap(userCourses, school.blocks);
@@ -406,7 +418,7 @@ export default class CoursesScreen extends React.Component {
     render() {
         return (
             <View style={styles.container}>
-                <HeaderBar iconLeft={<Touchable onPress={() => this.props.navigation.goBack()}><LeftIcon size={28}></LeftIcon></Touchable>} iconRight={<Touchable onPress={this.finished}><ConfirmIcon size={28}></ConfirmIcon></Touchable>} width={width} height={60} title="Courses"></HeaderBar>  
+                <HeaderBar iconLeft={<Touchable onPress={() => this.props.navigation.goBack()}><LeftIcon size={28}></LeftIcon></Touchable>} iconRight={<Touchable onPress={this.finished}><ConfirmIcon size={32} style={{paddingRight: 10}}></ConfirmIcon></Touchable>} width={width} height={60} title="Courses"></HeaderBar>  
                 <View style={styles.bodyHolder}>
                     <ScrollView ref={this.scrollView} horizontal={true} style={styles.slideView} scrollEnabled={false}>
                         {
@@ -417,7 +429,7 @@ export default class CoursesScreen extends React.Component {
                     </ScrollView>
                 </View>
                 <View style={[boxShadows.boxShadow7, {zIndex: 5}]}>
-                    <LinearGradient start={{x: 0, y: 0}} end={{x:1, y:0}} style={[{width: width, height: 45}]} colors={["rgb(0,153,153)", ", rgb(0,130,209)"]}>
+                    <LinearGradient start={{x: 0, y: 0}} end={{x:1, y:0}} style={[{width: width, ...ifIphoneX({height: 60}, {height: 45})}]} colors={["rgb(0,153,153)", ", rgb(0,130,209)"]}>
                         <SemesterTabBar scrollView={this.scrollView} semesters={this.semesters}></SemesterTabBar>
                     </LinearGradient>
                 </View>
@@ -433,7 +445,11 @@ const styles = StyleSheet.create({
     flexDirection: 'column'
   }, 
   bodyHolder: {
-    height: height-60-45,
+    ...ifIphoneX({
+        height: height-80-60
+    }, {
+        height: height-60-45,
+    }),
     zIndex: 1,
   },
   slideView: {
@@ -468,7 +484,7 @@ const styles = StyleSheet.create({
     paddingTop: 5,
     paddingBottom: 5,
     paddingLeft: 15,
-    paddingRight: 15
+    paddingRight: 15,
   },
   verticalStack: {
     flexDirection: "column",
@@ -496,7 +512,12 @@ const styles = StyleSheet.create({
   },
   semesterButton: {
     minWidth: width/3,
-    height: 45,
+    ...ifIphoneX({
+        height: 60,
+        paddingBottom: 15,
+    }, {
+        height: 45,
+    }),
     flexGrow: 1,
     flexDirection: "row",
     alignItems: "center",
