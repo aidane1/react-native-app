@@ -11,7 +11,8 @@ import {
   Keyboard,
   Easing,
   TextInput,
-  AppState
+  AppState,
+  Alert
 } from 'react-native';
 
 
@@ -54,7 +55,7 @@ class ChatBox extends React.Component {
                         this.props.message.resources.map((resource, index, array) => {
                             return (
                                 <Touchable key={"image_" + index} onPress={() => {this.openImageViewer(array, index)}}>
-                                    <Image source={{uri: `https://www.apexschools.co${resource.path}`}} style={{width: 250, height: resource.height/resource.width*250, marginTop: 10, marginBottom: 10}}></Image>
+                                    <Image source={{uri: `https://www.apexschools.co${resource.path}`}} style={{width: width*0.7, height: resource.height/resource.width*width*0.7, marginTop: 10, marginBottom: 10}}></Image>
                                 </Touchable>
                             )
                         })
@@ -75,6 +76,7 @@ class CreateChatBar extends React.Component {
         }
         this.text = React.createRef();
         this.dropTextBar = true;
+        this.canSendMessage = true;
     }
     componentDidMount () {
         this.keyboardWillShowSub = Keyboard.addListener('keyboardWillShow', this.keyboardWillShow);
@@ -94,14 +96,35 @@ class CreateChatBar extends React.Component {
         }
     }
     sendMessage = () => {
-        let message = {
-            message: this.state.value,
-            "x-api-key": global.user["x-api-key"],
-            "x-id-key": global.user["x-id-key"],
+        if (this.canSendMessage) {
+            this.canSendMessage = false;
+            let message = {
+                message: this.state.value,
+                "x-api-key": global.user["x-api-key"],
+                "x-id-key": global.user["x-id-key"],
+            }
+            this.props.imageBar.current.clearImages();
+            this.props.sendMessage(message);
+            this.text.current.clear();
+            this.setState({value: ""});
+            setTimeout(() => {
+                this.canSendMessage = true;
+            }, 3000);
+        } else {
+            Alert.alert(
+                "Error",
+                "Must wait at least 3 seconds between messages",
+                [
+                    {text: "Try Again", onPress: () => this.sendMessage()},
+                {
+                    text: "Cancel",
+                    onPress: () => {console.log("cancelled")},
+                    style: "cancel",
+                }
+                ],
+                {cancelable: false}
+            );
         }
-        this.props.imageBar.current.clearImages();
-        this.props.sendMessage(message);
-        this.text.current.clear();
     }
     sendPhoto = () => {
         if (this.dropTextBar) {
@@ -155,6 +178,9 @@ export default class ChatRoom extends React.Component {
         this.imageBar = React.createRef();
         this.isShowing = false;
         this.webSocketOpen = true;
+        this.error = false;
+        this.errorMessage = "";
+        this.tryAgain = () => {};
         this.state = {
             chats: [],
             images: [],
@@ -171,12 +197,13 @@ export default class ChatRoom extends React.Component {
             this.setState({chats}, () => {
                 this.scrollView.current.scrollTo({x: 0, y: this.scrollViewHeight, animated: "true"});
             });
+            return false;
         }
         this.websocket.onerror = () => {
-            console.log("error");
+            this.canSendMessages = false;
         }
         this.websocket.onclose = () => {
-            console.log("closed");
+            this.canSendMessages = false;
             this.websocket = new WebSocket(`https://www.apexschools.co/web-sockets/app/courses/${global.courseInfoCourse.id}?x-api-key=${global.user["x-api-key"]}&x-id-key=${global.user["x-id-key"]}`);
             this.webSocketOpen = false;
         }
@@ -186,10 +213,39 @@ export default class ChatRoom extends React.Component {
             message.resources = this.state.images.map(image => image._id);
             this.websocket.send(JSON.stringify(message));
             this.setState({images: []});
+        } else {
+            if (message.message) {
+                Alert.alert(
+                    "Error",
+                    "Connection closed. Try leaving and re-entering the page to reload connection.",
+                    [
+                        {text: "Try Again", onPress: () => this.sendMessage(message)},
+                    {
+                        text: "Cancel",
+                        onPress: () => {console.log("cancelled")},
+                        style: "cancel",
+                    }
+                    ],
+                    {cancelable: false}
+                );
+            } else {
+                Alert.alert(
+                    "Error",
+                    "Messages must contain a body",
+                    [
+                        {text: "Try Again", onPress: () => this.sendMessage(message)},
+                    {
+                        text: "Cancel",
+                        onPress: () => {console.log("cancelled")},
+                        style: "cancel",
+                    }
+                    ],
+                    {cancelable: false}
+                );
+            }
         }
     }
-    componentDidMount() {
-        AppState.addEventListener('change', this._handleAppStateChange);
+    loadChats = () => {
         let api = new ApexAPI(global.user);
         api.get(`course-texts?reference_course=${global.courseInfoCourse.id}&order_by=date&order_direction=-1&limit=50&populate=resources`)
             .then(res => res.json())
@@ -197,9 +253,24 @@ export default class ChatRoom extends React.Component {
                 if (res.status == "ok") {
                     res.body = res.body.reverse();
                     this.setState({chats: res.body});
+                } else {
+                    this.error = true;
+                    this.errorMessage = res.body;
+                    this.tryAgain = this.loadChats;
                 }
-            });
+            })
+            .catch(e => {
+                if (e.message == "JSON Parse error: Unrecognized token '<'") {
+                    this.error = true;
+                    this.errorMessage = "Unable to retrieve chats";
+                    this.tryAgain = this.loadChats;
+                }
+            })
     }
+    componentDidMount() {
+        AppState.addEventListener('change', this._handleAppStateChange);
+        this.loadChats();
+    }   
     componentWillUnmount() {
         AppState.removeEventListener('change', this._handleAppStateChange);
     }
@@ -305,7 +376,7 @@ const ChatRoomStyles = StyleSheet.create({
         backgroundColor: "#Fdfdfd",
     },
     chatBox: {
-        maxWidth: width*0.7,
+        maxWidth: width*0.8,
         padding: 8,
         borderRadius: 3,
         marginTop: 2,

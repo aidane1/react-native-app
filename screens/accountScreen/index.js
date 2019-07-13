@@ -110,7 +110,7 @@ export default class AccountScreen extends React.Component {
                         </ButtonSection>
                         <ButtonSection>
                             <CourseRow color={"#fffec9"} icon={<CalendarIcon size={20} color={"black"}></CalendarIcon>} text={"Calendar"} last={false} onPress={() => this._navigateToPage("Calendar")}></CourseRow>
-                            <CourseRow color={"#afffad"} icon={<NotesIcon size={20} color={"black"}></NotesIcon>} text={"Notes"} last={false}></CourseRow>
+                            <CourseRow color={"#afffad"} icon={<NotesIcon size={20} color={"black"}></NotesIcon>} text={"Notes"} last={false} onPress={() => this._navigateToPage("Notes")}></CourseRow>
                             <CourseRow color={"#b1f9ed"} icon={<AssignmentsIcon size={20} color={"black"}></AssignmentsIcon>} text={"Assignments"} last={true}></CourseRow>
                         </ButtonSection>
                         <ButtonSection>

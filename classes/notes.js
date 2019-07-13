@@ -90,10 +90,9 @@ export class Notes {
                     topicsMap[notes[i].topic].push(notes[i]);
                 }
             }
-            if (topicsMap["_"].length == 0) {
-                delete topicsMap["_"];
+            for (var key in topicsMap) {
+                if (topicsMap[key].length == 0) delete topicsMap[key];
             }
-            
             return topicsMap;
         } catch(e) {
             console.log(e);

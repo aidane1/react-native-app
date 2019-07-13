@@ -1,25 +1,36 @@
 import React from 'react';
 import {
-  Image,
-  Platform,
-  ScrollView,
   StyleSheet,
-  Text,
-  TouchableOpacity,
   View,
   Dimensions,
-  AsyncStorage,
+  ActivityIndicator,
+  TouchableWithoutFeedback,
+  Text,
 } from 'react-native';
 
-import Touchable from 'react-native-platform-touchable';
+import HeaderBar from '../../components/header';
 
-import {Course, Courses} from '../../classes/courses';
+import {
+  LeftIcon,
+  CalendarIcon,
+  RightIcon,
+  EmptyIcon,
+  CourseIcon,
+  EventsIcon,
+  LogoutIcon,
+  NotesIcon,
+  AssignmentsIcon,
+  SchoolAssignmentsIcon,
+  BeforeSchoolIcon,
+  LunchTimeIcon,
+  AfterSchoolIcon,
+} from '../../classes/icons';
 
-import {RightIcon} from '../../classes/icons';
-
-import {SchoolIcons, GenericIcon} from '../../classes/icons';
+import {ScrollView} from 'react-native-gesture-handler';
 
 import {boxShadows} from '../../constants/boxShadows';
+
+import Touchable from 'react-native-platform-touchable';
 
 const width = Dimensions.get ('window').width; //full width
 const height = Dimensions.get ('window').height; //full height
@@ -156,47 +167,123 @@ class CourseRow extends React.Component {
   }
 }
 
-export default class LinksScreenTile extends React.Component {
+export default class NotesScreen extends React.Component {
   constructor (props) {
     super (props);
+    this.props = props;
   }
-  _navigateToPage = async (page, id) => {
-    globalThis.courseInfoCourse = await Courses._retrieveCourseById (id);
+  _navigateToPage = page => {
     this.props.navigation.navigate (page);
+  };
+  static navigationOptions = ({navigation}) => {
+    return {
+      header: null,
+    };
   };
   render () {
     return (
-      <ScrollView style={styles.scrollBack} bounces={false}>
-        <View style={styles.titleBlock}>
-          <Text style={styles.h1}>
-            Today
-          </Text>
-        </View>
-        <DayList
-          courses={this.props.courseList}
-          _navigateToPage={this._navigateToPage}
+      <View style={styles.container}>
+        <HeaderBar
+          iconLeft={
+            <Touchable onPress={() => this.props.navigation.goBack ()}>
+              <LeftIcon size={28} />
+            </Touchable>
+          }
+          iconRight={<EmptyIcon width={28} height={32} />}
+          width={width}
+          height={60}
+          title="Notes"
         />
-      </ScrollView>
+        <View style={styles.bodyHolder}>
+          <ScrollView>
+            <ButtonSection>
+              <CourseRow
+                color={'#ef8b8b'}
+                icon={<CourseIcon size={20} color={'black'} />}
+                text={'Courses'}
+                last={false}
+                onPress={() => this._navigateToPage ('Courses')}
+              />
+              <CourseRow
+                color={'#f2cc98'}
+                icon={<EventsIcon size={20} color={'black'} />}
+                text={'Events'}
+                last={false}
+                onPress={() => this._navigateToPage ('Events')}
+              />
+              <CourseRow
+                color={'#ffffad'}
+                icon={<LogoutIcon size={20} color={'black'} />}
+                text={'Login'}
+                last={true}
+                onPress={() => this._navigateToPage ('Login')}
+              />
+            </ButtonSection>
+            <ButtonSection>
+              <CourseRow
+                color={'#fffec9'}
+                icon={<CalendarIcon size={20} color={'black'} />}
+                text={'Calendar'}
+                last={false}
+                onPress={() => this._navigateToPage ('Calendar')}
+              />
+              <CourseRow
+                color={'#afffad'}
+                icon={<NotesIcon size={20} color={'black'} />}
+                text={'Notes'}
+                last={false}
+              />
+              <CourseRow
+                color={'#b1f9ed'}
+                icon={<AssignmentsIcon size={20} color={'black'} />}
+                text={'Assignments'}
+                last={true}
+              />
+            </ButtonSection>
+            <ButtonSection>
+              <CourseRow
+                color={'#b1d7f9'}
+                icon={<SchoolAssignmentsIcon size={20} color={'black'} />}
+                text={'School Assignments'}
+                last={true}
+              />
+            </ButtonSection>
+            <ButtonSection>
+              <CourseRow
+                color={'#b2b1f9'}
+                icon={<BeforeSchoolIcon size={20} color={'black'} />}
+                text={'Before School Activities'}
+                last={false}
+              />
+              <CourseRow
+                color={'#d7b1f9'}
+                icon={<LunchTimeIcon size={20} color={'black'} />}
+                text={'Lunchtime Activities'}
+                last={false}
+              />
+              <CourseRow
+                color={'#f6b1f9'}
+                icon={<AfterSchoolIcon size={20} color={'black'} />}
+                text={'After School Activities'}
+                last={true}
+              />
+            </ButtonSection>
+          </ScrollView>
+        </View>
+      </View>
     );
   }
 }
 
 const styles = StyleSheet.create ({
-  titleBlock: {
-    width: width,
-    borderBottomColor: '#000000',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    paddingTop: 20,
-    paddingLeft: 10,
-    paddingBottom: 0,
-    paddingRight: 10,
-  },
-  h1: {
-    fontSize: 34,
-    fontWeight: 'bold',
-  },
-  scrollBack: {
+  container: {
+    width,
+    flexGrow: 1,
     backgroundColor: '#f0f0f0',
+  },
+  bodyHolder: {
+    zIndex: 1,
+    flexGrow: 1,
   },
   courseRow: {
     alignItems: 'center',
@@ -215,9 +302,6 @@ const styles = StyleSheet.create ({
     borderBottomWidth: StyleSheet.hairlineWidth,
     paddingRight: 10,
   },
-  courseRowStack: {
-    flexDirection: 'column',
-  },
   icon: {
     width: 35,
     height: 35,
@@ -226,23 +310,23 @@ const styles = StyleSheet.create ({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 5,
+    paddingTop: 3,
+    paddingLeft: 2,
   },
-  courseRowCourse: {
-    fontSize: 17,
+  courseRowText: {
+    fontSize: 20,
+    color: '#444',
+    fontWeight: '300',
   },
-  courseRowTeacher: {
-    fontSize: 10,
-    fontStyle: 'italic',
-    opacity: 0.7,
+  buttonSection: {
+    marginTop: 20,
+    borderColor: 'rgb(210,210,210)',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  courseRowTime: {
-    fontSize: 17,
-  },
-  dayList: {
-    borderBottomColor: 'rgb(210,210,210)',
-    borderBottomWidth: StyleSheet.hairlineWidth * 2,
-    borderTopColor: 'rgb(210,210,210)',
-    borderTopWidth: StyleSheet.hairlineWidth * 2,
-    marginTop: 10,
+  clickIcon: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    paddingTop: 5,
   },
 });

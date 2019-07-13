@@ -258,7 +258,7 @@ class LoginButton extends React.Component {
                     await Events._saveToStorage(constructEventList(response.body.events));
                     await Topics._saveToStorage(constructTopicList(response.body.topics));
                     await School._saveToStorage(constructSchoolObject(response.body.school));
-                    await User._saveToStorage(constructUserObject({id: response.body.user._id, firstName: response.body.user.first_name, lastName: response.body.user.last_name, student_number: response.body.user.student_id, username: response.body.username, password, "x-api-key": response.body["api_key"], "x-id-key": response.body["_id"], courses: response.body.user.courses, school}));
+                    await User._saveToStorage(constructUserObject({scheduleImages: response.body.user.schedule_images, scheduleType: response.body.schedule_type, id: response.body.user._id, firstName: response.body.user.first_name, lastName: response.body.user.last_name, student_number: response.body.user.student_id, username: response.body.username, password, "x-api-key": response.body["api_key"], "x-id-key": response.body["_id"], courses: response.body.user.courses, school}));
                     await User._setLoginState(true);
                     const resetAction = StackActions.reset({
                         index: 0,

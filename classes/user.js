@@ -13,6 +13,8 @@ export class User {
         this.firstName = user.firstName;
         this.lastName = user.lastName;
         this.studentNumber = user.studentNumber;
+        this.scheduleType = user.scheduleType || "schedule";
+        this.scheduleImages = user.scheduleImages || [];
     }
     toString() {
         return {
@@ -26,6 +28,8 @@ export class User {
             firstName: this.firstName,
             lastName: this.lastName,
             studentNumber: this.studentNumber,
+            scheduleType: this.scheduleType,
+            scheduleImages: this.scheduleImages || [],
         }
     }
     static _saveToStorage = async (user) => {

@@ -10,7 +10,8 @@ import {
   Modal as ReactModal,
   Keyboard,
   Easing,
-  TextInput
+  TextInput,
+  Alert
 } from 'react-native';
 
 
@@ -377,7 +378,28 @@ class DisplayAssignmentModal extends React.Component {
         let api = new ApexAPI(global.user);
         api.put(`assignments/${this.state.assignment.id}?updateMethods=$push&$push=response_resources`, {
             response_resources: resource._id,
-        });
+        })
+        .then(data => data.json())
+        .then(json => {
+
+        })
+        .catch(e => {
+            if (e.message == "JSON Parse error: Unrecognized token '<'") {
+                Alert.alert(
+                  "Connection Error",
+                  "Unable to connect to the server",
+                  [
+                    {text: "Try Again", onPress: () => this.pushResultImage(resource)},
+                    {
+                      text: "Cancel",
+                      onPress: () => {console.log("cancelled")},
+                      style: "cancel",
+                    }
+                  ],
+                  {cancelable: false}
+                );
+              }
+        })
     }
     imageFunction = async (result) => {
         if (result.uri) {            
@@ -389,6 +411,37 @@ class DisplayAssignmentModal extends React.Component {
                         this.state.images.push(json.body);
                         this.setState({images: this.state.images});
                         this.pushResultImage(json.body);
+                    } else {
+                        Alert.alert(
+                            "Error",
+                            json.body,
+                            [
+                            {text: "Try Again", onPress: () => this.imageFunction(result)},
+                            {
+                                text: "Cancel",
+                                onPress: () => {console.log("cancelled")},
+                                style: "cancel",
+                            }
+                            ],
+                            {cancelable: false}
+                        );
+                    }
+                })
+                .catch(e => {
+                    if (e.message == "JSON Parse error: Unrecognized token '<'") {
+                        Alert.alert(
+                            "Connection Error",
+                            "Unable to connect to the server",
+                            [
+                                {text: "Try Again", onPress: () => this.imageFunction(result)},
+                            {
+                                text: "Cancel",
+                                onPress: () => {console.log("cancelled")},
+                                style: "cancel",
+                            }
+                            ],
+                            {cancelable: false}
+                        );
                     }
                 });
         }
@@ -539,8 +592,39 @@ class AssignmentModal extends React.Component {
                 .then(json => {
                     if (json.status == "ok") {
                         this.state.imageIDs.push(json.body);
+                    } else {
+                        Alert.alert(
+                            "Error",
+                            json.body,
+                            [
+                                {text: "Try Again", onPress: () => this.imageFunction(result)},
+                            {
+                                text: "Cancel",
+                                onPress: () => {console.log("cancelled")},
+                                style: "cancel",
+                            }
+                            ],
+                            {cancelable: false}
+                        );
                     }
-                });
+                })
+                .catch(e => {
+                    if (e.message == "JSON Parse error: Unrecognized token '<'") {
+                        Alert.alert(
+                            "Connection Error",
+                            "Unable to connect to the server",
+                            [
+                                {text: "Try Again", onPress: () => this.imageFunction(result)},
+                            {
+                                text: "Cancel",
+                                onPress: () => {console.log("cancelled")},
+                                style: "cancel",
+                            }
+                            ],
+                            {cancelable: false}
+                        );
+                    }
+                })
         }
     }
     
@@ -580,7 +664,40 @@ class AssignmentModal extends React.Component {
                     storageAssignments.push(assignment);
                     await Assignments._saveToStorage(storageAssignments);
                     this.props.parent.setState({assignments});
-                }  
+                } else {
+                    Alert.alert(
+                        "Error",
+                        res.body,
+                        [
+                            {text: "Try Again", onPress: () => this.createAssignment()},
+                        {
+                            text: "Cancel",
+                            onPress: () => {
+                                this.setState({isBackdropVisible: false, images: [], imageIDs: []});
+                            },
+                            style: "cancel",
+                        }
+                        ],
+                        {cancelable: false}
+                    );
+                }
+            })
+            .catch(e => {
+                if (e.message == "JSON Parse error: Unrecognized token '<'") {
+                    Alert.alert(
+                        "Connection Error",
+                        "Unable to connect to the server",
+                        [
+                            {text: "Try Again", onPress: () => this.createAssignment()},
+                        {
+                            text: "Cancel",
+                            onPress: () => {console.log("cancelled")},
+                            style: "cancel",
+                        }
+                        ],
+                        {cancelable: false}
+                    );
+                }
             })
     }
     onPress = () => {
@@ -592,26 +709,57 @@ class AssignmentModal extends React.Component {
                     topic: this.state.topic.topic,
                     reference_course: global.courseInfoCourse.id,
                 })
-                    .then(res => res.json())
-                    .then(async res => {
-                        if (res.status == "ok") {
-                            this.state.topic = {
-                                topicType: "id",
-                                topic: res.body._id,
-                            }
-                            let topic = {
-                                topic: res.body.topic,
-                                id: res.body._id,
-                                course: res.body.reference_course
-                            }
-                            topic = new Topic(topic);
-                            global.topics.push(topic);
-                            let storageTopics = await Topics._retrieveFromStorage();
-                            storageTopics.push(topic);
-                            await Topics._saveToStorage(storageTopics);
-                            this.createAssignment();
+                .then(res => res.json())
+                .then(async res => {
+                    if (res.status == "ok") {
+                        this.state.topic = {
+                            topicType: "id",
+                            topic: res.body._id,
                         }
-                    });
+                        let topic = {
+                            topic: res.body.topic,
+                            id: res.body._id,
+                            course: res.body.reference_course
+                        }
+                        topic = new Topic(topic);
+                        global.topics.push(topic);
+                        let storageTopics = await Topics._retrieveFromStorage();
+                        storageTopics.push(topic);
+                        await Topics._saveToStorage(storageTopics);
+                        this.createAssignment();
+                    } else {
+                        Alert.alert(
+                            "Error",
+                            res.body,
+                            [
+                                {text: "Try Again", onPress: () => this.onPress()},
+                            {
+                                text: "Cancel",
+                                onPress: () => {console.log("cancelled")},
+                                style: "cancel",
+                            }
+                            ],
+                            {cancelable: false}
+                        );
+                    }
+                })
+                .catch(e => {
+                    if (e.message == "JSON Parse error: Unrecognized token '<'") {
+                        Alert.alert(
+                            "Connection Error",
+                            "Unable to connect to the server",
+                            [
+                                {text: "Try Again", onPress: () => this.onPress()},
+                            {
+                                text: "Cancel",
+                                onPress: () => {console.log("cancelled")},
+                                style: "cancel",
+                            }
+                            ],
+                            {cancelable: false}
+                        );
+                    }
+                })
             } else {
                 this.createAssignment();
             }
@@ -637,7 +785,7 @@ class AssignmentModal extends React.Component {
                     isVisible={this.state.isBackdropVisible} 
                     onBackdropPress={() => this.setState({isBackdropVisible: false})}
                     propagateSwipe={true}>
-                    <Animated.View style={{position: "relative", top: this.state.keyboardHeight}}>
+                    <Animated.View style={{position: "relative", transform: [{translateY: this.state.keyboardHeight}]}}>
                         <View style={styles.newAssignmentModal}>
                             <View style={styles.assignmentModalHeader}>
                                 <Text style={{color: "#174ea6", fontSize: 16}}>Assignment</Text>
@@ -734,8 +882,39 @@ class NoteModal extends React.Component {
                 .then(json => {
                     if (json.status == "ok") {
                         this.state.imageIDs.push(json.body);
+                    } else {
+                        Alert.alert(
+                            "Error",
+                            json.body,
+                            [
+                                {text: "Try Again", onPress: () => this.imageFunction(result)},
+                            {
+                                text: "Cancel",
+                                onPress: () => {console.log("cancelled")},
+                                style: "cancel",
+                            }
+                            ],
+                            {cancelable: false}
+                        );
                     }
-                });
+                })
+                .catch(e => {
+                    if (e.message == "JSON Parse error: Unrecognized token '<'") {
+                        Alert.alert(
+                            "Connection Error",
+                            "Unable to connect to the server",
+                            [
+                                {text: "Try Again", onPress: () => this.imageFunction(result)},
+                            {
+                                text: "Cancel",
+                                onPress: () => {console.log("cancelled")},
+                                style: "cancel",
+                            }
+                            ],
+                            {cancelable: false}
+                        );
+                    }
+                })
         }
     }
     
@@ -771,8 +950,41 @@ class NoteModal extends React.Component {
                     storageNotes.push(note);
                     await Notes._saveToStorage(storageNotes);
                     this.props.parent.setState({notes});
-                }  
+                } else {
+                    Alert.alert(
+                        "Error",
+                        res.body,
+                        [
+                            {text: "Try Again", onPress: () => this.createAssignment()},
+                        {
+                            text: "Cancel",
+                            onPress: () => {
+                                this.setState({isBackdropVisible: false, images: [], imageIDs: []});
+                            },
+                            style: "cancel",
+                        }
+                        ],
+                        {cancelable: false}
+                    );
+                }
             })
+            .catch(e => {
+                if (e.message == "JSON Parse error: Unrecognized token '<'") {
+                    Alert.alert(
+                        "Connection Error",
+                        "Unable to connect to the server",
+                        [
+                            {text: "Try Again", onPress: () => this.createAssignment()},
+                        {
+                            text: "Cancel",
+                            onPress: () => {console.log("cancelled")},
+                            style: "cancel",
+                        }
+                        ],
+                        {cancelable: false}
+                    );
+                }
+            }) 
     }
     onPress = () => {
         this.create.current.setState({disabled: true});
@@ -801,8 +1013,38 @@ class NoteModal extends React.Component {
                             storageTopics.push(topic);
                             await Topics._saveToStorage(storageTopics);
                             this.createAssignment();
+                        } else {
+                            Alert.alert(
+                                "Error",
+                                res.body,
+                                [
+                                    {text: "Try Again", onPress: () => this.onPress()},
+                                {
+                                    text: "Cancel",
+                                    onPress: () => {console.log("cancelled")},
+                                    style: "cancel",
+                                }
+                                ],
+                                {cancelable: false}
+                            );
                         }
-                    });
+                    }).catch(e => {
+                        if (e.message == "JSON Parse error: Unrecognized token '<'") {
+                            Alert.alert(
+                                "Connection Error",
+                                "Unable to connect to the server",
+                                [
+                                    {text: "Try Again", onPress: () => this.onPress()},
+                                {
+                                    text: "Cancel",
+                                    onPress: () => {console.log("cancelled")},
+                                    style: "cancel",
+                                }
+                                ],
+                                {cancelable: false}
+                            );
+                        }
+                    })
             } else {
                 this.createAssignment();
             }
@@ -828,7 +1070,7 @@ class NoteModal extends React.Component {
                     isVisible={this.state.isBackdropVisible} 
                     onBackdropPress={() => this.setState({isBackdropVisible: false})}
                     propagateSwipe={true}>
-                    <Animated.View style={{position: "relative", top: this.state.keyboardHeight}}>
+                    <Animated.View style={{position: "relative", transform: [{translateY: this.state.keyboardHeight}]}}>
                         <View style={styles.newNoteModal}>
                             <View style={styles.assignmentModalHeader}>
                                 <Text style={{color: "#174ea6", fontSize: 16}}>Note</Text>
@@ -1055,6 +1297,21 @@ export default class CourseInfoScreen extends React.Component {
         this.setState({pageIndex: page});
         if (page == 2) {
             this.chatroom.current.isShowing = true;
+            if (this.chatroom.current.error) {
+                Alert.alert(
+                    "Error",
+                    this.chatroom.current.errorMessage,
+                    [
+                        {text: "Try Again", onPress: () => this.chatroom.current.tryAgain()},
+                    {
+                        text: "Cancel",
+                        onPress: () => {console.log("cancelled")},
+                        style: "cancel",
+                    }
+                    ],
+                    {cancelable: false}
+                );
+            }
         } else {
             this.chatroom.current.isShowing = false;
         }
@@ -1064,7 +1321,7 @@ export default class CourseInfoScreen extends React.Component {
         let topicsMap = Topics._makeTopicMap(topicsList);
         let assignmentsMap = Assignments._formTopicMap(this.state.assignments, topicsList);
         let notesList = this.state.notes.sort((a, b) => {
-            return a.date.getTime() > b.date.getTime() ? 1 : -1;    
+            return a.date.getTime() > b.date.getTime() ? -1 : 1;    
         });
         notesMap = Notes._formDateMap(notesList);
         return (

@@ -7,6 +7,7 @@ import CoursesScreen from "../screens/coursesScreen/index";
 import EventsScreen from "../screens/eventsScreen/index";
 import CalendarScreen from "../screens/calendarScreen/index";
 import CourseInfoScreen from '../screens/courseInfoScreen/index';
+import NotesScreen from "../screens/notesPage/index";
 import { createAppContainer, createStackNavigator, createSwitchNavigator } from 'react-navigation';
 
 
@@ -20,6 +21,7 @@ const MainNavigator = createStackNavigator(
         Events: {screen: EventsScreen, lazy: true},
         Calendar: {screen: CalendarScreen, lazy: true},
         CourseInfo: {screen: CourseInfoScreen, lazy: true},
+        Notes: {screen: NotesScreen, lazy: true}
     },
     {
         initialRouteName: "Loading",

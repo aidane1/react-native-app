@@ -10,6 +10,11 @@ class IconBlock {
     }
 }
 
+export class CloseCircleIcon extends React.Component {
+    render() {
+        return <AntDesign color="white" name="closecircle" size={16} {...this.props}></AntDesign>
+    }
+}
 export class SendIcon extends React.Component {
     render() {
         return <FontAwesome color="white" name="send" size={16} {...this.props}></FontAwesome>

@@ -73,6 +73,7 @@ export class Courses {
             }
             return new Course();
         } catch(e) {
+            console.log(e);
             return new Course();
         }
     }

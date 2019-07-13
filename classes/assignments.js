@@ -130,8 +130,8 @@ export class Assignments {
                     topicsMap[assignments[i].topic].push(assignments[i]);
                 }
             }
-            if (topicsMap["_"].length == 0) {
-                delete topicsMap["_"];
+            for (var key in topicsMap) {
+                if (topicsMap[key].length == 0) delete topicsMap[key];
             }
             return topicsMap;
         } catch(e) {
@@ -140,53 +140,3 @@ export class Assignments {
         }
     }
 }
-
-// export class Courses {
-//     static _saveToStorage = async (courses) => {
-//         try {
-//             await AsyncStorage.setItem("courses", JSON.stringify(courses));
-//             return courses;
-//         } catch(e) {
-//             return courses;
-//         }
-//     }
-//     static _retrieveFromStorage = async () => {
-//         try {
-//             let storageCourses = await AsyncStorage.getItem("courses");
-//             storageCourses = JSON.parse(storageCourses);
-//             let courses = [];
-//             for (var i = 0; i < storageCourses.length; i++) {
-//                 let course = new Course(storageCourses[i]);
-//                 courses.push(course);
-//             }
-//             return courses;
-//         } catch(e) {
-//             return [];
-//         }
-//     }
-//     static _retrieveCourseById = async (id) => {
-//         try {
-//             let courses = await Courses._retrieveFromStorage();
-//             for (var i = 0; i < courses.length; i++) {
-//                 if (courses[i].id == id) return courses[i];
-//             }
-//             return new Course();
-//         } catch(e) {
-//             return new Course();
-//         }
-//     }
-//     static _retrieveCoursesById = async (ids) => {
-//         try {
-//             let courses = [];
-//             for (var i = 0; i < ids.length; i++) {
-//                 let current = await Courses._retrieveCourseById(ids[i]);
-//                 if (current.isReal) {
-//                     courses.push(current);
-//                 }
-//             }
-//             return courses;
-//         } catch(e) {
-//             return [];
-//         }
-//     }
-// }

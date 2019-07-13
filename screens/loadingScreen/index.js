@@ -67,7 +67,7 @@ export default class LoadingScreen extends React.Component {
             require("../../assets/logo_transparent.png"),
             require("../../assets/splash.png"),
         ]);
-        const fontAssets = cacheFonts([FontAwesome.font, Ionicons.font, Entypo.font]);
+        const fontAssets = cacheFonts([FontAwesome.font, Ionicons.font, Entypo.font, AntDesign.font, MaterialCommunityIcons.font, MaterialIcons.font, Feather.font]);
         await Promise.all([...imageAssets, ...fontAssets]);
         return true;
     }

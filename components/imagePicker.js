@@ -110,7 +110,7 @@ export default class ImageBar extends React.Component {
 
     render() {
         return (
-            <View style={styles.imageHolder}>
+            <View style={[styles.imageHolder, this.props.style]}>
                 <View style={styles.imageHolderHeader}>
                     <View style={styles.imageUploadTypes}>
                         <Touchable onPress={() => this.launchCamera()}>
