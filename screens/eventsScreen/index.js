@@ -5,49 +5,55 @@ import {
   Dimensions,
   ActivityIndicator,
   TouchableWithoutFeedback,
-  Text
+  Text,
 } from 'react-native';
 
-import HeaderBar from "../../components/header";
+import HeaderBar from '../../components/header';
 
-import { LeftIcon, RightIcon, EmptyIcon,} from "../../classes/icons";
+import {LeftIcon, RightIcon, EmptyIcon} from '../../classes/icons';
 
-import { ScrollView } from 'react-native-gesture-handler';
+import {ScrollView} from 'react-native-gesture-handler';
 
-import { boxShadows } from "../../constants/boxShadows";
+import {boxShadows} from '../../constants/boxShadows';
 
-
-const width = Dimensions.get('window').width; //full width
-const height = Dimensions.get('window').height; //full height
-
+const width = Dimensions.get ('window').width; //full width
+const height = Dimensions.get ('window').height; //full height
 
 export default class AccountScreen extends React.Component {
-    constructor(props) {
-        super(props);
-        this.props = props;
-    }
-    _navigateToPage = (page) => {
-        this.props.navigation.navigate(page);
-    }
-    static navigationOptions = ({navigation}) => {
-        return {
-            header: null,
-        }
-    }
-    render() {
-        return (
-            <View style={styles.container}>
-                <HeaderBar iconLeft={<TouchableWithoutFeedback onPress={() => this.props.navigation.goBack()}><LeftIcon size={28}></LeftIcon></TouchableWithoutFeedback>} iconRight={<EmptyIcon width={28} height={32}></EmptyIcon>} width={width} height={60} title="Events"></HeaderBar>
-                <View style={styles.bodyHolder}>
-                    <ScrollView>
-                        
-                    </ScrollView>
-                </View>
-            </View>
-        )
-    }
+  constructor (props) {
+    super (props);
+    this.props = props;
+  }
+  _navigateToPage = page => {
+    this.props.navigation.navigate (page);
+  };
+  static navigationOptions = ({navigation}) => {
+    return {
+      header: null,
+    };
+  };
+  render () {
+    return (
+      <View style={styles.container}>
+        <HeaderBar
+          iconLeft={
+            <TouchableWithoutFeedback
+              onPress={() => this.props.navigation.goBack ()}
+            >
+              <LeftIcon size={28} />
+            </TouchableWithoutFeedback>
+          }
+          iconRight={<EmptyIcon width={28} height={32} />}
+          width={width}
+          height={60}
+          title="Events"
+        />
+        <View style={styles.bodyHolder}>
+          <ScrollView />
+        </View>
+      </View>
+    );
+  }
 }
 
-const styles = StyleSheet.create({
-    
-})
+const styles = StyleSheet.create ({});

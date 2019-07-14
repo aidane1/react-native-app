@@ -10,27 +10,25 @@ import {
 
 import HeaderBar from '../../components/header';
 
+import {ScrollView} from 'react-native-gesture-handler';
+
 import {
   LeftIcon,
-  CalendarIcon,
   RightIcon,
   EmptyIcon,
-  CourseIcon,
-  EventsIcon,
-  LogoutIcon,
-  NotesIcon,
-  AssignmentsIcon,
-  SchoolAssignmentsIcon,
-  BeforeSchoolIcon,
-  LunchTimeIcon,
-  AfterSchoolIcon,
+  SchoolIcons,
+  GenericIcon,
 } from '../../classes/icons';
 
-import {ScrollView} from 'react-native-gesture-handler';
+import {Courses} from "../../classes/courses";
 
 import {boxShadows} from '../../constants/boxShadows';
 
 import Touchable from 'react-native-platform-touchable';
+
+import {Day} from '../../classes/days';
+
+import {ifIphoneX} from 'react-native-iphone-x-helper';
 
 const width = Dimensions.get ('window').width; //full width
 const height = Dimensions.get ('window').height; //full height
@@ -102,7 +100,13 @@ class CourseRow extends React.Component {
                 </View>
                 <View>
                   <Text style={styles.courseRowTeacher}>
+                    {this.props.semester}
+                    ,
+                    {' '}
                     {this.props.teacher}
+                    , Block
+                    {' '}
+                    {this.props.block}
                   </Text>
                 </View>
               </View>
@@ -143,14 +147,17 @@ class CourseRow extends React.Component {
                 </View>
                 <View>
                   <Text style={styles.courseRowTeacher}>
+                    {this.props.semester}
+                    ,
+                    {' '}
                     {this.props.teacher}
+                    , Block
+                    {' '}
+                    {this.props.block}
                   </Text>
                 </View>
               </View>
               <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                <Text style={styles.courseRowTime}>
-                  {this.props.time}
-                </Text>
                 {this.props.id != '_'
                   ? <RightIcon
                       style={{marginTop: 3}}
@@ -172,8 +179,16 @@ export default class NotesScreen extends React.Component {
     super (props);
     this.props = props;
   }
-  _navigateToPage = page => {
-    this.props.navigation.navigate (page);
+  _navigateToPage = async (page, id) => {
+    try {
+      global.courseInfoCourse = await Courses._retrieveCourseById (id);
+      global.courseInfoPage="notes";
+      if (global.courseInfoCourse.id != '_') {
+        this.props.navigation.navigate (page);
+      }
+    } catch(e) {
+      console.log(e);
+    }
   };
   static navigationOptions = ({navigation}) => {
     return {
@@ -181,6 +196,25 @@ export default class NotesScreen extends React.Component {
     };
   };
   render () {
+    let semesters = {};
+    global.semesters.forEach (semester => {
+      semesters[semester.id] = semester;
+    });
+    let blocks = {};
+    global.school.blocks.forEach (block => {
+      blocks[block._id] = block;
+    });
+    let courseList = global.userCourses.map (course => {
+      return {
+        course: course.course,
+        category: course.category,
+        teacher: course.teacher,
+        semester: semesters[course.semester].name,
+        block: blocks[course.block].block,
+        id: course.id,
+        isReal: true,
+      };
+    });
     return (
       <View style={styles.container}>
         <HeaderBar
@@ -196,78 +230,21 @@ export default class NotesScreen extends React.Component {
         />
         <View style={styles.bodyHolder}>
           <ScrollView>
-            <ButtonSection>
-              <CourseRow
-                color={'#ef8b8b'}
-                icon={<CourseIcon size={20} color={'black'} />}
-                text={'Courses'}
-                last={false}
-                onPress={() => this._navigateToPage ('Courses')}
-              />
-              <CourseRow
-                color={'#f2cc98'}
-                icon={<EventsIcon size={20} color={'black'} />}
-                text={'Events'}
-                last={false}
-                onPress={() => this._navigateToPage ('Events')}
-              />
-              <CourseRow
-                color={'#ffffad'}
-                icon={<LogoutIcon size={20} color={'black'} />}
-                text={'Login'}
-                last={true}
-                onPress={() => this._navigateToPage ('Login')}
-              />
-            </ButtonSection>
-            <ButtonSection>
-              <CourseRow
-                color={'#fffec9'}
-                icon={<CalendarIcon size={20} color={'black'} />}
-                text={'Calendar'}
-                last={false}
-                onPress={() => this._navigateToPage ('Calendar')}
-              />
-              <CourseRow
-                color={'#afffad'}
-                icon={<NotesIcon size={20} color={'black'} />}
-                text={'Notes'}
-                last={false}
-              />
-              <CourseRow
-                color={'#b1f9ed'}
-                icon={<AssignmentsIcon size={20} color={'black'} />}
-                text={'Assignments'}
-                last={true}
-              />
-            </ButtonSection>
-            <ButtonSection>
-              <CourseRow
-                color={'#b1d7f9'}
-                icon={<SchoolAssignmentsIcon size={20} color={'black'} />}
-                text={'School Assignments'}
-                last={true}
-              />
-            </ButtonSection>
-            <ButtonSection>
-              <CourseRow
-                color={'#b2b1f9'}
-                icon={<BeforeSchoolIcon size={20} color={'black'} />}
-                text={'Before School Activities'}
-                last={false}
-              />
-              <CourseRow
-                color={'#d7b1f9'}
-                icon={<LunchTimeIcon size={20} color={'black'} />}
-                text={'Lunchtime Activities'}
-                last={false}
-              />
-              <CourseRow
-                color={'#f6b1f9'}
-                icon={<AfterSchoolIcon size={20} color={'black'} />}
-                text={'After School Activities'}
-                last={true}
-              />
-            </ButtonSection>
+            <Text
+              style={{
+                textAlign: 'center',
+                fontSize: 30,
+                fontWeight: '500',
+                marginTop: 30,
+                marginBottom: 10,
+              }}
+            >
+              This Year's Classes
+            </Text>
+            <DayList
+              _navigateToPage={this._navigateToPage}
+              courses={courseList}
+            />
           </ScrollView>
         </View>
       </View>
@@ -283,7 +260,7 @@ const styles = StyleSheet.create ({
   },
   bodyHolder: {
     zIndex: 1,
-    flexGrow: 1,
+    height: ifIphoneX (height - 80, height - 60),
   },
   courseRow: {
     alignItems: 'center',
@@ -302,6 +279,9 @@ const styles = StyleSheet.create ({
     borderBottomWidth: StyleSheet.hairlineWidth,
     paddingRight: 10,
   },
+  courseRowStack: {
+    flexDirection: 'column',
+  },
   icon: {
     width: 35,
     height: 35,
@@ -310,23 +290,23 @@ const styles = StyleSheet.create ({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 5,
-    paddingTop: 3,
-    paddingLeft: 2,
   },
-  courseRowText: {
-    fontSize: 20,
-    color: '#444',
-    fontWeight: '300',
+  courseRowCourse: {
+    fontSize: 17,
   },
-  buttonSection: {
-    marginTop: 20,
-    borderColor: 'rgb(210,210,210)',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+  courseRowTeacher: {
+    fontSize: 10,
+    fontStyle: 'italic',
+    opacity: 0.7,
   },
-  clickIcon: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    paddingTop: 5,
+  courseRowTime: {
+    fontSize: 17,
+  },
+  dayList: {
+    borderBottomColor: 'rgb(210,210,210)',
+    borderBottomWidth: StyleSheet.hairlineWidth * 2,
+    borderTopColor: 'rgb(210,210,210)',
+    borderTopWidth: StyleSheet.hairlineWidth * 2,
+    marginTop: 10,
   },
 });

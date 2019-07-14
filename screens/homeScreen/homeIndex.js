@@ -10,30 +10,32 @@ import {
   Dimensions,
   AsyncStorage,
   Button,
-  RefreshControl
+  RefreshControl,
 } from 'react-native';
 
-import { WebBrowser } from 'expo';
+import {WebBrowser} from 'expo';
 
-import { LinearGradient } from 'expo-linear-gradient';
+import {LinearGradient} from 'expo-linear-gradient';
 
-import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import {Ionicons, MaterialIcons} from '@expo/vector-icons';
 
 import {boxShadows} from '../../constants/boxShadows';
 
 import Touchable from 'react-native-platform-touchable';
 
-import {Courses} from "../../classes/courses";
+import {Courses} from '../../classes/courses';
 
-
-const width = Dimensions.get('window').width; //full width
-const height = Dimensions.get('window').height; //full height
+const width = Dimensions.get ('window').width; //full width
+const height = Dimensions.get ('window').height; //full height
 
 class GradientBlock extends React.Component {
-  render() {
+  render () {
     return (
       <View style={[styles.gradientBlock, boxShadows.boxShadow4]}>
-        <LinearGradient colors={["#e8865c", "#e86e5c"]} style={[styles.gradientBlockChild]}>
+        <LinearGradient
+          colors={['#e8865c', '#e86e5c']}
+          style={[styles.gradientBlockChild]}
+        >
           <View style={styles.blockBody}>
             <View style={styles.blockHeader}>
               <Text style={styles.blockHeaderText}>
@@ -45,23 +47,29 @@ class GradientBlock extends React.Component {
                 {this.props.main}
               </Text>
               <Text style={styles.blockSecondary}>
-              {this.props.secondary}
+                {this.props.secondary}
               </Text>
             </View>
           </View>
         </LinearGradient>
       </View>
-    )
+    );
   }
 }
 class EventBlock extends React.Component {
-  render() {
+  render () {
     return (
       <View style={[styles.gradientBlock, boxShadows.boxShadow4]}>
-        <LinearGradient colors={["#5cc0e8", "#5c9be8"]} style={styles.gradientBlockChild}>
+        <LinearGradient
+          colors={['#5cc0e8', '#5c9be8']}
+          style={styles.gradientBlockChild}
+        >
           <View style={[styles.blockBody, {flexDirection: 'column'}]}>
             <View>
-              <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
+              <ScrollView
+                horizontal={true}
+                showsHorizontalScrollIndicator={false}
+              >
                 <Text style={styles.eventTopRow}>
                   {this.props.info}
                 </Text>
@@ -78,140 +86,172 @@ class EventBlock extends React.Component {
           </View>
         </LinearGradient>
       </View>
-    )
+    );
   }
 }
 class AssignmentBlock extends React.Component {
-  constructor(props) {
-    super(props);
+  constructor (props) {
+    super (props);
   }
-  render() {
-    return (
-      this.props.id == "_" ?
-      <View style={[styles.gradientBlock, boxShadows.boxShadow4]}>
-        <LinearGradient colors={["#79e098", "#43ba67"]} style={[styles.gradientBlockChild]}>
-          <View style={[styles.blockBody, {flexDirection: 'column'}]}>
-            <View>
-              <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
-                <Text style={styles.eventTopRow}>
-                  {this.props.assignmentTitle}
+  render () {
+    return this.props.id == '_'
+      ? <View style={[styles.gradientBlock, boxShadows.boxShadow4]}>
+          <LinearGradient
+            colors={['#79e098', '#43ba67']}
+            style={[styles.gradientBlockChild]}
+          >
+            <View style={[styles.blockBody, {flexDirection: 'column'}]}>
+              <View>
+                <ScrollView
+                  horizontal={true}
+                  showsHorizontalScrollIndicator={false}
+                >
+                  <Text style={styles.eventTopRow}>
+                    {this.props.assignmentTitle}
+                  </Text>
+                </ScrollView>
+              </View>
+              <View style={styles.eventBottomRow}>
+                <Text style={styles.eventBottomRowText}>
+                  {this.props.topic}
                 </Text>
-              </ScrollView>
-            </View>
-            <View style={styles.eventBottomRow}>
-              <Text style={styles.eventBottomRowText}>
-                {this.props.topic}
-              </Text>
-              <Text style={styles.eventBottomRowText}>
-                {this.props.dueDate}
-              </Text>
-            </View>
-          </View>
-        </LinearGradient>
-      </View>
-      :
-      <Touchable style={[styles.gradientBlock, boxShadows.boxShadow4]} onPress={() => this.props.navigateToPage("CourseInfo", this.props.referenceCourse)}>
-        <LinearGradient colors={["#79e098", "#43ba67"]} style={[styles.gradientBlockChild]}>
-          <View style={[styles.blockBody, {flexDirection: 'column'}]}>
-            <View>
-              <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
-                <Text style={styles.eventTopRow}>
-                  {this.props.assignmentTitle}
+                <Text style={styles.eventBottomRowText}>
+                  {this.props.dueDate}
                 </Text>
-              </ScrollView>
+              </View>
             </View>
-            <View style={styles.eventBottomRow}>
-              <Text style={styles.eventBottomRowText}>
-                {this.props.topic}
-              </Text>
-              <Text style={styles.eventBottomRowText}>
-                {this.props.dueDate}
-              </Text>
+          </LinearGradient>
+        </View>
+      : <Touchable
+          style={[styles.gradientBlock, boxShadows.boxShadow4]}
+          onPress={() =>
+            this.props.navigateToPage (
+              'CourseInfo',
+              this.props.referenceCourse
+            )}
+        >
+          <LinearGradient
+            colors={['#79e098', '#43ba67']}
+            style={[styles.gradientBlockChild]}
+          >
+            <View style={[styles.blockBody, {flexDirection: 'column'}]}>
+              <View>
+                <ScrollView
+                  horizontal={true}
+                  showsHorizontalScrollIndicator={false}
+                >
+                  <Text style={styles.eventTopRow}>
+                    {this.props.assignmentTitle}
+                  </Text>
+                </ScrollView>
+              </View>
+              <View style={styles.eventBottomRow}>
+                <Text style={styles.eventBottomRowText}>
+                  {this.props.topic}
+                </Text>
+                <Text style={styles.eventBottomRowText}>
+                  {this.props.dueDate}
+                </Text>
+              </View>
             </View>
-          </View>
-        </LinearGradient>
-      </Touchable>
-    )
+          </LinearGradient>
+        </Touchable>;
   }
 }
 
-
 export default class HomeScreenTile extends React.Component {
-  
   static navigationOptions = ({navigation}) => {
     return {
       header: null,
-    }
-  }
-  constructor(props) {
-    super(props);
+    };
+  };
+  constructor (props) {
+    super (props);
     this.props = props;
     this.state = {
       refreshing: false,
-    }
+    };
   }
 
   _onRefresh = () => {
-    this.setState({refreshing: true});
+    this.setState ({refreshing: true});
     // this.props.navigation.replace("Home");
-    setTimeout(() => {
-      this.props.parent.setState({currentDate: new Date(2019, 10, 8, 12, 30)}, () => {
-        this.setState({refreshing: false});
-      })
+    setTimeout (() => {
+      this.props.parent.setState (
+        {currentDate: new Date (2019, 10, 8, 12, 30)},
+        () => {
+          this.setState ({refreshing: false});
+        }
+      );
     }, 400);
-  }
-  
-  _navigateToPage = async (page, id) => {
-    global.courseInfoCourse = await Courses._retrieveCourseById(id);
-    if (global.courseInfoCourse.id != "_") {
-      this.props.parent.props.navigation.navigate(page);
-    }
-  }
+  };
 
-  render() {
+  _navigateToPage = async (page, id) => {
+    global.courseInfoCourse = await Courses._retrieveCourseById (id);
+    if (global.courseInfoCourse.id != '_') {
+      this.props.parent.props.navigation.navigate (page);
+    }
+  };
+
+  render () {
     return (
-        <ScrollView style={styles.scrollBack}
-          refreshControl={
-            <RefreshControl
-              refreshing={this.state.refreshing}
-              onRefresh={this._onRefresh}
-            />
-          }>
-            <View style = {styles.backdrop}>
-              <View style={styles.titleBlock}>
-                  <Text style = {styles.h1}>{this.props.dayTitle}</Text>
-              </View>
-              <GradientBlock {...this.props.current}></GradientBlock>
-              <GradientBlock {...this.props.next}></GradientBlock>
-              <View style={styles.titleBlock}>
-                  <Text style = {styles.h1}>Events</Text>
-              </View>
-              {
-                this.props.events.map((y, i) => {
-                  return (
-                    <EventBlock key={`event_${i}`} {...y}></EventBlock>
-                  )
-                })
-              }
-              <View style={styles.titleBlock}>
-                  <Text style = {styles.h1}>Assignments</Text>
-              </View>
-              {
-                this.props.assignments.map((y, i) => {
-                  return (
-                    <AssignmentBlock navigateToPage={this._navigateToPage} key={`event_${i}`} {...y}></AssignmentBlock>
-                  )
-                })
-              }
-            </View>
-        </ScrollView>
-    )
+      <ScrollView
+        style={[
+          styles.scrollBack,
+          {backgroundColor: global.user.getPrimaryTheme ()},
+        ]}
+        refreshControl={
+          <RefreshControl
+            refreshing={this.state.refreshing}
+            onRefresh={this._onRefresh}
+          />
+        }
+      >
+        <View style={styles.backdrop}>
+          <View style={[styles.titleBlock, global.user.borderColor ()]}>
+            <Text
+              style={[styles.h1, {color: global.user.getPrimaryTextColor ()}]}
+            >
+              {this.props.dayTitle}
+            </Text>
+          </View>
+          <GradientBlock {...this.props.current} />
+          <GradientBlock {...this.props.next} />
+          <View style={[styles.titleBlock, global.user.borderColor ()]}>
+            <Text
+              style={[styles.h1, {color: global.user.getPrimaryTextColor ()}]}
+            >
+              Events
+            </Text>
+          </View>
+          {this.props.events.map ((y, i) => {
+            return <EventBlock key={`event_${i}`} {...y} />;
+          })}
+          <View style={[styles.titleBlock, global.user.borderColor ()]}>
+            <Text
+              style={[styles.h1, {color: global.user.getPrimaryTextColor ()}]}
+            >
+              Assignments
+            </Text>
+          </View>
+          {this.props.assignments.map ((y, i) => {
+            return (
+              <AssignmentBlock
+                navigateToPage={this._navigateToPage}
+                key={`event_${i}`}
+                {...y}
+              />
+            );
+          })}
+        </View>
+      </ScrollView>
+    );
   }
 }
-const styles = StyleSheet.create({
+const styles = StyleSheet.create ({
   scrollBack: {
     width: width,
-    backgroundColor: "#f0f0f0",
+    backgroundColor: '#f0f0f0',
   },
   backdrop: {
     flexDirection: 'column',
@@ -220,7 +260,6 @@ const styles = StyleSheet.create({
   },
   titleBlock: {
     width: width,
-    borderBottomColor: "#000000",
     borderBottomWidth: StyleSheet.hairlineWidth,
     paddingTop: 20,
     paddingLeft: 10,
@@ -232,11 +271,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   gradientBlock: {
-    width: width*0.95,
+    width: width * 0.95,
     marginTop: 10,
   },
   gradientBlockChild: {
-    width: width*0.95,
+    width: width * 0.95,
     paddingTop: 5,
     paddingRight: 15,
     paddingBottom: 10,
@@ -250,23 +289,23 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   blockHeaderText: {
-    color: "#ffffff",
+    color: '#ffffff',
     fontSize: 20,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     paddingTop: 5,
   },
   blockMain: {
     fontSize: 35,
     fontWeight: '200',
-    color: "#ffffff",
+    color: '#ffffff',
     textAlign: 'right',
-    overflow: "hidden",
+    overflow: 'hidden',
   },
   blockSecondary: {
     fontSize: 14,
     fontWeight: '300',
     opacity: 0.7,
-    color: "#ffffff",
+    color: '#ffffff',
     textAlign: 'right',
   },
   eventBottomRow: {
@@ -275,14 +314,14 @@ const styles = StyleSheet.create({
   },
   eventBottomRowText: {
     fontSize: 14,
-    color: "#ffffff",
+    color: '#ffffff',
     opacity: 0.7,
   },
   eventTopRow: {
-    color: "#ffffff",
+    color: '#ffffff',
     fontSize: 20,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     paddingTop: 5,
     paddingBottom: 10,
-  }
+  },
 });

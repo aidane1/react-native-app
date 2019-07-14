@@ -10,31 +10,40 @@ import {
   Modal as ReactModal,
   Keyboard,
   Easing,
-  TextInput
+  TextInput,
 } from 'react-native';
 
+import {
+  LeftIcon,
+  PlusIcon,
+  CheckBoxFilledIcon,
+  EmptyIcon,
+  CheckBoxOpenIcon,
+  XIcon,
+  SendIcon,
+  PhotoIcon,
+  TrashIcon,
+  SchoolAssignmentsIcon,
+  BeforeSchoolIcon,
+  LunchTimeIcon,
+  AfterSchoolIcon,
+} from '../../classes/icons';
 
-import { LeftIcon, PlusIcon, CheckBoxFilledIcon, EmptyIcon, CheckBoxOpenIcon, XIcon, SendIcon, PhotoIcon, TrashIcon, SchoolAssignmentsIcon, BeforeSchoolIcon, LunchTimeIcon, AfterSchoolIcon } from "../../classes/icons";
-
-import { ScrollView } from 'react-native-gesture-handler';
+import {ScrollView} from 'react-native-gesture-handler';
 
 import Touchable from 'react-native-platform-touchable';
 
-import { boxShadows } from "../../constants/boxShadows";
+import {boxShadows} from '../../constants/boxShadows';
 
-import ApexAPI from "../../http/api";
+import ApexAPI from '../../http/api';
 
-import ImageBar from "../../components/imagePicker";
+import ImageBar from '../../components/imagePicker';
 
 export default class Notes extends React.Component {
-    constructor(props) {
-        super(props);
-    }
-    render() {
-        return (
-            <View>
-                
-            </View>
-        )
-    }
+  constructor (props) {
+    super (props);
+  }
+  render () {
+    return <View />;
+  }
 }
