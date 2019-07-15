@@ -165,6 +165,9 @@ class TopicDropDown extends React.Component {
             label="Topic"
             onChangeText={this.updateTopic}
             animationDuration={100}
+            textColor={global.user.getSecondaryTextColor ()}
+            baseColor={global.user.getTertiaryTextColor ()}
+            pickerStyle={global.user.primaryTheme ()}
             data={data}
           />
         </View>
@@ -172,6 +175,8 @@ class TopicDropDown extends React.Component {
           focused={true}
           stateKey="topic"
           handleInput={this.handleTextInput}
+          textColor={global.user.getSecondaryTextColor ()}
+          baseColor={global.user.getTertiaryTextColor ()}
           label="New Topic"
           multiline={false}
         />;
@@ -200,12 +205,23 @@ class AssignmentRow extends React.Component {
         >
           <View style={styles.assignmentInfo}>
             <View style={styles.assignmentTitle}>
-              <Text style={{fontSize: 16}} numberOfLines={1}>
+              <Text
+                style={{
+                  fontSize: 16,
+                  color: global.user.getSecondaryTextColor (),
+                }}
+                numberOfLines={1}
+              >
                 {this.props.assignment.assignmentTitle}
               </Text>
             </View>
             <View style={styles.assignmentDue} numberOfLines={1}>
-              <Text style={{fontSize: 14, color: 'rgb(190,190,190)'}}>
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: global.user.getTertiaryTextColor (),
+                }}
+              >
                 {this.props.assignment.dueDate}
               </Text>
             </View>
@@ -221,7 +237,13 @@ class AssignmentBubble extends React.Component {
   }
   render () {
     return (
-      <View style={[styles.assignmentBubble, boxShadows.boxShadow3]}>
+      <View
+        style={[
+          styles.assignmentBubble,
+          boxShadows.boxShadow3,
+          global.user.secondaryTheme (),
+        ]}
+      >
         <View style={styles.assignmentBubbleHeader}>
           <Text style={{color: '#174ea6', fontSize: 30}}>
             {this.props.title}
@@ -330,6 +352,8 @@ class ModalInput extends React.Component {
           this.props.multiline !== undefined ? this.props.multiline : true
         }
         value={this.state.value}
+        textColor={this.props.textColor}
+        baseColor={this.props.baseColor}
         onChangeText={value => this.updateText (value)}
       />
     );
@@ -438,7 +462,9 @@ class DisplayAssignmentModal extends React.Component {
         }
       )
       .then (data => data.json ())
-      .then (json => {})
+      .then (json => {
+        console.log (json);
+      })
       .catch (e => {
         if (e.message == "JSON Parse error: Unrecognized token '<'") {
           Alert.alert (
@@ -520,35 +546,56 @@ class DisplayAssignmentModal extends React.Component {
           animationIn="zoomIn"
           animationOut="zoomOut"
           isVisible={this.state.isBackdropVisible}
+          backdropColor={
+            global.user.theme == 'Light' ? 'black' : 'rgba(255,255,255,0.4)'
+          }
           onBackdropPress={() => this.setState ({isBackdropVisible: false})}
           propagateSwipe={true}
         >
-          <View style={styles.displayAssignment}>
-            <View style={styles.assignmentModalHeader}>
+          <View
+            style={[styles.displayAssignment, global.user.secondaryTheme ()]}
+          >
+            <View
+              style={[
+                styles.assignmentModalHeader,
+                global.user.secondaryTheme (),
+              ]}
+            >
               <Text style={{color: '#174ea6', fontSize: 16}}>Assignment</Text>
               <Touchable
                 onPress={this.props.parent.closeAssignment}
                 hitSlop={{top: 20, left: 20, bottom: 20, right: 20}}
               >
-                <XIcon size={30} color="black" />
+                <XIcon size={30} color={global.user.getPrimaryTextColor ()} />
               </Touchable>
             </View>
             <View
               style={[
                 styles.displayAssignmentModalBody,
                 {height: 0, flexGrow: 1},
+                global.user.secondaryTheme (),
               ]}
             >
               <ScrollView>
                 <View style={styles.modalBodySection}>
                   <Text style={styles.modalBodySectionHeader}>Title</Text>
-                  <Text style={styles.modalBodySectionContent}>
+                  <Text
+                    style={[
+                      styles.modalBodySectionContent,
+                      global.user.secondaryTextColor (),
+                    ]}
+                  >
                     {this.state.assignment.assignmentTitle}
                   </Text>
                 </View>
                 <View style={styles.modalBodySection}>
                   <Text style={styles.modalBodySectionHeader}>Topic</Text>
-                  <Text style={styles.modalBodySectionContent}>
+                  <Text
+                    style={[
+                      styles.modalBodySectionContent,
+                      global.user.secondaryTextColor (),
+                    ]}
+                  >
                     {this.state.assignment.topic == '_'
                       ? 'No Topic'
                       : topicsMap[this.state.assignment.topic].topic}
@@ -556,13 +603,23 @@ class DisplayAssignmentModal extends React.Component {
                 </View>
                 <View style={styles.modalBodySection}>
                   <Text style={styles.modalBodySectionHeader}>Due</Text>
-                  <Text style={styles.modalBodySectionContent}>
+                  <Text
+                    style={[
+                      styles.modalBodySectionContent,
+                      global.user.secondaryTextColor (),
+                    ]}
+                  >
                     {this.state.assignment.dueDate}
                   </Text>
                 </View>
                 <View style={styles.modalBodySection}>
                   <Text style={styles.modalBodySectionHeader}>Notes</Text>
-                  <Text style={styles.modalBodySectionContent}>
+                  <Text
+                    style={[
+                      styles.modalBodySectionContent,
+                      global.user.secondaryTextColor (),
+                    ]}
+                  >
                     {this.state.assignment.assignmentNotes}
                   </Text>
                 </View>
@@ -570,7 +627,12 @@ class DisplayAssignmentModal extends React.Component {
                   <Text style={styles.modalBodySectionHeader}>
                     Date Created
                   </Text>
-                  <Text style={styles.modalBodySectionContent}>
+                  <Text
+                    style={[
+                      styles.modalBodySectionContent,
+                      global.user.secondaryTextColor (),
+                    ]}
+                  >
                     {moment (this.state.assignment.date).format (
                       'MMMM Do YYYY, h:mm:ss a'
                     )}
@@ -929,6 +991,9 @@ class AssignmentModal extends React.Component {
           animationIn="zoomIn"
           animationOut="zoomOut"
           isVisible={this.state.isBackdropVisible}
+          backdropColor={
+            global.user.theme == 'Light' ? 'black' : 'rgba(255,255,255,0.4)'
+          }
           onBackdropPress={() => this.setState ({isBackdropVisible: false})}
           propagateSwipe={true}
         >
@@ -938,14 +1003,16 @@ class AssignmentModal extends React.Component {
               transform: [{translateY: this.state.keyboardHeight}],
             }}
           >
-            <View style={styles.newAssignmentModal}>
+            <View
+              style={[styles.newAssignmentModal, global.user.secondaryTheme ()]}
+            >
               <View style={styles.assignmentModalHeader}>
                 <Text style={{color: '#174ea6', fontSize: 16}}>Assignment</Text>
                 <Touchable
                   onPress={this.props.parent.closeModal}
                   hitSlop={{top: 20, left: 20, bottom: 20, right: 20}}
                 >
-                  <XIcon size={30} color="black" />
+                  <XIcon size={30} color={global.user.getPrimaryTextColor ()} />
                 </Touchable>
               </View>
               <View style={styles.assignmentModalBody}>
@@ -963,6 +1030,8 @@ class AssignmentModal extends React.Component {
                     handleInput={this.handleInput}
                     ref={this.assignment}
                     style={{marginTop: 30}}
+                    textColor={global.user.getSecondaryTextColor ()}
+                    baseColor={global.user.getTertiaryTextColor ()}
                     label="Assignment"
                     stateKey={'assignment'}
                   />
@@ -970,6 +1039,8 @@ class AssignmentModal extends React.Component {
                     handleInput={this.handleInput}
                     ref={this.notes}
                     style={{marginTop: 30}}
+                    textColor={global.user.getSecondaryTextColor ()}
+                    baseColor={global.user.getTertiaryTextColor ()}
                     label="Instructions/Notes"
                     stateKey={'notes'}
                   />
@@ -978,6 +1049,8 @@ class AssignmentModal extends React.Component {
                     handleInput={this.handleInput}
                     ref={this.due}
                     style={{marginTop: 30}}
+                    textColor={global.user.getSecondaryTextColor ()}
+                    baseColor={global.user.getTertiaryTextColor ()}
                     label="Due"
                     stateKey={'due'}
                   />
@@ -1006,7 +1079,7 @@ class AssignmentModal extends React.Component {
               <View style={styles.assignmentModalFooter}>
                 <Touchable onPress={this.handleClear}>
                   <TrashIcon
-                    color="black"
+                    color={global.user.getPrimaryTextColor ()}
                     size={26}
                     style={{marginRight: 30, padding: 20}}
                   />
@@ -1289,6 +1362,9 @@ class NoteModal extends React.Component {
           animationIn="zoomIn"
           animationOut="zoomOut"
           isVisible={this.state.isBackdropVisible}
+          backdropColor={
+            global.user.theme == 'Light' ? 'black' : 'rgba(255,255,255,0.4)'
+          }
           onBackdropPress={() => this.setState ({isBackdropVisible: false})}
           propagateSwipe={true}
         >
@@ -1298,14 +1374,14 @@ class NoteModal extends React.Component {
               transform: [{translateY: this.state.keyboardHeight}],
             }}
           >
-            <View style={styles.newNoteModal}>
+            <View style={[styles.newNoteModal, global.user.secondaryTheme ()]}>
               <View style={styles.assignmentModalHeader}>
                 <Text style={{color: '#174ea6', fontSize: 16}}>Note</Text>
                 <Touchable
                   onPress={this.props.parent.closeNoteModal}
                   hitSlop={{top: 20, left: 20, bottom: 20, right: 20}}
                 >
-                  <XIcon size={30} color="black" />
+                  <XIcon size={30} color={global.user.getPrimaryTextColor ()} />
                 </Touchable>
               </View>
               <View style={styles.noteModalBody}>
@@ -1323,6 +1399,8 @@ class NoteModal extends React.Component {
                     handleInput={this.handleInput}
                     ref={this.note}
                     style={{marginTop: 30}}
+                    textColor={global.user.getSecondaryTextColor ()}
+                    baseColor={global.user.getTertiaryTextColor ()}
                     label="Note"
                     stateKey={'note'}
                   />
@@ -1351,7 +1429,7 @@ class NoteModal extends React.Component {
               <View style={styles.assignmentModalFooter}>
                 <Touchable onPress={this.handleClear}>
                   <TrashIcon
-                    color="black"
+                    color={global.user.getPrimaryTextColor ()}
                     size={26}
                     style={{marginRight: 30, padding: 20}}
                   />
@@ -1413,17 +1491,22 @@ class DisplayNoteModal extends React.Component {
           animationIn="zoomIn"
           animationOut="zoomOut"
           isVisible={this.state.isBackdropVisible}
+          backdropColor={
+            global.user.theme == 'Light' ? 'black' : 'rgba(255,255,255,0.4)'
+          }
           onBackdropPress={() => this.setState ({isBackdropVisible: false})}
           propagateSwipe={true}
         >
-          <View style={styles.displayAssignment}>
+          <View
+            style={[styles.displayAssignment, global.user.secondaryTheme ()]}
+          >
             <View style={styles.assignmentModalHeader}>
               <Text style={{color: '#174ea6', fontSize: 16}}>Note</Text>
               <Touchable
                 onPress={this.props.parent.closeNote}
                 hitSlop={{top: 20, left: 20, bottom: 20, right: 20}}
               >
-                <XIcon size={30} color="black" />
+                <XIcon size={30} color={global.user.getPrimaryTextColor ()} />
               </Touchable>
             </View>
             <View
@@ -1435,13 +1518,23 @@ class DisplayNoteModal extends React.Component {
               <ScrollView>
                 <View style={styles.modalBodySection}>
                   <Text style={styles.modalBodySectionHeader}>Note</Text>
-                  <Text style={styles.modalBodySectionContent}>
+                  <Text
+                    style={[
+                      styles.modalBodySectionContent,
+                      global.user.secondaryTextColor (),
+                    ]}
+                  >
                     {this.state.note.note}
                   </Text>
                 </View>
                 <View style={styles.modalBodySection}>
                   <Text style={styles.modalBodySectionHeader}>Topic</Text>
-                  <Text style={styles.modalBodySectionContent}>
+                  <Text
+                    style={[
+                      styles.modalBodySectionContent,
+                      global.user.secondaryTextColor (),
+                    ]}
+                  >
                     {this.state.note.topic == '_'
                       ? 'No Topic'
                       : topicsMap[this.state.note.topic].topic}
@@ -1451,7 +1544,12 @@ class DisplayNoteModal extends React.Component {
                   <Text style={styles.modalBodySectionHeader}>
                     Date Created
                   </Text>
-                  <Text style={styles.modalBodySectionContent}>
+                  <Text
+                    style={[
+                      styles.modalBodySectionContent,
+                      global.user.secondaryTextColor (),
+                    ]}
+                  >
                     {moment (this.state.note.date).format (
                       'MMMM Do YYYY, h:mm:ss a'
                     )}
@@ -1507,7 +1605,13 @@ class NoteBubble extends React.Component {
     let date = this.props.date.split ('_');
     date = new Date (...date);
     return (
-      <View style={[styles.assignmentBubble, boxShadows.boxShadow3]}>
+      <View
+        style={[
+          styles.assignmentBubble,
+          boxShadows.boxShadow3,
+          global.user.secondaryTheme (),
+        ]}
+      >
         <View style={styles.assignmentBubbleHeader}>
           <Text style={{color: '#174ea6', fontSize: 30}}>
             {moment (date).format ('MMMM Do YYYY')}
@@ -1549,12 +1653,23 @@ class NoteRow extends React.Component {
         >
           <View style={styles.assignmentInfo}>
             <View style={styles.assignmentTitle}>
-              <Text style={{fontSize: 16}} numberOfLines={1}>
+              <Text
+                style={{
+                  fontSize: 16,
+                  color: global.user.getSecondaryTextColor (),
+                }}
+                numberOfLines={1}
+              >
                 {this.props.note.note}
               </Text>
             </View>
             <View style={styles.assignmentDue} numberOfLines={1}>
-              <Text style={{fontSize: 14, color: 'rgb(190,190,190)'}}>
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: global.user.getTertiaryTextColor (),
+                }}
+              >
                 {this.props.note.topic == '_'
                   ? 'No Topic'
                   : topicsMap[this.props.note.topic].topic}
@@ -1699,7 +1814,7 @@ export default class CourseInfoScreen extends React.Component {
     });
     notesMap = Notes._formDateMap (notesList);
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, global.user.primaryTheme ()]}>
         <HeaderBar
           iconLeft={
             <Touchable onPress={() => this.props.navigation.goBack ()}>
@@ -1711,7 +1826,7 @@ export default class CourseInfoScreen extends React.Component {
           height={60}
           title={this.course.course}
         />
-        <View style={styles.bodyHolder}>
+        <View style={[styles.bodyHolder, global.user.primaryTheme ()]}>
           <ScrollView
             ref={this.scrollMain}
             horizontal={true}
@@ -1726,7 +1841,9 @@ export default class CourseInfoScreen extends React.Component {
             keyboardShouldPersistTaps="always"
             keyboardDismissMode="on-drag"
           >
-            <ScrollView style={styles.infoHolder}>
+            <ScrollView
+              style={[styles.infoHolder, global.user.primaryTheme ()]}
+            >
               <View style={styles.optionContent}>
                 <CreateButton onPress={this.openModal} />
                 {Object.keys (assignmentsMap).map ((topic, index) => {
@@ -1742,7 +1859,9 @@ export default class CourseInfoScreen extends React.Component {
                 })}
               </View>
             </ScrollView>
-            <ScrollView style={styles.infoHolder}>
+            <ScrollView
+              style={[styles.infoHolder, global.user.primaryTheme ()]}
+            >
               <View style={styles.optionContent}>
                 <CreateButton onPress={this.openNoteModal} />
                 {Object.keys (notesMap).map ((date, index) => {
@@ -1792,7 +1911,11 @@ export default class CourseInfoScreen extends React.Component {
             start={{x: 0, y: 0}}
             end={{x: 1, y: 0}}
             style={[{width: width, height: ifIphoneX (60, 45)}]}
-            colors={['rgb(0,153,153)', ', rgb(0,130,209)']}
+            colors={
+              global.user.theme == 'Light'
+                ? ['rgb(0,153,153)', ', rgb(0,130,209)']
+                : ['rgb(0,78,78)', ', rgb(0,66,107)']
+            }
           >
             <View style={styles.switchHeader}>
               <TouchableWithoutFeedback onPress={() => this.changePage (0)}>

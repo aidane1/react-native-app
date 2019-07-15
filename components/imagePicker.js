@@ -110,15 +110,32 @@ export default class ImageBar extends React.Component {
 
   render () {
     return (
-      <View style={[styles.imageHolder, this.props.style]}>
+      <View
+        style={[
+          styles.imageHolder,
+          this.props.style,
+          global.user.theme == 'Light'
+            ? {
+                backgroundColor: '#fdfdfd',
+              }
+            : {
+                backgroundColor: '#111111',
+              },
+        ]}
+      >
         <View style={styles.imageHolderHeader}>
           <View style={styles.imageUploadTypes}>
             <Touchable onPress={() => this.launchCamera ()}>
               <View
                 style={{flexDirection: 'row', alignItems: 'center', padding: 5}}
               >
-                <CameraIcon color="black" />
-                <Text style={{color: '#4c4e53', marginLeft: 10}}>
+                <CameraIcon color={global.user.getPrimaryTextColor ()} />
+                <Text
+                  style={{
+                    color: global.user.getSecondaryTextColor (),
+                    marginLeft: 10,
+                  }}
+                >
                   Take Photo
                 </Text>
               </View>
@@ -127,8 +144,13 @@ export default class ImageBar extends React.Component {
               <View
                 style={{flexDirection: 'row', alignItems: 'center', padding: 5}}
               >
-                <PhotoIcon color="black" />
-                <Text style={{color: '#4c4e53', marginLeft: 10}}>
+                <PhotoIcon color={global.user.getPrimaryTextColor ()} />
+                <Text
+                  style={{
+                    color: global.user.getSecondaryTextColor (),
+                    marginLeft: 10,
+                  }}
+                >
                   Camera Roll
                 </Text>
               </View>

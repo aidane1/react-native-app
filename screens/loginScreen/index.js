@@ -275,6 +275,8 @@ function constructSchoolObject (serverData) {
     spareName: serverData['spare_name'],
     dayTitles: serverData['day_titles'],
     id: serverData._id,
+    name: serverData.name,
+    district: serverData.district,
   };
 }
 
@@ -325,6 +327,7 @@ class LoginButton extends React.Component {
           await Topics._saveToStorage (
             constructTopicList (response.body.topics)
           );
+          console.log(response.body.school.name);
           await School._saveToStorage (
             constructSchoolObject (response.body.school)
           );

@@ -186,7 +186,7 @@ export default class AccountScreen extends React.Component {
                       width: width * 0.7,
                     }}
                   >
-                    Account Settings, Push Notifications, Student ID
+                    Account Settings, Push Notifications, Theme
                   </Text>
                 </View>
                 <View style={{marginLeft: 'auto'}}>
@@ -256,6 +256,7 @@ export default class AccountScreen extends React.Component {
                 color={'#b1d7f9'}
                 icon={<SchoolAssignmentsIcon size={20} color={'black'} />}
                 text={'School Assignments'}
+                onPress={() => this._navigateToPage ('SchoolAssignments')}
                 last={true}
               />
             </ButtonSection>

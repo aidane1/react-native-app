@@ -123,7 +123,11 @@ export default class TabBar extends React.Component {
           start={{x: 0, y: 0}}
           end={{x: 1, y: 0}}
           style={[{width: width, ...ifIphoneX ({height: 60}, {height: 45})}]}
-          colors={['rgb(0,153,153)', ', rgb(0,130,209)']}
+          colors={
+            global.user.theme == 'Light'
+              ? ['rgb(0,153,153)', ', rgb(0,130,209)']
+              : ['rgb(0,78,78)', ', rgb(0,66,107)']
+          }
         >
           <TabBarButtons
             selectedIndex={this.state.selectedIndex}

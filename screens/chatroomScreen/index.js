@@ -64,10 +64,131 @@ class DayList extends React.Component {
       );
     }
     return (
-      <View style={styles.dayList}>
+      <View
+        style={[styles.dayList, {borderColor: global.user.getBorderColor ()}]}
+      >
         {rowLists}
       </View>
     );
+  }
+}
+
+class GradeDayList extends React.Component {
+  render () {
+    let list = this.props.grades || [];
+    let rowLists = [];
+    for (var i = 0; i < list.length; i++) {
+      rowLists.push (
+        <GradeRow
+          prefix={this.props.prefix}
+          _navigateToPage={this.props._navigateToPage}
+          last={i == list.length - 1}
+          key={'courseRow_' + i.toString ()}
+          {...list[i]}
+        />
+      );
+    }
+    return (
+      <View
+        style={[styles.dayList, {borderColor: global.user.getBorderColor ()}]}
+      >
+        {rowLists}
+      </View>
+    );
+  }
+}
+
+class GradeRow extends React.Component {
+  render () {
+    if (this.props.last) {
+      return (
+        <Touchable
+          onPress={() =>
+            this.props.id != '_'
+              ? this.props._navigateToPage ('PureChatroom', this.props.grade)
+              : () => {}}
+        >
+          <View style={[styles.courseRow, global.user.secondaryTheme ()]}>
+            <View
+              style={[
+                styles.courseRowInfo,
+                {borderBottomColor: 'rgba(0,0,0,0)', marginLeft: 15},
+              ]}
+            >
+              <View style={[styles.courseRowStack]}>
+                <View>
+                  <Text
+                    style={[
+                      styles.courseRowCourse,
+                      global.user.secondaryTextColor (),
+                      {fontSize: 18},
+                    ]}
+                  >
+                    {this.props.prefix} {this.props.grade}
+                  </Text>
+                </View>
+              </View>
+              <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                <Text style={styles.courseRowTime}>
+                  {this.props.time}
+                </Text>
+                {this.props.id != '_'
+                  ? <RightIcon
+                      style={{marginTop: 3}}
+                      size={30}
+                      color="orange"
+                    />
+                  : <View style={{marginRight: 30}} />}
+              </View>
+            </View>
+          </View>
+        </Touchable>
+      );
+    } else {
+      return (
+        <Touchable
+          onPress={() =>
+            this.props.id != '_'
+              ? this.props._navigateToPage ('PureChatroom', this.props.grade)
+              : () => {}}
+        >
+          <View style={[styles.courseRow, global.user.secondaryTheme ()]}>
+            <View
+              style={[
+                styles.courseRowInfo,
+                {
+                  borderBottomColor: global.user.getBorderColor (),
+                  marginLeft: 15,
+                },
+              ]}
+            >
+              <View style={styles.courseRowStack}>
+                <View>
+                  <Text
+                    style={[
+                      styles.courseRowCourse,
+                      global.user.secondaryTextColor (),
+                      {fontSize: 18},
+                    ]}
+                  >
+                    {this.props.prefix} {this.props.grade}
+                  </Text>
+                </View>
+              </View>
+              <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                {this.props.id != '_'
+                  ? <RightIcon
+                      style={{marginTop: 3}}
+                      size={30}
+                      color="orange"
+                    />
+                  : <View style={{marginRight: 30}} />}
+              </View>
+            </View>
+          </View>
+        </Touchable>
+      );
+    }
   }
 }
 
@@ -82,7 +203,7 @@ class CourseRow extends React.Component {
               ? this.props._navigateToPage ('CourseInfo', this.props.id)
               : () => {}}
         >
-          <View style={[styles.courseRow]}>
+          <View style={[styles.courseRow, global.user.secondaryTheme ()]}>
             <CourseIcon color={icon[1]}>
               <GenericIcon icon={icon[0]} color="black" size={20} />
             </CourseIcon>
@@ -94,12 +215,22 @@ class CourseRow extends React.Component {
             >
               <View style={styles.courseRowStack}>
                 <View>
-                  <Text style={styles.courseRowCourse}>
+                  <Text
+                    style={[
+                      styles.courseRowCourse,
+                      global.user.secondaryTextColor (),
+                    ]}
+                  >
                     {this.props.course}
                   </Text>
                 </View>
                 <View>
-                  <Text style={styles.courseRowTeacher}>
+                  <Text
+                    style={[
+                      styles.courseRowTeacher,
+                      global.user.tertiaryTextColor (),
+                    ]}
+                  >
                     {this.props.semester}
                     ,
                     {' '}
@@ -134,19 +265,34 @@ class CourseRow extends React.Component {
               ? this.props._navigateToPage ('CourseInfo', this.props.id)
               : () => {}}
         >
-          <View style={[styles.courseRow]}>
+          <View style={[styles.courseRow, global.user.secondaryTheme ()]}>
             <CourseIcon color={icon[1]}>
               <GenericIcon icon={icon[0]} color="black" size={20} />
             </CourseIcon>
-            <View style={[styles.courseRowInfo]}>
+            <View
+              style={[
+                styles.courseRowInfo,
+                {borderBottomColor: global.user.getBorderColor ()},
+              ]}
+            >
               <View style={styles.courseRowStack}>
                 <View>
-                  <Text style={styles.courseRowCourse}>
+                  <Text
+                    style={[
+                      styles.courseRowCourse,
+                      global.user.secondaryTextColor (),
+                    ]}
+                  >
                     {this.props.course}
                   </Text>
                 </View>
                 <View>
-                  <Text style={styles.courseRowTeacher}>
+                  <Text
+                    style={[
+                      styles.courseRowTeacher,
+                      global.user.tertiaryTextColor (),
+                    ]}
+                  >
                     {this.props.semester}
                     ,
                     {' '}
@@ -182,9 +328,11 @@ export default class ChatroomScreen extends React.Component {
   _navigateToPage = async (page, id) => {
     try {
       global.courseInfoCourse = await Courses._retrieveCourseById (id);
-      global.courseInfoPage = 'chatrooms';
       if (global.courseInfoCourse.id != '_') {
-        this.props.navigation.navigate (page);
+        global.websocketPath = `courses/${global.courseInfoCourse.id}`;
+        global.textPath = `course-texts?reference_course=${global.courseInfoCourse.id}&order_by=date&order_direction=-1&populate=resources`;
+        global.chatroomName = `${global.courseInfoCourse.course}`;
+        this.props.navigation.navigate ('PureChatroom');
       }
     } catch (e) {
       console.log (e);
@@ -194,6 +342,26 @@ export default class ChatroomScreen extends React.Component {
     return {
       header: null,
     };
+  };
+  _navigateToGrade = async (page, grade) => {
+    try {
+      global.websocketPath = `schools/${global.school.id}/grade/${grade}`;
+      global.textPath = `grade-texts?find_fields=school,grade&school=${global.school.id}&grade=${grade}&order_by=date&order_direction=-1&populate=resources`;
+      global.chatroomName = `Grade ${grade}`;
+      this.props.navigation.navigate ('PureChatroom');
+    } catch (e) {
+      console.log (e);
+    }
+  };
+  _navigateToSchool = async (page, grade) => {
+    try {
+      global.websocketPath = `schools/${global.school.id}`;
+      global.textPath = `school-texts?find_fields=school&school=${global.school.id}&order_by=date&order_direction=-1&populate=resources`;
+      global.chatroomName = `${grade}`;
+      this.props.navigation.navigate ('PureChatroom');
+    } catch (e) {
+      console.log (e);
+    }
   };
   render () {
     let semesters = {};
@@ -216,7 +384,7 @@ export default class ChatroomScreen extends React.Component {
       };
     });
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, global.user.primaryTheme ()]}>
         <HeaderBar
           iconLeft={
             <Touchable onPress={() => this.props.navigation.goBack ()}>
@@ -228,7 +396,7 @@ export default class ChatroomScreen extends React.Component {
           height={60}
           title="Chatrooms"
         />
-        <View style={styles.bodyHolder}>
+        <View style={[styles.bodyHolder, global.user.primaryTheme ()]}>
           <ScrollView>
             <Text
               style={{
@@ -237,6 +405,7 @@ export default class ChatroomScreen extends React.Component {
                 fontWeight: '500',
                 marginTop: 30,
                 marginBottom: 10,
+                color: global.user.getPrimaryTextColor (),
               }}
             >
               This Year's Classes
@@ -252,10 +421,18 @@ export default class ChatroomScreen extends React.Component {
                 fontWeight: '500',
                 marginTop: 30,
                 marginBottom: 10,
+                color: global.user.getPrimaryTextColor (),
               }}
             >
               Grades
             </Text>
+            <GradeDayList
+              _navigateToPage={this._navigateToGrade}
+              prefix="Grade"
+              grades={global.school.grades.map (grade => {
+                return {grade};
+              })}
+            />
             <Text
               style={{
                 textAlign: 'center',
@@ -263,10 +440,17 @@ export default class ChatroomScreen extends React.Component {
                 fontWeight: '500',
                 marginTop: 30,
                 marginBottom: 10,
+                color: global.user.getPrimaryTextColor (),
               }}
             >
               School
             </Text>
+            <GradeDayList
+              _navigateToPage={this._navigateToSchool}
+              grades={[{grade: global.school.name}]}
+              prefix="School"
+            />
+            <View style={{width, marginTop: 20}} />
           </ScrollView>
         </View>
       </View>
@@ -325,9 +509,8 @@ const styles = StyleSheet.create ({
     fontSize: 17,
   },
   dayList: {
-    borderBottomColor: 'rgb(210,210,210)',
+    borderColor: 'rgb(210,210,210)',
     borderBottomWidth: StyleSheet.hairlineWidth * 2,
-    borderTopColor: 'rgb(210,210,210)',
     borderTopWidth: StyleSheet.hairlineWidth * 2,
     marginTop: 10,
   },

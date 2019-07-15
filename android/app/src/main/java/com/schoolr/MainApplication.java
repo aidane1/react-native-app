@@ -3,6 +3,7 @@ package com.schoolr;
 import android.app.Application;
 
 import com.facebook.react.ReactApplication;
+import net.no_mad.tts.TextToSpeechPackage;
 import com.RNFetchBlob.RNFetchBlobPackage;
 import fr.snapp.imagebase64.RNImgToBase64Package;
 import com.RNFetchBlob.RNFetchBlobPackage;
@@ -29,6 +30,7 @@ public class MainApplication extends Application implements ReactApplication {
     protected List<ReactPackage> getPackages() {
       return Arrays.<ReactPackage>asList(
           new MainReactPackage(),
+            new TextToSpeechPackage(),
             new RNFetchBlobPackage(),
             new RNImgToBase64Package(),
             new RNFetchBlobPackage(),

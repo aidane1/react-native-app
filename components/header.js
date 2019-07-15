@@ -41,7 +41,11 @@ export default class HeaderBar extends React.Component {
             },
             styles.tabBar,
           ]}
-          colors={['rgb(0,153,153)', ', rgb(0,130,209)']}
+          colors={
+            global.user.theme == 'Light'
+              ? ['rgb(0,153,153)', ', rgb(0,130,209)']
+              : ['rgb(0,78,78)', ', rgb(0,66,107)']
+          }
         >
           <View style={styles.iconLeft}>
             {this.props.iconLeft}

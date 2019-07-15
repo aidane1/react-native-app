@@ -20,7 +20,7 @@ import {
   GenericIcon,
 } from '../../classes/icons';
 
-import {Courses} from "../../classes/courses";
+import {Courses} from '../../classes/courses';
 
 import {boxShadows} from '../../constants/boxShadows';
 
@@ -64,7 +64,7 @@ class DayList extends React.Component {
       );
     }
     return (
-      <View style={styles.dayList}>
+      <View style={[styles.dayList, {borderColor: global.user.getBorderColor()}]}>
         {rowLists}
       </View>
     );
@@ -82,7 +82,7 @@ class CourseRow extends React.Component {
               ? this.props._navigateToPage ('CourseInfo', this.props.id)
               : () => {}}
         >
-          <View style={[styles.courseRow]}>
+          <View style={[styles.courseRow, global.user.secondaryTheme ()]}>
             <CourseIcon color={icon[1]}>
               <GenericIcon icon={icon[0]} color="black" size={20} />
             </CourseIcon>
@@ -94,12 +94,22 @@ class CourseRow extends React.Component {
             >
               <View style={styles.courseRowStack}>
                 <View>
-                  <Text style={styles.courseRowCourse}>
+                  <Text
+                    style={[
+                      styles.courseRowCourse,
+                      global.user.secondaryTextColor (),
+                    ]}
+                  >
                     {this.props.course}
                   </Text>
                 </View>
                 <View>
-                  <Text style={styles.courseRowTeacher}>
+                  <Text
+                    style={[
+                      styles.courseRowTeacher,
+                      global.user.tertiaryTextColor (),
+                    ]}
+                  >
                     {this.props.semester}
                     ,
                     {' '}
@@ -134,19 +144,29 @@ class CourseRow extends React.Component {
               ? this.props._navigateToPage ('CourseInfo', this.props.id)
               : () => {}}
         >
-          <View style={[styles.courseRow]}>
+          <View style={[styles.courseRow, global.user.secondaryTheme()]}>
             <CourseIcon color={icon[1]}>
               <GenericIcon icon={icon[0]} color="black" size={20} />
             </CourseIcon>
-            <View style={[styles.courseRowInfo]}>
+            <View style={[styles.courseRowInfo, {borderBottomColor: global.user.getBorderColor()}]}>
               <View style={styles.courseRowStack}>
                 <View>
-                  <Text style={styles.courseRowCourse}>
+                  <Text
+                    style={[
+                      styles.courseRowCourse,
+                      global.user.secondaryTextColor (),
+                    ]}
+                  >
                     {this.props.course}
                   </Text>
                 </View>
                 <View>
-                  <Text style={styles.courseRowTeacher}>
+                  <Text
+                    style={[
+                      styles.courseRowTeacher,
+                      global.user.tertiaryTextColor (),
+                    ]}
+                  >
                     {this.props.semester}
                     ,
                     {' '}
@@ -174,7 +194,7 @@ class CourseRow extends React.Component {
   }
 }
 
-export default class AssignmentsScreen extends React.Component {
+export default class ChatroomScreen extends React.Component {
   constructor (props) {
     super (props);
     this.props = props;
@@ -182,12 +202,12 @@ export default class AssignmentsScreen extends React.Component {
   _navigateToPage = async (page, id) => {
     try {
       global.courseInfoCourse = await Courses._retrieveCourseById (id);
-      global.courseInfoPage="assignments";
+      global.courseInfoPage = 'assignments';
       if (global.courseInfoCourse.id != '_') {
         this.props.navigation.navigate (page);
       }
-    } catch(e) {
-      console.log(e);
+    } catch (e) {
+      console.log (e);
     }
   };
   static navigationOptions = ({navigation}) => {
@@ -216,7 +236,7 @@ export default class AssignmentsScreen extends React.Component {
       };
     });
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, global.user.primaryTheme ()]}>
         <HeaderBar
           iconLeft={
             <Touchable onPress={() => this.props.navigation.goBack ()}>
@@ -228,7 +248,7 @@ export default class AssignmentsScreen extends React.Component {
           height={60}
           title="Assignments"
         />
-        <View style={styles.bodyHolder}>
+        <View style={[styles.bodyHolder, global.user.primaryTheme ()]}>
           <ScrollView>
             <Text
               style={{
@@ -237,6 +257,7 @@ export default class AssignmentsScreen extends React.Component {
                 fontWeight: '500',
                 marginTop: 30,
                 marginBottom: 10,
+                color: global.user.getPrimaryTextColor (),
               }}
             >
               This Year's Classes
@@ -303,9 +324,8 @@ const styles = StyleSheet.create ({
     fontSize: 17,
   },
   dayList: {
-    borderBottomColor: 'rgb(210,210,210)',
+    borderColor: "rgb(210,210,210)",
     borderBottomWidth: StyleSheet.hairlineWidth * 2,
-    borderTopColor: 'rgb(210,210,210)',
     borderTopWidth: StyleSheet.hairlineWidth * 2,
     marginTop: 10,
   },

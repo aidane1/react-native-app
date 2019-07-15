@@ -64,7 +64,9 @@ class DayList extends React.Component {
       );
     }
     return (
-      <View style={[styles.dayList, {borderColor: global.user.getBorderColor()}]}>
+      <View
+        style={[styles.dayList, {borderColor: global.user.getBorderColor ()}]}
+      >
         {rowLists}
       </View>
     );
@@ -144,11 +146,16 @@ class CourseRow extends React.Component {
               ? this.props._navigateToPage ('CourseInfo', this.props.id)
               : () => {}}
         >
-          <View style={[styles.courseRow, global.user.secondaryTheme()]}>
+          <View style={[styles.courseRow, global.user.secondaryTheme ()]}>
             <CourseIcon color={icon[1]}>
               <GenericIcon icon={icon[0]} color="black" size={20} />
             </CourseIcon>
-            <View style={[styles.courseRowInfo, {borderBottomColor: global.user.getBorderColor()}]}>
+            <View
+              style={[
+                styles.courseRowInfo,
+                {borderBottomColor: global.user.getBorderColor ()},
+              ]}
+            >
               <View style={styles.courseRowStack}>
                 <View>
                   <Text
@@ -194,7 +201,7 @@ class CourseRow extends React.Component {
   }
 }
 
-export default class ChatroomScreen extends React.Component {
+export default class ActivitiesScreen extends React.Component {
   constructor (props) {
     super (props);
     this.props = props;
@@ -202,7 +209,7 @@ export default class ChatroomScreen extends React.Component {
   _navigateToPage = async (page, id) => {
     try {
       global.courseInfoCourse = await Courses._retrieveCourseById (id);
-      global.courseInfoPage = 'notes';
+      global.courseInfoPage = 'assignments';
       if (global.courseInfoCourse.id != '_') {
         this.props.navigation.navigate (page);
       }
@@ -246,7 +253,7 @@ export default class ChatroomScreen extends React.Component {
           iconRight={<EmptyIcon width={28} height={32} />}
           width={width}
           height={60}
-          title="Notes"
+          title={`${global.activity.name} Activities`}
         />
         <View style={[styles.bodyHolder, global.user.primaryTheme ()]}>
           <ScrollView>
@@ -324,7 +331,7 @@ const styles = StyleSheet.create ({
     fontSize: 17,
   },
   dayList: {
-    borderColor: "rgb(210,210,210)",
+    borderColor: 'rgb(210,210,210)',
     borderBottomWidth: StyleSheet.hairlineWidth * 2,
     borderTopWidth: StyleSheet.hairlineWidth * 2,
     marginTop: 10,

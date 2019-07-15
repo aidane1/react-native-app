@@ -193,6 +193,7 @@ export default class LinksScreenTile extends React.Component {
   _navigateToPage = async (page, id) => {
     try {
       global.courseInfoCourse = await Courses._retrieveCourseById (id);
+      global.courseInfoPage = 'assignments';
       if (global.courseInfoCourse.id != '_') {
         this.props.navigation.navigate (page);
       }

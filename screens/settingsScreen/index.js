@@ -43,10 +43,36 @@ import {ifIphoneX} from 'react-native-iphone-x-helper';
 
 import ApexAPI from '../../http/api';
 
+import {Notifications} from 'expo';
+
+import * as Permissions from 'expo-permissions';
+
 import {StackActions, NavigationActions} from 'react-navigation';
 
 const width = Dimensions.get ('window').width; //full width
 const height = Dimensions.get ('window').height; //full height
+
+async function registerForPushNotificationsAsync () {
+  const {status: existingStatus} = await Permissions.getAsync (
+    Permissions.NOTIFICATIONS
+  );
+  let finalStatus = existingStatus;
+  if (existingStatus !== 'granted') {
+    const {status} = await Permissions.askAsync (Permissions.NOTIFICATIONS);
+    finalStatus = status;
+  }
+  if (finalStatus !== 'granted') {
+    return;
+  }
+  let token = await Notifications.getExpoPushTokenAsync ();
+  let api = new ApexAPI (global.user);
+  return api
+    .put (`users/${global.user.id}`, {
+      push_token: token,
+    })
+    .then (data => data.json ())
+    .then (data => console.log (data));
+}
 
 class CourseRow extends React.Component {
   render () {
@@ -204,7 +230,7 @@ export default class SettingsScreen extends React.Component {
     let state = {...this.state};
     state[setting] = value;
     global.user[setting] = value;
-    await User._saveToStorage(global.user);
+    await User._saveToStorage (global.user);
     let api = new ApexAPI (global.user);
     this.setState (state, () => {
       api
@@ -223,16 +249,15 @@ export default class SettingsScreen extends React.Component {
           automatic_course_updating: this.state.automaticCourseUpdating,
         })
         .then (data => data.json ())
-        .then (data => {
-          console.log (data);
-        });
+        .then (data => {});
     });
   };
   toggleNotifications = async (setting, value) => {
+    registerForPushNotificationsAsync ();
     let state = {...this.state.notifications};
     state[setting] = value;
     global.user.notifications[setting] = value;
-    await User._saveToStorage(global.user);
+    await User._saveToStorage (global.user);
     let api = new ApexAPI (global.user);
     this.setState ({notifications: state}, () => {
       api
@@ -243,6 +268,7 @@ export default class SettingsScreen extends React.Component {
             new_assignments: this.state.notifications.newAssignments,
             image_replies: this.state.notifications.imageReplies,
             upcoming_events: this.state.notifications.upcomingEvents,
+            marked_assignments: this.state.notifications.markedAssignments,
           },
           theme: this.state.theme,
           true_dark: this.state.trueDark,
@@ -295,7 +321,7 @@ export default class SettingsScreen extends React.Component {
   };
   updateTheme = async theme => {
     global.user.theme = theme;
-    await User._saveToStorage(global.user);
+    await User._saveToStorage (global.user);
     let api = new ApexAPI (global.user);
     this.setState ({theme}, () => {
       api
@@ -306,6 +332,7 @@ export default class SettingsScreen extends React.Component {
             new_assignments: this.state.notifications.newAssignments,
             image_replies: this.state.notifications.imageReplies,
             upcoming_events: this.state.notifications.upcomingEvents,
+            marked_assignments: this.state.notifications.markedAssignments,
           },
           theme: this.state.theme,
           true_dark: this.state.trueDark,
@@ -325,7 +352,7 @@ export default class SettingsScreen extends React.Component {
       actions: [NavigationActions.navigate ({routeName: 'Home'})],
     });
     this.props.navigation.dispatch (resetAction);
-  }
+  };
   render () {
     return (
       <View
@@ -359,10 +386,21 @@ export default class SettingsScreen extends React.Component {
         >
           <View style={{width, flexDirection: 'column', alignItems: 'center'}}>
             <AccountIcon color="black" size={60} />
-            <Text style={{fontSize: 22, fontWeight: '500', color: global.user.getPrimaryTextColor()}}>
+            <Text
+              style={{
+                fontSize: 22,
+                fontWeight: '500',
+                color: global.user.getPrimaryTextColor (),
+              }}
+            >
               {global.user.username}
             </Text>
-            <Text style={{fontSize: 14, color: global.user.getSecondaryTextColor()}}>
+            <Text
+              style={{
+                fontSize: 14,
+                color: global.user.getSecondaryTextColor (),
+              }}
+            >
               Student ID {global.user.studentNumber}
             </Text>
           </View>
@@ -396,6 +434,17 @@ export default class SettingsScreen extends React.Component {
                   value={this.state.notifications.newAssignments}
                   onValueChange={val =>
                     this.toggleNotifications ('newAssignments', val)}
+                />
+              }
+              last={false}
+            />
+            <CourseRow
+              text={'Marked Assignments'}
+              control={
+                <Switch
+                  value={this.state.notifications.markedAssignments}
+                  onValueChange={val =>
+                    this.toggleNotifications ('markedAssignments', val)}
                 />
               }
               last={false}

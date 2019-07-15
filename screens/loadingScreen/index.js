@@ -13,6 +13,8 @@ import * as Font from 'expo-font';
 
 import {Asset} from 'expo-asset';
 
+import {Notifications} from 'expo';
+
 import {Course, Courses} from '../../classes/courses';
 
 import {Event, Events} from '../../classes/events';
@@ -32,6 +34,8 @@ import {Day, Days} from '../../classes/days';
 import {AsyncStorage} from 'react-native';
 
 import {Topic, Topics} from '../../classes/topics';
+
+import ApexAPI from '../../http/api';
 
 import {StackActions, NavigationActions} from 'react-navigation';
 
@@ -86,7 +90,143 @@ export default class LoadingScreen extends React.Component {
     await Promise.all ([...imageAssets, ...fontAssets]);
     return true;
   }
+  _handleNotification = async notification => {
+    if (notification.data.action == 'assignment-upload') {
+      let course = await Courses._retrieveCourseById (
+        notification.data.assignment.reference_course
+      );
+      global.courseInfoCourse = course;
+      global.courseInfoPage = 'assignments';
+      if (course.id !== '_') {
+        let api = new ApexAPI (global.user);
+        api
+          .get (`topics?reference_course=${course.id}`)
+          .then (res => res.json ())
+          .then (async data => {
+            if (data.status == 'ok') {
+              await Topics._saveToStorage (
+                data.body.map (topic => {
+                  return {
+                    topic: topic.topic,
+                    course: topic.reference_course,
+                    id: topic._id,
+                  };
+                })
+              );
+              global.topics = await Topics._retrieveFromStorage ();
+            }
+          })
+          .catch (e => {
+            console.log (e);
+          });
+        api
+          .get (
+            `assignments?populate=resources,response_resources&reference_course=${course.id}`
+          )
+          .then (res => res.json ())
+          .then (async data => {
+            if (data.status == 'ok') {
+              await Assignments._saveToStorage (
+                data.body.map (assignment => {
+                  return {
+                    topic: assignment.topic || '_',
+                    id: assignment._id,
+                    assignmentTitle: assignment.assignment_title,
+                    assignmentNotes: assignment.assignment_notes,
+                    dueDate: assignment.due_date,
+                    date: assignment.date,
+                    referenceCourse: assignment.reference_course,
+                    resources: assignment.resources || [],
+                    responseResources: assignment.response_resources || [],
+                  };
+                })
+              );
+              global.assignments = await Assignments._retrieveFromStorage ();
+              const resetAction = StackActions.reset ({
+                index: 1,
+                actions: [
+                  NavigationActions.navigate ({routeName: 'Home'}),
+                  NavigationActions.navigate ({routeName: 'CourseInfo'}),
+                ],
+              });
+              this.props.navigation.dispatch (resetAction);
+            }
+          })
+          .catch (e => {
+            console.log (e);
+          });
+      }
+    } else if (notification.data.action == 'image-reply') {
+      let course = await Courses._retrieveCourseById (
+        notification.data.assignment.reference_course
+      );
+      global.courseInfoCourse = course;
+      global.courseInfoPage = 'assignments';
+      if (course.id !== '_') {
+        let api = new ApexAPI (global.user);
+        api
+          .get (`topics?reference_course=${course.id}`)
+          .then (res => res.json ())
+          .then (async data => {
+            if (data.status == 'ok') {
+              await Topics._saveToStorage (
+                data.body.map (topic => {
+                  return {
+                    topic: topic.topic,
+                    course: topic.reference_course,
+                    id: topic._id,
+                  };
+                })
+              );
+              global.topics = await Topics._retrieveFromStorage ();
+            }
+          })
+          .catch (e => {
+            console.log (e);
+          });
+        api
+          .get (
+            `assignments?populate=resources,response_resources&reference_course=${course.id}`
+          )
+          .then (res => res.json ())
+          .then (async data => {
+            if (data.status == 'ok') {
+              await Assignments._saveToStorage (
+                data.body.map (assignment => {
+                  return {
+                    topic: assignment.topic || '_',
+                    id: assignment._id,
+                    assignmentTitle: assignment.assignment_title,
+                    assignmentNotes: assignment.assignment_notes,
+                    dueDate: assignment.due_date,
+                    date: assignment.date,
+                    referenceCourse: assignment.reference_course,
+                    resources: assignment.resources || [],
+                    responseResources: assignment.response_resources || [],
+                  };
+                })
+              );
+              global.assignments = await Assignments._retrieveFromStorage ();
+              const resetAction = StackActions.reset ({
+                index: 1,
+                actions: [
+                  NavigationActions.navigate ({routeName: 'Home'}),
+                  NavigationActions.navigate ({routeName: 'CourseInfo'}),
+                ],
+              });
+              this.props.navigation.dispatch (resetAction);
+            }
+          })
+          .catch (e => {
+            console.log (e);
+          });
+      }
+    }
+  };
   async componentDidMount () {
+    this._notificationSubscription = Notifications.addListener (
+      this._handleNotification
+    );
     try {
       let loggedIn = await User._isLoggedIn ();
       if (!loggedIn) {
@@ -110,10 +250,14 @@ export default class LoadingScreen extends React.Component {
         let allTopics = await Topics._retrieveFromStorage ();
 
         global.user = user;
-        global.courseInfoPage="assignments",
-        global.userCourses = userCourses;
+        (global.courseInfoPage =
+          'assignments'), (global.userCourses = userCourses);
         global.assignments = allAssignments || [];
         global.notes = allNotes || [];
+        global.activity = {
+          name: "Before School",
+          page: 0,
+        }
         global.completedAssignments = completedAssignments;
         global.semesterMap = semesterMap;
         global.dayMap = school['dayMap'];

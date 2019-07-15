@@ -32,11 +32,27 @@ import {
   AfterSchoolIcon,
 } from '../../classes/icons';
 
+import {
+  BallIndicator,
+  BarIndicator,
+  DotIndicator,
+  MaterialIndicator,
+  PacmanIndicator,
+  PulseIndicator,
+  SkypeIndicator,
+  UIActivityIndicator,
+  WaveIndicator,
+} from 'react-native-indicators';
+
+import HeaderBar from '../../components/header';
+
 import {ScrollView} from 'react-native-gesture-handler';
 
 import Touchable from 'react-native-platform-touchable';
 
 import {boxShadows} from '../../constants/boxShadows';
+
+import ImageViewer from 'react-native-image-zoom-viewer';
 
 import ApexAPI from '../../http/api';
 
@@ -225,6 +241,39 @@ class CreateChatBar extends React.Component {
   }
 }
 
+class ImageViewerModal extends React.Component {
+  constructor (props) {
+    super (props);
+    this.state = {
+      isBackdropVisible: false,
+      index: 0,
+      images: [],
+    };
+  }
+  swipeDown = () => {
+    this.setState ({isBackdropVisible: false});
+  };
+  render () {
+    return (
+      <View>
+        <ReactModal
+          visible={this.state.isBackdropVisible}
+          transparent={true}
+          onRequestClose={() => this.setState ({modalVisible: false})}
+        >
+          <ImageViewer
+            onSwipeDown={this.swipeDown}
+            enableSwipeDown={true}
+            enablePreload={true}
+            index={this.state.index}
+            imageUrls={this.state.images}
+          />
+        </ReactModal>
+      </View>
+    );
+  }
+}
+
 function sendResourseToServer (resource) {
   return fetch (
     'https://www.apexschools.co/api/v1/resources?base64=true&populate=resources',
@@ -246,25 +295,24 @@ export default class ChatRoom extends React.Component {
     super (props);
     this.scrollView = React.createRef ();
     this.websocket = new WebSocket (
-      `https://www.apexschools.co/web-sockets/app/courses/${global.courseInfoCourse.id}?x-api-key=${global.user['x-api-key']}&x-id-key=${global.user['x-id-key']}`
+      `https://www.apexschools.co/web-sockets/app/${global.websocketPath}?x-api-key=${global.user['x-api-key']}&x-id-key=${global.user['x-id-key']}`
     );
     this.canSendMessages = false;
     this.scrollToBottom = true;
     this.imageBar = React.createRef ();
-    this.isShowing = false;
     this.webSocketOpen = true;
     this.error = false;
     this.errorMessage = '';
+    this.imageViewerModal = React.createRef ();
     this.tryAgain = () => {};
     this.state = {
       chats: [],
       images: [],
-      height: new Animated.Value (
-        ifIphoneX (height - 80 - 60, height - 60 - 45)
-      ),
+      height: new Animated.Value (ifIphoneX (height - 80, height - 60)),
       appState: AppState.currentState,
-      limit: 50,
+      updated: false,
       refreshing: false,
+      limit: 50,
     };
     this.scrollViewHeight = 0;
     this.websocket.onopen = () => {
@@ -288,11 +336,16 @@ export default class ChatRoom extends React.Component {
     this.websocket.onclose = () => {
       this.canSendMessages = false;
       this.websocket = new WebSocket (
-        `https://www.apexschools.co/web-sockets/app/courses/${global.courseInfoCourse.id}?x-api-key=${global.user['x-api-key']}&x-id-key=${global.user['x-id-key']}`
+        `https://www.apexschools.co/web-sockets/app/${global.websocketPath}?x-api-key=${global.user['x-api-key']}&x-id-key=${global.user['x-id-key']}`
       );
       this.webSocketOpen = false;
     };
   }
+  static navigationOptions = ({navigation}) => {
+    return {
+      header: null,
+    };
+  };
   sendMessage = message => {
     if (this.canSendMessages && message.message) {
       message.resources = this.state.images.map (image => image._id);
@@ -337,9 +390,7 @@ export default class ChatRoom extends React.Component {
   loadChats = (limit = 50, callback) => {
     let api = new ApexAPI (global.user);
     api
-      .get (
-        `course-texts?reference_course=${global.courseInfoCourse.id}&order_by=date&order_direction=-1&limit=${limit}&populate=resources`
-      )
+      .get (`${global.textPath}&limit=${limit}`)
       .then (res => res.json ())
       .then (res => {
         if (res.status == 'ok') {
@@ -381,7 +432,7 @@ export default class ChatRoom extends React.Component {
     ) {
       if (!this.webSocketOpen) {
         this.websocket = new WebSocket (
-          `https://www.apexschools.co/web-sockets/app/courses/${global.courseInfoCourse.id}?x-api-key=${global.user['x-api-key']}&x-id-key=${global.user['x-id-key']}`
+          `https://www.apexschools.co/web-sockets/app/${global.websocketPath}?x-api-key=${global.user['x-api-key']}&x-id-key=${global.user['x-id-key']}`
         );
       }
       console.log ('App has come to the foreground!');
@@ -396,32 +447,28 @@ export default class ChatRoom extends React.Component {
     this.scrollToBottom = Math.abs (scrollPos - bottom) < 100;
   };
   compactScrollView = event => {
-    if (this.isShowing) {
-      Animated.timing (this.state.height, {
-        toValue: ifIphoneX (height - 80 - 60, height - 60 - 45) -
-          (event.endCoordinates.height - ifIphoneX (60, 45)),
-        easing: Easing.bezier (0.2, 0.73, 0.33, 0.99),
-        duration: 270,
-        delay: 50,
-      }).start (() => {
-        this.scrollView.current.scrollTo ({
-          x: 0,
-          y: this.scrollViewHeight,
-          animated: 'true',
-        });
+    Animated.timing (this.state.height, {
+      toValue: ifIphoneX (height - 80, height - 60) -
+        event.endCoordinates.height,
+      easing: Easing.bezier (0.2, 0.73, 0.33, 0.99),
+      duration: 280,
+      delay: 50,
+    }).start (() => {
+      this.scrollView.current.scrollTo ({
+        x: 0,
+        y: this.scrollViewHeight,
+        animated: 'true',
       });
-      this.scrollToBottom = true;
-    }
+    });
+    this.scrollToBottom = true;
   };
   openScrollView = event => {
-    if (this.isShowing) {
-      Animated.timing (this.state.height, {
-        toValue: ifIphoneX (height - 80 - 60, height - 60 - 45),
-        easing: Easing.bezier (0.2, 0.73, 0.33, 0.99),
-        duration: 270,
-        delay: 0,
-      }).start ();
-    }
+    Animated.timing (this.state.height, {
+      toValue: ifIphoneX (height - 80, height - 60),
+      easing: Easing.bezier (0.2, 0.73, 0.33, 0.99),
+      duration: 280,
+      delay: 0,
+    }).start ();
   };
   addImage = async result => {
     if (result.uri) {
@@ -438,7 +485,7 @@ export default class ChatRoom extends React.Component {
     this.setState ({refreshing: true, limit: this.state.limit + 50}, () => {
       this.loadChats (this.state.limit, (err, body) => {
         if (err) {
-          this.setState ({refreshing: false, chats: []});
+          this.setState({refreshing: false, chats: []});
         } else {
           this.setState ({refreshing: false, chats: body});
         }
@@ -447,75 +494,96 @@ export default class ChatRoom extends React.Component {
   };
   render () {
     return (
-      <View
-        style={{
-          width,
-          height: ifIphoneX (height - 80 - 60, height - 60 - 45),
-          backgroundColor: global.user.getPrimaryTheme (),
-          overflow: 'hidden',
-          flexDirection: 'column',
-        }}
-      >
-        <Animated.View
-          style={[
-            ChatRoomStyles.chatroom,
-            {height: this.state.height},
-            global.user.primaryTheme (),
-          ]}
-        >
-          <ScrollView
-            ref={this.scrollView}
-            onScroll={this.onScroll}
-            keyboardDismissMode="on-drag"
-            keyboardShouldPersistTaps={'always'}
-            scrollEventThrottle={25}
-            onContentSizeChange={(contentWidth, contentHeight) => {
-              this.scrollViewHeight = contentHeight;
-              if (this.scrollToBottom) {
-                this.scrollView.current.scrollToEnd ({animated: true});
-              }
-            }}
-            refreshControl={
-              <RefreshControl
-                refreshing={this.state.refreshing}
-                onRefresh={this._onRefresh}
-              />
-            }
-          >
-            {this.state.chats.map ((chat, index) => {
-              return (
-                <ChatBox
-                  imageViewer={this.props.imageViewer}
-                  key={'chat_' + index}
-                  sent={global.user.username == chat.username}
-                  message={chat}
-                />
-              );
-            })}
-          </ScrollView>
-          <CreateChatBar
-            imageBar={this.imageBar}
-            compactScrollView={this.compactScrollView}
-            openScrollView={this.openScrollView}
-            sendMessage={this.sendMessage}
-          />
-        </Animated.View>
+      <View style={{width, height}}>
+        <HeaderBar
+          iconLeft={
+            <Touchable onPress={() => this.props.navigation.goBack ()}>
+              <LeftIcon size={28} />
+            </Touchable>
+          }
+          iconRight={<EmptyIcon width={28} height={32} />}
+          width={width}
+          height={60}
+          title={`${global.chatroomName} Chatroom`}
+        />
         <View
           style={{
             width,
-            height: 0,
-            flexGrow: 1,
-            backgroundColor: global.user.getSecondaryTheme (),
+            height: ifIphoneX (height - 80, height - 60),
+            backgroundColor: global.user.getPrimaryTheme (),
+            overflow: 'hidden',
+            flexDirection: 'column',
           }}
         >
-          <ScrollView style={{width}}>
-            <ImageBar
-              ref={this.imageBar}
-              displayImages={true}
-              imageFunction={this.addImage}
+          <Animated.View
+            style={[
+              ChatRoomStyles.chatroom,
+              {height: this.state.height},
+              global.user.primaryTheme (),
+            ]}
+          >
+            <ScrollView
+              ref={this.scrollView}
+              onScroll={this.onScroll}
+              keyboardDismissMode="on-drag"
+              keyboardShouldPersistTaps={'always'}
+              scrollEventThrottle={25}
+              onContentSizeChange={(contentWidth, contentHeight) => {
+                this.scrollViewHeight = contentHeight;
+                if (this.scrollToBottom) {
+                  this.scrollView.current.scrollToEnd ({animated: true});
+                }
+              }}
+              refreshControl={
+                <RefreshControl
+                  refreshing={this.state.refreshing}
+                  onRefresh={this._onRefresh}
+                />
+              }
+            >
+              {this.state.updated
+                ? this.state.chats.map ((chat, index) => {
+                    return (
+                      <ChatBox
+                        imageViewer={this.imageViewerModal}
+                        key={'chat_' + index}
+                        sent={global.user.username == chat.username}
+                        message={chat}
+                      />
+                    );
+                  })
+                : <UIActivityIndicator
+                    color={global.user.getPrimaryTextColor ()}
+                    count={12}
+                    size={20}
+                    style={{marginTop: 80}}
+                  />}
+            </ScrollView>
+            <CreateChatBar
+              imageBar={this.imageBar}
+              compactScrollView={this.compactScrollView}
+              openScrollView={this.openScrollView}
+              sendMessage={this.sendMessage}
             />
-          </ScrollView>
+          </Animated.View>
+          <View
+            style={{
+              width,
+              height: 0,
+              flexGrow: 1,
+              backgroundColor: global.user.getSecondaryTheme (),
+            }}
+          >
+            <ScrollView style={{width}}>
+              <ImageBar
+                ref={this.imageBar}
+                displayImages={true}
+                imageFunction={this.addImage}
+              />
+            </ScrollView>
+          </View>
         </View>
+        <ImageViewerModal ref={this.imageViewerModal} parent={this} />
       </View>
     );
   }
@@ -524,7 +592,7 @@ export default class ChatRoom extends React.Component {
 const ChatRoomStyles = StyleSheet.create ({
   chatroom: {
     width,
-    height: ifIphoneX (height - 80 - 60, height - 60 - 45),
+    height: ifIphoneX (height - 80, height - 60),
     backgroundColor: '#Fdfdfd',
   },
   chatBox: {

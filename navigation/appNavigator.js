@@ -10,6 +10,9 @@ import NotesScreen from '../screens/notesPage/index';
 import AssignmentsScreen from "../screens/assignmentsScreen/index";
 import ChatroomScreen from "../screens/chatroomScreen/index";
 import SettingsScreen from "../screens/settingsScreen/index";
+import SchoolAssignmentsScreen from "../screens/schoolAssignmentsScreen/index";
+import PureChatroomScreen from "../screens/pureChatRoomScreen/index";
+import ActivitiesScreen from "../screens/activitiesScreen/index";
 import {
   createAppContainer,
   createStackNavigator,
@@ -29,6 +32,9 @@ const MainNavigator = createStackNavigator (
     Assignments: {screen: AssignmentsScreen, lazy: true},
     Chatrooms: {screen: ChatroomScreen, lazy: true},
     Settings: {screen: SettingsScreen, lazy: true},
+    SchoolAssignments: {screen: SchoolAssignmentsScreen, lazy: true},
+    PureChatroom: {screen: PureChatroomScreen, lazy: true},
+    Activities: {screen: ActivitiesScreen, lazy: true},
   },
   {
     initialRouteName: 'Loading',

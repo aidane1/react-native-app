@@ -18,6 +18,7 @@ export class User {
       dailyAnnouncements: false,
       nextClass: false,
       newAssignments: true,
+      markedAssignments: false,
       imageReplies: true,
       upcomingEvents: true,
     };
@@ -45,6 +46,7 @@ export class User {
         dailyAnnouncements: false,
         nextClass: false,
         newAssignments: true,
+        markedAssignments: false,
         imageReplies: true,
         upcomingEvents: true,
       },

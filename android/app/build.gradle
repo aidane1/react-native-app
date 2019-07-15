@@ -137,6 +137,7 @@ android {
 }
 
 dependencies {
+    implementation project(':react-native-tts')
     compile project(':rn-fetch-blob')
     compile project(':react-native-image-base64')
     compile project(':react-native-fetch-blob')

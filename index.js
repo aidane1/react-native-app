@@ -1,3 +1,5 @@
 import {AppRegistry} from 'react-native';
 import App from './App';
-AppRegistry.registerComponent ('schoolr', () => App);
+
+
+AppRegistry.registerComponent ('schoolr', () => App)

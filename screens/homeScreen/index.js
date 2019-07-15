@@ -37,6 +37,10 @@ import ApexAPI from '../../http/api';
 
 import {ifIphoneX} from 'react-native-iphone-x-helper';
 
+import Constants from 'expo-constants';
+
+import * as Speech from 'expo-speech';
+
 const width = Dimensions.get ('window').width; //full width
 const height = Dimensions.get ('window').height; //full height
 
@@ -68,6 +72,15 @@ export default class HomeScreen extends React.Component {
     this.state = {
       currentDate: new Date (2019, 10, 8, 9, 10),
     };
+
+    this.speaking = false;
+
+    this.current;
+    this.next;
+    this.dayTitle;
+    this.events;
+    this.assignments;
+    this.courses;
     // let currentDate = new Date();
   }
 
@@ -153,6 +166,37 @@ export default class HomeScreen extends React.Component {
         });
     }
   }
+  readOut = section => {
+    if (!this.speaking) {
+      this.speaking = true;
+      let speech = `Current Time: ${new Date().getHours()%12}: ${new Date().getMinutes()}: `;
+      if (section == "today") {
+        let timesOne = this.current.secondary.split(" - ");
+        let timesTwo = this.next.secondary.split(" - ");
+        if (timesOne.length == 2) timesOne = `${timesOne[0]}: to ${timesOne[1]}:`;
+        if (timesTwo.length == 2) timesTwo = `${timesTwo[0]}: to ${timesTwo[1]}:`;
+        speech += `Today: ${this.dayTitle}: current class: ${this.current.main}: from ${timesOne}. Next Class: ${this.next.main}: from ${timesTwo}:`;
+      } else if (section == "courses") {
+        this.courses.forEach(course => {
+          speech += `${course.course} with ${course.teacher}: . . . ${formatUnit(course.time_num.start_hour, course.time_num.start_minute)} to ${formatUnit(course.time_num.end_hour, course.time_num.end_minute)}:`;
+        })
+      } else {
+  
+      }
+      Speech.speak (speech, {
+        voice: 'com.apple.ttsbundle.siri_male_en-AU_compact',
+        onDone: () => { this.speaking = false },
+        rate: 0.8,
+      });
+    } else {
+      Speech.stop();
+      this.speaking = false;
+    }
+    
+  };
+  longPress = section => {
+
+  }
   render () {
     let {currentDate} = this.state;
     let currentSemesters = global.semesters
@@ -223,6 +267,7 @@ export default class HomeScreen extends React.Component {
         isReal: false,
       });
     }
+    this.courses = courseList;
 
     // string
     let dayTitle = 'Off!';
@@ -271,9 +316,13 @@ export default class HomeScreen extends React.Component {
         foundCurrent = true;
       }
     }
+    this.current = current;
+    this.next = next;
+    this.dayTitle = dayTitle;
 
     //[{date, time, info}]
     let events = [{date: 'today', time: 'today', info: 'No Events!'}];
+    this.events = events;
     // {date: {scheduleWeek, scheduleDay, events, dayDisplayed}}
     // this.calendar = this.dayMap;
     let assignments = Object.keys (courseMap)
@@ -287,7 +336,10 @@ export default class HomeScreen extends React.Component {
           global.topics
         );
         let topicsMap = Topics._makeTopicMap (topicsList);
-        if (courseAssignments.length > 0 && topicsMap[courseAssignments[0].topic]) {
+        if (
+          courseAssignments.length > 0 &&
+          topicsMap[courseAssignments[0].topic]
+        ) {
           return true;
         } else {
           return false;
@@ -306,7 +358,10 @@ export default class HomeScreen extends React.Component {
             global.topics
           );
           let topicsMap = Topics._makeTopicMap (topicsList);
-          return {...courseAssignments[0], topic: topicsMap[courseAssignments[0].topic].topic};
+          return {
+            ...courseAssignments[0],
+            topic: topicsMap[courseAssignments[0].topic].topic,
+          };
         }
       });
     if (assignments.length == 0) {
@@ -319,6 +374,7 @@ export default class HomeScreen extends React.Component {
         },
       ];
     }
+    this.assignments = assignments;
     return (
       <View style={styles.container}>
         <HeaderBar
@@ -344,40 +400,79 @@ export default class HomeScreen extends React.Component {
           height={60}
           title="Home"
         />
-        <View style={styles.bodyHolder}>
-          <ScrollView
-            horizontal={true}
-            style={styles.slideView}
-            scrollEnabled={false}
-            ref={component => {
-              this._scrollMain = component;
-            }}
-          >
-            <View style={styles.bodySlide}>
-              <HomeScreenTile
-                assignments={assignments}
-                dayTitle={dayTitle}
-                current={current}
-                next={next}
-                parent={this}
-                events={events}
-              />
+        {global.user.visuallyImpared
+          ? <View
+              style={{
+                flexDirection: 'column',
+                height: ifIphoneX (height - 80, height - 60),
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: 'column',
+                  width,
+                  height: ifIphoneX (
+                    2 * (height - 80) / 2,
+                    2 * (height - 60) / 2
+                  ),
+                }}
+              >
+                <Touchable
+                  style={styles.accessButton}
+                  onPress={() => this.readOut ('today')}
+                  onLongPress={() => this.longPress("today")}
+                >
+                  <Text style={styles.accessButtonText}>Today</Text>
+                </Touchable>
+                <Touchable
+                  style={styles.accessButton}
+                  onPress={() => this.readOut ('courses')}
+                  onLongPress={() => this.longPress("courses")}
+                >
+                  <Text style={styles.accessButtonText}>Courses</Text>
+                </Touchable>
+                <Touchable
+                  style={styles.accessButton}
+                  onPress={() => this.readOut ('schedule')}
+                >
+                  <Text style={styles.accessButtonText}>Schedule</Text>
+                </Touchable>
+              </View>
+              <Text>Yeet</Text>
             </View>
-            <View style={styles.bodySlide}>
-              <LinkScreenTile
-                navigation={this.props.navigation}
-                courseList={courseList}
-              />
-            </View>
-            <View style={styles.bodySlide}>
-              <ScheduleScreenTile />
-            </View>
-            {/* <View style={styles.bodySlide}>
-              <CalendarScreenTile dayTitles={this.school.dayTitles} dates={this.dates}></CalendarScreenTile>
-            </View> */}
-          </ScrollView>
-        </View>
-        <TabBar tapFunction={this} />
+          : <View>
+              <View style={styles.bodyHolder}>
+                <ScrollView
+                  horizontal={true}
+                  style={styles.slideView}
+                  scrollEnabled={false}
+                  ref={component => {
+                    this._scrollMain = component;
+                  }}
+                >
+                  <View style={styles.bodySlide}>
+                    <HomeScreenTile
+                      assignments={assignments}
+                      dayTitle={dayTitle}
+                      current={current}
+                      next={next}
+                      parent={this}
+                      events={events}
+                    />
+                  </View>
+                  <View style={styles.bodySlide}>
+                    <LinkScreenTile
+                      navigation={this.props.navigation}
+                      courseList={courseList}
+                    />
+                  </View>
+                  <View style={styles.bodySlide}>
+                    <ScheduleScreenTile />
+                  </View>
+                </ScrollView>
+              </View>
+              <TabBar tapFunction={this} />
+            </View>}
       </View>
     );
   }
@@ -406,5 +501,21 @@ const styles = StyleSheet.create ({
   bodySlide: {
     width: width,
     flexGrow: 1,
+  },
+  accessButton: {
+    width,
+    flexGrow: 1 / 3,
+    flexBasis: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 2,
+    marginBottom: 2,
+    borderColor: '#000',
+    borderWidth: 5,
+  },
+  accessButtonText: {
+    fontSize: 30,
+    fontWeight: '500',
   },
 });

@@ -14,6 +14,9 @@ export class School {
     this.id = school.id;
     this.dayTitles = school.dayTitles;
     this.rawSchedule = school.rawSchedule;
+    this.grades = school.grades || [9, 10, 11, 12];
+    this.name = school.name || "";
+    this.district = school.district || "";
   }
   toString () {
     return {
@@ -23,6 +26,9 @@ export class School {
       id: this.id,
       dayTitles: this.dayTitles,
       rawSchedule: this.rawSchedule,
+      grades: this.grades,
+      name: this.name,
+      district: this.district,
     };
   }
 
