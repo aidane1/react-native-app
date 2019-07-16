@@ -778,51 +778,7 @@ class AssignmentModal extends React.Component {
   };
 
   imageFunction = result => {
-    if (result.uri) {
-      result.path = `/courses/${global.courseInfoCourse.id}/resources`;
-      sendResourseToServer (result)
-        .then (res => res.json ())
-        .then (json => {
-          if (json.status == 'ok') {
-            this.state.imageIDs.push (json.body);
-          } else {
-            Alert.alert (
-              'Error',
-              json.body,
-              [
-                {text: 'Try Again', onPress: () => this.imageFunction (result)},
-                {
-                  text: 'Cancel',
-                  onPress: () => {
-                    console.log ('cancelled');
-                  },
-                  style: 'cancel',
-                },
-              ],
-              {cancelable: false}
-            );
-          }
-        })
-        .catch (e => {
-          if (e.message == "JSON Parse error: Unrecognized token '<'") {
-            Alert.alert (
-              'Connection Error',
-              'Unable to connect to the server',
-              [
-                {text: 'Try Again', onPress: () => this.imageFunction (result)},
-                {
-                  text: 'Cancel',
-                  onPress: () => {
-                    console.log ('cancelled');
-                  },
-                  style: 'cancel',
-                },
-              ],
-              {cancelable: false}
-            );
-          }
-        });
-    }
+    console.log(result);
   };
 
   createAssignment () {
@@ -1071,8 +1027,9 @@ class AssignmentModal extends React.Component {
                     Images
                   </Text>
                   <ImageBar
-                    displayImages={true}
-                    imageFunction={this.imageFunction}
+                    displayImagesInline={true}
+                    onImageRecieved={this.imageFunction}
+                    displayCameraRollInline={true}
                   />
                 </ScrollView>
               </View>

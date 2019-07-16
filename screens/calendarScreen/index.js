@@ -208,10 +208,16 @@ function makeMonthRows (month) {
 class CalendarMonthTitle extends React.Component {
   render () {
     return (
-      <View style={[styles.calendarMonthTitle, global.user.secondaryTheme()]}>
-        <View style={[styles.bar, {backgroundColor: global.user.getBorderColor()}]} />
-        <Text style={[styles.monthTitle, global.user.primaryTextColor()]}>{this.props.month}</Text>
-        <View style={[styles.bar, {backgroundColor: global.user.getBorderColor()}]} />
+      <View style={[styles.calendarMonthTitle, global.user.secondaryTheme ()]}>
+        <View
+          style={[styles.bar, {backgroundColor: global.user.getBorderColor ()}]}
+        />
+        <Text style={[styles.monthTitle, global.user.primaryTextColor ()]}>
+          {this.props.month}
+        </Text>
+        <View
+          style={[styles.bar, {backgroundColor: global.user.getBorderColor ()}]}
+        />
       </View>
     );
   }
@@ -275,16 +281,16 @@ class CalendarMonth extends React.Component {
                   global.dayMap[
                     `${z.date.getFullYear ()}_${z.date.getMonth ()}_${z.date.getDate ()}`
                   ];
-                  if (zDay) {
-                    zDay.isInMonth = z.isInMonth;
-                    zDay.date = z.date;  
-                  } else {
-                    zDay = {
-                      isInMonth: false,
-                      is_displayed: false,
-                      date: z.date,
-                    }
-                  }
+                if (zDay) {
+                  zDay.isInMonth = z.isInMonth;
+                  zDay.date = z.date;
+                } else {
+                  zDay = {
+                    isInMonth: false,
+                    is_displayed: false,
+                    date: z.date,
+                  };
+                }
                 return (
                   <CalendarDay
                     modal={this.props.modal}
@@ -324,16 +330,31 @@ class CalendarDay extends React.Component {
       if (this.props.day.events.length > 0) {
         return (
           <Touchable onPress={this.handleClick}>
-            <View style={[styles.calendarDay, styles.fullDay, global.user.secondaryTheme()]}>
-              <Text style={[styles.calendarDate, global.user.secondaryTextColor()]}>
+            <View
+              style={[
+                styles.calendarDay,
+                styles.fullDay,
+                global.user.secondaryTheme (),
+              ]}
+            >
+              <Text
+                style={[styles.calendarDate, global.user.secondaryTextColor ()]}
+              >
                 {this.props.day.date.getDate ()}
               </Text>
               {(() => {
                 if (this.props.day.is_displayed) {
                   return (
-                    <Text style={[styles.calendarTitle, global.user.tertiaryTextColor()]}>
+                    <Text
+                      style={[
+                        styles.calendarTitle,
+                        global.user.tertiaryTextColor (),
+                      ]}
+                    >
                       {
-                        this.props.titles[this.props.day.week][this.props.day.day]
+                        this.props.titles[this.props.day.week][
+                          this.props.day.day
+                        ]
                       }
                     </Text>
                   );
@@ -354,16 +375,32 @@ class CalendarDay extends React.Component {
       } else {
         return (
           <Touchable onPress={this.handleClick}>
-            <View style={[styles.calendarDay, styles.fullDay, styles.fullDay, global.user.secondaryTheme()]}>
-              <Text style={[styles.calendarDate, global.user.secondaryTextColor()]}>
+            <View
+              style={[
+                styles.calendarDay,
+                styles.fullDay,
+                styles.fullDay,
+                global.user.secondaryTheme (),
+              ]}
+            >
+              <Text
+                style={[styles.calendarDate, global.user.secondaryTextColor ()]}
+              >
                 {this.props.day.date.getDate ()}
               </Text>
               {(() => {
                 if (this.props.day.is_displayed) {
                   return (
-                    <Text style={[styles.calendarTitle, global.user.tertiaryTextColor()]}>
+                    <Text
+                      style={[
+                        styles.calendarTitle,
+                        global.user.tertiaryTextColor (),
+                      ]}
+                    >
                       {
-                        this.props.titles[this.props.day.week][this.props.day.day]
+                        this.props.titles[this.props.day.week][
+                          this.props.day.day
+                        ]
                       }
                     </Text>
                   );
@@ -383,7 +420,15 @@ class CalendarDay extends React.Component {
         );
       }
     } else {
-      return <View style={[styles.calendarDay, styles.emptyDay, global.user.secondaryTheme()]} />;
+      return (
+        <View
+          style={[
+            styles.calendarDay,
+            styles.emptyDay,
+            global.user.secondaryTheme (),
+          ]}
+        />
+      );
     }
   }
 }
@@ -435,7 +480,13 @@ class SideBarHour extends React.Component {
 class SideBarEvent extends React.Component {
   render () {
     return (
-      <View style={[styles.sidebarEvent, global.user.borderColor(), {backgroundColor: global.user.getBorderColor()}]}>
+      <View
+        style={[
+          styles.sidebarEvent,
+          global.user.borderColor (),
+          {backgroundColor: global.user.getBorderColor ()},
+        ]}
+      >
         <Text style={styles.eventTimeText}>
           {this.props.event.time}
         </Text>
@@ -482,7 +533,13 @@ class SideBarScheduled extends React.Component {
 class SideBar extends React.Component {
   render () {
     return (
-      <View style={[styles.sidebar, boxShadows.boxShadow5, global.user.primaryTheme()]}>
+      <View
+        style={[
+          styles.sidebar,
+          boxShadows.boxShadow5,
+          global.user.primaryTheme (),
+        ]}
+      >
         <SideBarHeader
           date={this.props.date}
           events={
@@ -500,8 +557,14 @@ class SideBar extends React.Component {
 class SideBarHeader extends React.Component {
   render () {
     return (
-      <View style={[styles.sidebarHeader, boxShadows.boxShadow5, global.user.secondaryTheme()]}>
-        <Text style={[styles.sidebarDate, global.user.secondaryTextColor()]}>
+      <View
+        style={[
+          styles.sidebarHeader,
+          boxShadows.boxShadow5,
+          global.user.secondaryTheme (),
+        ]}
+      >
+        <Text style={[styles.sidebarDate, global.user.secondaryTextColor ()]}>
           {moment (this.props.date).format ('MMMM Do, YYYY')}
         </Text>
         {this.props.events.map ((event, index) => {
@@ -648,7 +711,7 @@ class Calendars extends React.Component {
   render () {
     return (
       <FlatList
-        style={global.user.secondaryTheme()}
+        style={global.user.secondaryTheme ()}
         ref={this.calendars}
         data={this.props.months}
         renderItem={({item, index}) => (
@@ -692,9 +755,12 @@ export default class CalendarScreenTile extends React.Component {
       header: null,
     };
   };
+  componentDidMount () {
+    this.props.navigation.getParam ('callback', () => {}) ();
+  }
   render () {
     return (
-      <View styles={[styles.container, global.user.primaryTheme()]}>
+      <View styles={[styles.container, global.user.primaryTheme ()]}>
         <HeaderBar
           iconLeft={
             <Touchable onPress={() => this.props.navigation.goBack ()}>

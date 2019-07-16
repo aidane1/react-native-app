@@ -25,7 +25,21 @@ import {
   LunchTimeIcon,
   AfterSchoolIcon,
   AccountIcon,
+  ChatIcon,
+  QuestionIcon
 } from '../../classes/icons';
+
+import {
+  BallIndicator,
+  BarIndicator,
+  DotIndicator,
+  MaterialIndicator,
+  PacmanIndicator,
+  PulseIndicator,
+  SkypeIndicator,
+  UIActivityIndicator,
+  WaveIndicator,
+} from 'react-native-indicators';
 
 import {ScrollView} from 'react-native-gesture-handler';
 
@@ -69,10 +83,26 @@ class CourseRow extends React.Component {
                 {borderBottomColor: 'rgba(0,0,0,0)'},
               ]}
             >
-              <Text style={[styles.courseRowText, global.user.secondaryTextColor()]}>
+              <Text
+                style={[
+                  styles.courseRowText,
+                  global.user.secondaryTextColor (),
+                ]}
+              >
                 {this.props.text}
               </Text>
-              <RightIcon style={styles.clickIcon} size={30} color="orange" />
+              {this.props.loading
+                ? <UIActivityIndicator
+                    color="orange"
+                    count={12}
+                    size={20}
+                    style={{flexGrow: 0, paddingRight: 15}}
+                  />
+                : <RightIcon
+                    style={styles.clickIcon}
+                    size={30}
+                    color="orange"
+                  />}
             </View>
           </View>
         </Touchable>
@@ -85,10 +115,26 @@ class CourseRow extends React.Component {
               {this.props.icon}
             </CourseIconBlock>
             <View style={[styles.courseRowInfo, global.user.borderColor ()]}>
-              <Text style={[styles.courseRowText, global.user.secondaryTextColor()]}>
+              <Text
+                style={[
+                  styles.courseRowText,
+                  global.user.secondaryTextColor (),
+                ]}
+              >
                 {this.props.text}
               </Text>
-              <RightIcon style={styles.clickIcon} size={30} color="orange" />
+              {this.props.loading
+                ? <UIActivityIndicator
+                    color="orange"
+                    count={12}
+                    size={20}
+                    style={{flexGrow: 0, paddingRight: 15}}
+                  />
+                : <RightIcon
+                    style={styles.clickIcon}
+                    size={30}
+                    color="orange"
+                  />}
             </View>
           </View>
         </Touchable>
@@ -104,7 +150,7 @@ class ButtonSection extends React.Component {
   }
   render () {
     return (
-      <View style={[styles.buttonSection, global.user.borderColor()]}>
+      <View style={[styles.buttonSection, global.user.borderColor ()]}>
         {this.props.children}
       </View>
     );
@@ -115,15 +161,22 @@ export default class AccountScreen extends React.Component {
   constructor (props) {
     super (props);
     this.props = props;
+    this.state = {
+      loading: false,
+      loadingRoute: '',
+    };
   }
-  _navigateToPage = page => {
-    this.props.navigation.navigate (page);
+  _navigateToPage = (page, props = {}) => {
+    this.props.navigation.navigate (page, props);
   };
   static navigationOptions = ({navigation}) => {
     return {
       header: null,
     };
   };
+  callback () {
+    this.setState ({loading: false});
+  }
   render () {
     return (
       <View style={[styles.container, global.user.primaryTheme ()]}>
@@ -204,17 +257,41 @@ export default class AccountScreen extends React.Component {
                 icon={<CourseIcon size={20} color={'black'} />}
                 text={'Courses'}
                 last={false}
-                onPress={() => this._navigateToPage ('Courses')}
+                loading={
+                  this.state.loading && this.state.loadingRoute == 'Courses'
+                }
+                onPress={async () => {
+                  this.setState (
+                    {loading: true, loadingRoute: 'Courses'},
+                    () => {
+                      setTimeout (() => {
+                        this._navigateToPage ('Courses', {
+                          callback: () =>
+                            this.setState ({loading: false, loadingRoute: ''}),
+                        });
+                      }, 1);
+                    }
+                  );
+                }}
               />
               <CourseRow
-                color={'#f2cc98'}
+                color={'#e8a266'}
+                icon={<QuestionIcon size={20} color={'black'} />}
+                text={'Questions'}
+                last={false}
+                loading={false}
+                onPress={() => this._navigateToPage ('Questions')}
+              />
+              <CourseRow
+                color={'#e8b266'}
                 icon={<EventsIcon size={20} color={'black'} />}
                 text={'Events'}
                 last={false}
+                loading={false}
                 onPress={() => this._navigateToPage ('Events')}
               />
               <CourseRow
-                color={'#ffffad'}
+                color={'#e8ca66'}
                 icon={<LogoutIcon size={20} color={'black'} />}
                 text={'Login'}
                 last={true}
@@ -223,11 +300,26 @@ export default class AccountScreen extends React.Component {
             </ButtonSection>
             <ButtonSection>
               <CourseRow
-                color={'#fffec9'}
+                color={'#ebe07c'}
                 icon={<CalendarIcon size={20} color={'black'} />}
                 text={'Calendar'}
                 last={false}
-                onPress={() => this._navigateToPage ('Calendar')}
+                loading={
+                  this.state.loading && this.state.loadingRoute == 'Calendar'
+                }
+                onPress={async () => {
+                  this.setState (
+                    {loading: true, loadingRoute: 'Calendar'},
+                    () => {
+                      setTimeout (() => {
+                        this._navigateToPage ('Calendar', {
+                          callback: () =>
+                            this.setState ({loading: false, loadingRoute: ''}),
+                        });
+                      }, 1);
+                    }
+                  );
+                }}
               />
               <CourseRow
                 color={'#afffad'}
@@ -245,7 +337,7 @@ export default class AccountScreen extends React.Component {
               />
               <CourseRow
                 color={'#42cef5'}
-                icon={<NotesIcon size={20} color={'black'} />}
+                icon={<ChatIcon size={20} color={'black'} />}
                 text={'Chatrooms'}
                 last={true}
                 onPress={() => this._navigateToPage ('Chatrooms')}
@@ -265,18 +357,42 @@ export default class AccountScreen extends React.Component {
                 color={'#b2b1f9'}
                 icon={<BeforeSchoolIcon size={20} color={'black'} />}
                 text={'Before School Activities'}
+                onPress={() => {
+                  global.activity = {
+                    name: 'Before School',
+                    page: 0,
+                    key: 'beforeSchoolActivities',
+                  };
+                  this._navigateToPage ('Activities');
+                }}
                 last={false}
               />
               <CourseRow
                 color={'#d7b1f9'}
                 icon={<LunchTimeIcon size={20} color={'black'} />}
                 text={'Lunchtime Activities'}
+                onPress={() => {
+                  global.activity = {
+                    name: 'Lunch Time',
+                    page: 1,
+                    key: 'lunchTimeActivities',
+                  };
+                  this._navigateToPage ('Activities');
+                }}
                 last={false}
               />
               <CourseRow
                 color={'#f6b1f9'}
                 icon={<AfterSchoolIcon size={20} color={'black'} />}
                 text={'After School Activities'}
+                onPress={() => {
+                  global.activity = {
+                    name: 'After School',
+                    page: 2,
+                    key: 'afterSchoolActivities',
+                  };
+                  this._navigateToPage ('Activities');
+                }}
                 last={true}
               />
             </ButtonSection>

@@ -6,198 +6,294 @@ import {
   ActivityIndicator,
   TouchableWithoutFeedback,
   Text,
+  Animated,
 } from 'react-native';
 
 import HeaderBar from '../../components/header';
 
-import {ScrollView} from 'react-native-gesture-handler';
+import {ScrollView, RectButton, TextInput} from 'react-native-gesture-handler';
 
 import {
   LeftIcon,
-  RightIcon,
+  PlusIcon,
   EmptyIcon,
-  SchoolIcons,
+  XIcon,
+  CheckMarkIcon,
   GenericIcon,
 } from '../../classes/icons';
-
-import {Courses} from '../../classes/courses';
 
 import {boxShadows} from '../../constants/boxShadows';
 
 import Touchable from 'react-native-platform-touchable';
 
-import {Day} from '../../classes/days';
+import Modal from 'react-native-modal';
+
+import {User} from '../../classes/user';
 
 import {ifIphoneX} from 'react-native-iphone-x-helper';
 
 const width = Dimensions.get ('window').width; //full width
 const height = Dimensions.get ('window').height; //full height
 
-class CourseIcon extends React.Component {
+class CreateButton extends React.Component {
+  constructor (props) {
+    super (props);
+    this.state = {
+      scaleVal: new Animated.Value (1),
+    };
+  }
+  handleClick = () => {
+    Animated.timing (this.state.scaleVal, {
+      toValue: 1.05,
+      duration: 100,
+    }).start ();
+  };
+  handlePressOut = () => {
+    Animated.timing (this.state.scaleVal, {
+      toValue: 1,
+      duration: 100,
+    }).start ();
+  };
+  render () {
+    let {scaleVal} = this.state;
+    return (
+      <Touchable
+        onPressIn={this.handleClick}
+        onPressOut={this.handlePressOut}
+        style={{width: 140}}
+        onPress={this.props.onPress}
+      >
+        <Animated.View
+          style={[
+            styles.createButton,
+            boxShadows.boxShadow2,
+            {transform: [{scale: scaleVal}]},
+          ]}
+        >
+          <PlusIcon size={20} style={{paddingTop: 2}} />
+          <Text style={{color: 'white', fontSize: 16}}>Create</Text>
+        </Animated.View>
+      </Touchable>
+    );
+  }
+}
+
+class ActivityRow extends React.Component {
+  constructor (props) {
+    super (props);
+  }
+  render () {
+    return this.props.default
+      ? <View style={[styles.dayRowLast, global.user.borderColor ()]}>
+          <Text
+            style={{fontSize: 18, color: global.user.getSecondaryTextColor ()}}
+          >
+            No activities yet!
+          </Text>
+        </View>
+      : <View
+          style={[
+            this.props.last ? styles.dayRowLast : styles.dayRow,
+            global.user.borderColor (),
+          ]}
+        >
+          <Text
+            style={{fontSize: 18, color: global.user.getSecondaryTextColor ()}}
+          >
+            {this.props.activity}
+          </Text>
+          <Touchable
+            onPress={() =>
+              this.props.deleteActivity (
+                this.props.objectKey,
+                this.props.index
+              )}
+          >
+            <XIcon size={25} color={global.user.getTertiaryTextColor ()} />
+          </Touchable>
+        </View>;
+  }
+}
+
+class DayActivityBubble extends React.Component {
+  constructor (props) {
+    super (props);
+  }
   render () {
     return (
       <View
         style={[
-          styles.icon,
-          {backgroundColor: this.props.color},
-          boxShadows.boxShadow2,
+          styles.dayBubble,
+          boxShadows.boxShadow3,
+          global.user.secondaryTheme (),
         ]}
       >
-        {this.props.children}
+        <View style={styles.dayBubbleHeader}>
+          <Text style={{color: '#174ea6', fontSize: 30}}>
+            {this.props.day}
+          </Text>
+          <CreateButton
+            onPress={() =>
+              this.props.modal.current.setState ({
+                isBackdropVisible: true,
+                title: this.props.day,
+                key: this.props.objectKey,
+              })}
+          />
+        </View>
+        {this.props.activities.length == 0
+          ? <ActivityRow last={true} default={true} />
+          : this.props.activities.map ((activity, index, array) => {
+              return (
+                <ActivityRow
+                  last={index == array.length - 1}
+                  activity={activity}
+                  key={'activity_' + index}
+                  deleteActivity={this.props.deleteActivity}
+                  objectKey={this.props.objectKey}
+                  index={index}
+                />
+              );
+            })}
       </View>
     );
   }
 }
 
-class DayList extends React.Component {
-  render () {
-    let list = this.props.courses || [];
-    let rowLists = [];
-    for (var i = 0; i < list.length; i++) {
-      rowLists.push (
-        <CourseRow
-          _navigateToPage={this.props._navigateToPage}
-          last={i == list.length - 1}
-          key={'courseRow_' + i.toString ()}
-          {...list[i]}
-        />
-      );
+class CreateNewModal extends React.Component {
+  constructor (props) {
+    super (props);
+    this.state = {
+      isBackdropVisible: false,
+      title: 'Monday',
+      key: 'day_1',
+      activities: [],
+      text: '',
+    };
+    this.activity = React.createRef ();
+  }
+  modalHide = () => {
+    this.setState ({isBackdropVisible: false});
+  };
+  addActivity = async () => {
+    if (this.state.text) {
+      global.user[global.activity.key][this.state.key].push (this.state.text);
+      await User._saveToStorage (global.user);
+      this.activity.current.blur ();
+      this.setState ({text: ''}, () => {
+        this.props.parent.setState ({user: global.user});
+      });
     }
+  };
+  render () {
     return (
-      <View
-        style={[styles.dayList, {borderColor: global.user.getBorderColor ()}]}
-      >
-        {rowLists}
+      <View>
+        <Modal
+          onModalHide={this.modalHide}
+          animationIn="zoomIn"
+          animationOut="zoomOut"
+          isVisible={this.state.isBackdropVisible}
+          backdropColor={
+            global.user.theme == 'Light' ? 'black' : 'rgba(255,255,255,0.4)'
+          }
+          onBackdropPress={() => this.setState ({isBackdropVisible: false})}
+          propagateSwipe={true}
+        >
+          <View
+            style={[styles.newActivityModal, global.user.secondaryTheme ()]}
+          >
+            <View
+              style={[
+                styles.dayBubbleHeader,
+                {paddingBottom: 10, paddingTop: 10, paddingLeft: 10},
+              ]}
+            >
+              <Text style={{color: '#174ea6', fontSize: 30}}>
+                {this.state.title}
+              </Text>
+              <Touchable
+                onPress={() => this.setState({isBackdropVisible: false})}
+                hitSlop={{top: 20, left: 20, bottom: 20, right: 20}}
+                style={{paddingRight: 15}}
+              >
+                <XIcon size={30} color={global.user.getPrimaryTextColor ()} />
+              </Touchable>
+            </View>
+            <ScrollView>
+              <View style={[styles.dayRow, global.user.borderColor ()]}>
+                <TextInput
+                  ref={this.activity}
+                  placeholder={'Activity...'}
+                  multiline={false}
+                  placeholderTextColor={global.user.getTertiaryTextColor ()}
+                  onChangeText={text => this.setState ({text})}
+                  value={this.state.text}
+                  style={{
+                    fontSize: 18,
+                    height: 40,
+                    paddingLeft: 5,
+                    color: global.user.getSecondaryTextColor (),
+                    flexGrow: 1,
+                  }}
+                />
+                <Touchable
+                  hitSlop={{top: 15, left: 30, bottom: 15, right: 30}}
+                  onPress={this.addActivity}
+                >
+                  <CheckMarkIcon
+                    size={25}
+                    color={global.user.getTertiaryTextColor ()}
+                    style={{marginRight: 5}}
+                  />
+                </Touchable>
+              </View>
+              {global.user[global.activity.key][this.state.key].length == 0
+                ? <View
+                    key={'modalActivity_' + 0}
+                    style={[styles.dayRow, global.user.borderColor ()]}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 18,
+                        color: global.user.getSecondaryTextColor (),
+                      }}
+                    >
+                      No Activities Yet!
+                    </Text>
+                  </View>
+                : global.user[global.activity.key][
+                    this.state.key
+                  ].map ((activity, index) => {
+                    return (
+                      <View
+                        key={'modalActivity_' + index}
+                        style={[styles.dayRow, global.user.borderColor ()]}
+                      >
+                        <Text
+                          style={{
+                            fontSize: 18,
+                            color: global.user.getSecondaryTextColor (),
+                          }}
+                        >
+                          {activity}
+                        </Text>
+                        <Touchable
+                          onPress={() =>
+                            this.props.deleteActivity (this.state.key, index)}
+                        >
+                          <XIcon
+                            size={25}
+                            color={global.user.getTertiaryTextColor ()}
+                          />
+                        </Touchable>
+                      </View>
+                    );
+                  })}
+            </ScrollView>
+          </View>
+        </Modal>
       </View>
     );
-  }
-}
-
-class CourseRow extends React.Component {
-  render () {
-    let icon = SchoolIcons.getIcon (this.props.category);
-    if (this.props.last) {
-      return (
-        <Touchable
-          onPress={() =>
-            this.props.id != '_'
-              ? this.props._navigateToPage ('CourseInfo', this.props.id)
-              : () => {}}
-        >
-          <View style={[styles.courseRow, global.user.secondaryTheme ()]}>
-            <CourseIcon color={icon[1]}>
-              <GenericIcon icon={icon[0]} color="black" size={20} />
-            </CourseIcon>
-            <View
-              style={[
-                styles.courseRowInfo,
-                {borderBottomColor: 'rgba(0,0,0,0)'},
-              ]}
-            >
-              <View style={styles.courseRowStack}>
-                <View>
-                  <Text
-                    style={[
-                      styles.courseRowCourse,
-                      global.user.secondaryTextColor (),
-                    ]}
-                  >
-                    {this.props.course}
-                  </Text>
-                </View>
-                <View>
-                  <Text
-                    style={[
-                      styles.courseRowTeacher,
-                      global.user.tertiaryTextColor (),
-                    ]}
-                  >
-                    {this.props.semester}
-                    ,
-                    {' '}
-                    {this.props.teacher}
-                    , Block
-                    {' '}
-                    {this.props.block}
-                  </Text>
-                </View>
-              </View>
-              <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                <Text style={styles.courseRowTime}>
-                  {this.props.time}
-                </Text>
-                {this.props.id != '_'
-                  ? <RightIcon
-                      style={{marginTop: 3}}
-                      size={30}
-                      color="orange"
-                    />
-                  : <View style={{marginRight: 30}} />}
-              </View>
-            </View>
-          </View>
-        </Touchable>
-      );
-    } else {
-      return (
-        <Touchable
-          onPress={() =>
-            this.props.id != '_'
-              ? this.props._navigateToPage ('CourseInfo', this.props.id)
-              : () => {}}
-        >
-          <View style={[styles.courseRow, global.user.secondaryTheme ()]}>
-            <CourseIcon color={icon[1]}>
-              <GenericIcon icon={icon[0]} color="black" size={20} />
-            </CourseIcon>
-            <View
-              style={[
-                styles.courseRowInfo,
-                {borderBottomColor: global.user.getBorderColor ()},
-              ]}
-            >
-              <View style={styles.courseRowStack}>
-                <View>
-                  <Text
-                    style={[
-                      styles.courseRowCourse,
-                      global.user.secondaryTextColor (),
-                    ]}
-                  >
-                    {this.props.course}
-                  </Text>
-                </View>
-                <View>
-                  <Text
-                    style={[
-                      styles.courseRowTeacher,
-                      global.user.tertiaryTextColor (),
-                    ]}
-                  >
-                    {this.props.semester}
-                    ,
-                    {' '}
-                    {this.props.teacher}
-                    , Block
-                    {' '}
-                    {this.props.block}
-                  </Text>
-                </View>
-              </View>
-              <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                {this.props.id != '_'
-                  ? <RightIcon
-                      style={{marginTop: 3}}
-                      size={30}
-                      color="orange"
-                    />
-                  : <View style={{marginRight: 30}} />}
-              </View>
-            </View>
-          </View>
-        </Touchable>
-      );
-    }
   }
 }
 
@@ -205,43 +301,27 @@ export default class ActivitiesScreen extends React.Component {
   constructor (props) {
     super (props);
     this.props = props;
+    this.modal = React.createRef ();
+    this.state = {
+      user: global.user,
+    };
   }
-  _navigateToPage = async (page, id) => {
-    try {
-      global.courseInfoCourse = await Courses._retrieveCourseById (id);
-      global.courseInfoPage = 'assignments';
-      if (global.courseInfoCourse.id != '_') {
-        this.props.navigation.navigate (page);
-      }
-    } catch (e) {
-      console.log (e);
-    }
-  };
   static navigationOptions = ({navigation}) => {
     return {
       header: null,
     };
   };
+  deleteActivity = async (key, index) => {
+    global.user[global.activity.key][key] = global.user[global.activity.key][
+      key
+    ].filter ((item, i) => {
+      return index !== i;
+    });
+    await User._saveToStorage (global.user);
+    this.setState ({user: global.user});
+  };
   render () {
-    let semesters = {};
-    global.semesters.forEach (semester => {
-      semesters[semester.id] = semester;
-    });
-    let blocks = {};
-    global.school.blocks.forEach (block => {
-      blocks[block._id] = block;
-    });
-    let courseList = global.userCourses.map (course => {
-      return {
-        course: course.course,
-        category: course.category,
-        teacher: course.teacher,
-        semester: semesters[course.semester].name,
-        block: blocks[course.block].block,
-        id: course.id,
-        isReal: true,
-      };
-    });
+    let {user} = this.state;
     return (
       <View style={[styles.container, global.user.primaryTheme ()]}>
         <HeaderBar
@@ -257,24 +337,48 @@ export default class ActivitiesScreen extends React.Component {
         />
         <View style={[styles.bodyHolder, global.user.primaryTheme ()]}>
           <ScrollView>
-            <Text
-              style={{
-                textAlign: 'center',
-                fontSize: 30,
-                fontWeight: '500',
-                marginTop: 30,
-                marginBottom: 10,
-                color: global.user.getPrimaryTextColor (),
-              }}
-            >
-              This Year's Classes
-            </Text>
-            <DayList
-              _navigateToPage={this._navigateToPage}
-              courses={courseList}
+            <DayActivityBubble
+              modal={this.modal}
+              day="Monday"
+              objectKey="day_1"
+              deleteActivity={this.deleteActivity}
+              activities={user[global.activity.key]['day_1']}
+            />
+            <DayActivityBubble
+              modal={this.modal}
+              day="Tuesday"
+              objectKey="day_2"
+              deleteActivity={this.deleteActivity}
+              activities={user[global.activity.key]['day_2']}
+            />
+            <DayActivityBubble
+              modal={this.modal}
+              day="Wednesday"
+              objectKey="day_3"
+              deleteActivity={this.deleteActivity}
+              activities={user[global.activity.key]['day_3']}
+            />
+            <DayActivityBubble
+              modal={this.modal}
+              day="Thursday"
+              objectKey="day_4"
+              deleteActivity={this.deleteActivity}
+              activities={user[global.activity.key]['day_4']}
+            />
+            <DayActivityBubble
+              modal={this.modal}
+              day="Friday"
+              objectKey="day_5"
+              deleteActivity={this.deleteActivity}
+              activities={user[global.activity.key]['day_5']}
             />
           </ScrollView>
         </View>
+        <CreateNewModal
+          deleteActivity={this.deleteActivity}
+          parent={this}
+          ref={this.modal}
+        />
       </View>
     );
   }
@@ -290,50 +394,63 @@ const styles = StyleSheet.create ({
     zIndex: 1,
     height: ifIphoneX (height - 80, height - 60),
   },
-  courseRow: {
-    alignItems: 'center',
+  createButton: {
+    width: 140,
+    height: 50,
+    backgroundColor: '#1d5bc1',
     flexDirection: 'row',
-    width: width,
-    height: 50.0,
-    backgroundColor: 'white',
+    alignItems: 'center',
+    justifyContent: 'space-evenly',
+    borderRadius: 25,
   },
-  courseRowInfo: {
-    height: 50.0,
-    flexGrow: 1,
+  dayBubble: {
+    backgroundColor: 'white',
+    margin: 10,
+    paddingTop: 15,
+    paddingBottom: 5,
+    paddingLeft: 12,
+    paddingRight: 12,
+    borderRadius: 10,
+  },
+  dayBubbleHeader: {
+    paddingBottom: 12,
+    borderBottomColor: '#1967d2',
+    borderBottomWidth: StyleSheet.hairlineWidth * 2,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderBottomColor: 'rgb(210,210,210)',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    paddingRight: 10,
   },
-  courseRowStack: {
-    flexDirection: 'column',
-  },
-  icon: {
-    width: 35,
-    height: 35,
-    margin: 7.5,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 5,
-  },
-  courseRowCourse: {
-    fontSize: 17,
-  },
-  courseRowTeacher: {
-    fontSize: 10,
-    fontStyle: 'italic',
-    opacity: 0.7,
-  },
-  courseRowTime: {
-    fontSize: 17,
-  },
-  dayList: {
+  dayRow: {
+    height: 50,
     borderColor: 'rgb(210,210,210)',
-    borderBottomWidth: StyleSheet.hairlineWidth * 2,
-    borderTopWidth: StyleSheet.hairlineWidth * 2,
-    marginTop: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingLeft: 0,
+    paddingRight: 5,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingLeft: 25,
+  },
+  dayRowLast: {
+    height: 50,
+    paddingRight: 5,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingLeft: 25,
+  },
+  dayInfo: {
+    width: 0,
+    flexGrow: 1,
+  },
+  dayTitle: {
+    marginBottom: 5,
+    flexDirection: 'row',
+  },
+  newActivityModal: {
+    height: height * 0.5,
+    backgroundColor: 'white',
+    overflow: 'hidden',
+    flexDirection: 'column',
   },
 });

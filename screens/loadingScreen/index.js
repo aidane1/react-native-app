@@ -5,6 +5,7 @@ import {
   Dimensions,
   ActivityIndicator,
   Image,
+  CameraRoll,
 } from 'react-native';
 
 // import {AppLoading} from "expo";
@@ -38,6 +39,8 @@ import {Topic, Topics} from '../../classes/topics';
 import ApexAPI from '../../http/api';
 
 import {StackActions, NavigationActions} from 'react-navigation';
+
+import * as Permissions from 'expo-permissions';
 
 import {
   Ionicons,
@@ -232,6 +235,24 @@ export default class LoadingScreen extends React.Component {
       if (!loggedIn) {
         this.props.navigation.navigate ('Login');
       } else {
+        let {status} = await Permissions.askAsync (Permissions.CAMERA_ROLL);
+        global.cameraRollImages = [];
+        global.getCameraRollImages = (callback) => {
+          if (status !== "granted") {
+            callback([]);
+          } else {
+            callback(global.cameraRollImages);
+          }
+        }
+        if (status == "granted") {
+          let photos = await CameraRoll.getPhotos ({
+            first: 50,
+            assetType: 'Photos',
+            groupTypes: 'All',
+          });
+          global.cameraRollImages = photos.edges;
+        }
+
         let user = await User._retrieveFromStorage ();
         let currentSemesters = await Semesters._currentSemesters ();
         let userCourses = await Courses._retrieveCoursesById (user.courses);
@@ -257,6 +278,7 @@ export default class LoadingScreen extends React.Component {
         global.activity = {
           name: "Before School",
           page: 0,
+          key: "beforeSchoolActivities"
         }
         global.completedAssignments = completedAssignments;
         global.semesterMap = semesterMap;

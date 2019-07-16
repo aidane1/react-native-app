@@ -428,6 +428,17 @@ export default class SettingsScreen extends React.Component {
               last={false}
             />
             <CourseRow
+              text={'Activities'}
+              control={
+                <Switch
+                  value={this.state.notifications.activities}
+                  onValueChange={val =>
+                    this.toggleNotifications ('activities', val)}
+                />
+              }
+              last={false}
+            />
+            <CourseRow
               text={'New Assignments'}
               control={
                 <Switch

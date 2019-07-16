@@ -14,6 +14,52 @@ class IconBlock {
   constructor (icon) {}
 }
 
+export class EllipsisIcon extends React.Component {
+  render() {
+    return (
+      <FontAwesome color="white" name="ellipsis-h" size={16} {...this.props}></FontAwesome>
+    )
+  }
+}
+
+export class MessageIcon extends React.Component {
+  render() {
+    return (
+      <Feather color="white" name="message-circle" size={16} {...this.props}></Feather>
+    )
+  }
+}
+
+export class ClockIcon extends React.Component {
+  render() {
+    return (
+      <FontAwesome color="white" name="clock-o" size={16} {...this.props}></FontAwesome>
+    )
+  }
+}
+export class ReplyIcon extends React.Component {
+  render() {
+    return (
+      <FontAwesome color="white" name="reply" size={16} {...this.props}></FontAwesome>
+    )
+  }
+}
+export class QuestionIcon extends React.Component {
+  render() {
+    return (
+      <MaterialIcons color="white" name="question-answer" size={16} {...this.props}></MaterialIcons>
+    )
+  }
+}
+
+export class ChatIcon extends React.Component {
+  render() {
+    return (
+      <Ionicons color="white" name="ios-chatboxes" size={16} {...this.props}></Ionicons>
+    )
+  }
+}
+
 export class CloseCircleIcon extends React.Component {
   render () {
     return (

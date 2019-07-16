@@ -543,6 +543,9 @@ export default class CoursesScreen extends React.Component {
     }
     this.scrollView = React.createRef ();
   }
+  componentDidMount() {
+    this.props.navigation.getParam("callback", () => {})();
+  }
   static navigationOptions = ({navigation}) => {
     return {
       header: null,

@@ -42,6 +42,9 @@ class ApexAPI {
       },
     });
   }
+  postBlob(path, callback) {
+    
+  }
   static getSchoolList = () => {
     return fetch ('https://www.apexschools.co/api/v1/schools', {
       method: 'GET',

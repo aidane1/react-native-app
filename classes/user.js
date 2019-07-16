@@ -21,12 +21,34 @@ export class User {
       markedAssignments: false,
       imageReplies: true,
       upcomingEvents: true,
+      activities: false,
     };
     this.theme = user.theme || 'Light';
     this.trueDark = user.trueDark || false;
     this.visuallyImpared = user.visuallyImpared || false;
     this.automaticMarkRetrieval = user.automaticMarkRetrieval || false;
     this.automaticCourseUpdating == user.automaticCourseUpdating || false;
+    this.beforeSchoolActivities = user.beforeSchoolActivities || {
+      day_1: [],
+      day_2: [],
+      day_3: [],
+      day_4: [],
+      day_5: [],
+    };
+    this.lunchTimeActivities = user.lunchTimeActivities || {
+      day_1: [],
+      day_2: [],
+      day_3: [],
+      day_4: [],
+      day_5: [],
+    };
+    this.afterSchoolActivities = user.afterSchoolActivities || {
+      day_1: [],
+      day_2: [],
+      day_3: [],
+      day_4: [],
+      day_5: [],
+    };
   }
   toString () {
     return {
@@ -55,6 +77,27 @@ export class User {
       visuallyImpared: this.visuallyImpared || false,
       automaticMarkRetrieval: this.automaticMarkRetrieval || false,
       automaticCourseUpdating: this.automaticCourseUpdating || false,
+      afterSchoolActivities: this.afterSchoolActivities || {
+        day_1: [],
+        day_2: [],
+        day_3: [],
+        day_4: [],
+        day_5: [],
+      },
+      lunchTimeActivities: this.lunchTimeActivities || {
+        day_1: [],
+        day_2: [],
+        day_3: [],
+        day_4: [],
+        day_5: [],
+      },
+      beforeSchoolActivities: this.beforeSchoolActivities || {
+        day_1: [],
+        day_2: [],
+        day_3: [],
+        day_4: [],
+        day_5: [],
+      },
     };
   }
   getPrimaryTheme = () => {
@@ -89,7 +132,7 @@ export class User {
         return '#ffffff';
       }
     }
-  }
+  };
   getSecondaryTextColor = () => {
     if (this.theme == 'Light') {
       return 'rgba(0,0,0,0.9)';
@@ -100,7 +143,7 @@ export class User {
         return 'rgba(255,255,255,0.9)';
       }
     }
-  }
+  };
   getTertiaryTextColor = () => {
     if (this.theme == 'Light') {
       return 'rgba(0,0,0,0.7)';
@@ -111,7 +154,7 @@ export class User {
         return 'rgba(255,255,255,0.7)';
       }
     }
-  }
+  };
   getBorderColor = () => {
     if (this.theme == 'Light') {
       return 'rgba(210,210,210, 0.9)';
@@ -122,7 +165,7 @@ export class User {
         return 'rgba(120, 120, 120, 0.9)';
       }
     }
-  }
+  };
   primaryTheme = () => {
     if (this.theme == 'Light') {
       return {backgroundColor: '#f0f0f0'};
@@ -155,7 +198,7 @@ export class User {
         return {color: '#ffffff'};
       }
     }
-  }
+  };
   secondaryTextColor = () => {
     if (this.theme == 'Light') {
       return {color: 'rgba(0,0,0,0.9)'};
@@ -166,7 +209,7 @@ export class User {
         return {color: 'rgba(255,255,255,0.9)'};
       }
     }
-  }
+  };
   tertiaryTextColor = () => {
     if (this.theme == 'Light') {
       return {color: 'rgba(0,0,0,0.7)'};
@@ -177,7 +220,7 @@ export class User {
         return {color: 'rgba(255,255,255,0.7)'};
       }
     }
-  }
+  };
   borderColor = () => {
     if (this.theme == 'Light') {
       return {borderColor: 'rgba(210,210,210, 0.9)'};
@@ -188,7 +231,7 @@ export class User {
         return {borderColor: 'rgba(120, 120, 120, 0.9)'};
       }
     }
-  }
+  };
   static _saveToStorage = async user => {
     try {
       await AsyncStorage.setItem ('user', JSON.stringify (user));

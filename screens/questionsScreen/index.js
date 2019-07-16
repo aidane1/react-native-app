@@ -1,0 +1,651 @@
+import React from 'react';
+import {
+  StyleSheet,
+  View,
+  Dimensions,
+  Animated,
+  Alert,
+  Text,
+} from 'react-native';
+
+import HeaderBar from '../../components/header';
+
+import {ScrollView, TextInput, FlatList} from 'react-native-gesture-handler';
+
+import {
+  LeftIcon,
+  PlusIcon,
+  ReplyIcon,
+  MessageIcon,
+  ClockIcon,
+  EllipsisIcon,
+} from '../../classes/icons';
+
+import Modal from 'react-native-modal';
+
+import {boxShadows} from '../../constants/boxShadows';
+
+import Touchable from 'react-native-platform-touchable';
+
+import ApexAPI from '../../http/api';
+
+import {ifIphoneX} from 'react-native-iphone-x-helper';
+
+import ImagePicker from '../../components/imagePicker';
+
+import moment from 'moment';
+
+import Swipeable from 'react-native-swipeable-row';
+
+import ActionSheet from 'react-native-actionsheet';
+
+const width = Dimensions.get ('window').width; //full width
+const height = Dimensions.get ('window').height; //full height
+
+function sendResourseToServer (resource) {
+  return fetch ('https://www.apexschools.co/api/v1/resources?base64=true', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': global.user['x-api-key'],
+      'x-id-key': global.user['x-id-key'],
+      school: global.user['school'],
+    },
+    body: JSON.stringify (resource),
+  });
+}
+
+class CreateQuestion extends React.Component {
+  constructor (props) {
+    super (props);
+    this.state = {
+      isBackdropVisible: false,
+      title: '',
+      body: '',
+      imageIDs: [],
+    };
+  }
+  updateTitle = text => {
+    this.setState ({title: text});
+  };
+  updateBody = text => {
+    this.setState ({body: text});
+  };
+  post = () => {
+    let api = new ApexAPI (global.user);
+    api
+      .post ('posts', {
+        title: this.state.title,
+        body: this.state.body,
+        resources: this.state.imageIDs.map (image => image._id),
+      })
+      .then (data => data.json ())
+      .then (data => {
+        if (data.status == 'ok') {
+          this.props.parent.loadQuestions (
+            this.props.parent.state.limit,
+            this.props.callback
+          );
+          this.setState ({isBackdropVisible: false});
+        } else {
+        }
+      })
+      .catch (e => {
+        console.log (e);
+      });
+  };
+  imageFunction = result => {
+    if (result.uri) {
+      result.path = `/questions`;
+      sendResourseToServer (result)
+        .then (res => res.json ())
+        .then (json => {
+          console.log (json);
+          if (json.status == 'ok') {
+            this.state.imageIDs.push (json.body);
+          } else {
+            Alert.alert (
+              'Error',
+              json.body,
+              [
+                {text: 'Try Again', onPress: () => this.imageFunction (result)},
+                {
+                  text: 'Cancel',
+                  onPress: () => {
+                    console.log ('cancelled');
+                  },
+                  style: 'cancel',
+                },
+              ],
+              {cancelable: false}
+            );
+          }
+        })
+        .catch (e => {
+          if (e.message == "JSON Parse error: Unrecognized token '<'") {
+            Alert.alert (
+              'Connection Error',
+              'Unable to connect to the server',
+              [
+                {text: 'Try Again', onPress: () => this.imageFunction (result)},
+                {
+                  text: 'Cancel',
+                  onPress: () => {
+                    console.log ('cancelled');
+                  },
+                  style: 'cancel',
+                },
+              ],
+              {cancelable: false}
+            );
+          }
+        });
+    }
+  };
+  render () {
+    return (
+      <View>
+        <Modal
+          style={{margin: 0}}
+          onModalHide={this.modalHide}
+          animationIn="slideInUp"
+          animationOut="slideOutDown"
+          isVisible={this.state.isBackdropVisible}
+          backdropColor={'rgba(0,0,0,0)'}
+          onBackdropPress={() => this.setState ({isBackdropVisible: false})}
+          propagateSwipe={true}
+        >
+          <View style={[styles.container, global.user.primaryTheme ()]}>
+            <HeaderBar
+              iconLeft={
+                <Touchable
+                  style={{paddingRight: 10}}
+                  onPress={() => this.setState ({isBackdropVisible: false})}
+                >
+                  <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                    <Text style={{fontSize: 18, color: 'red', marginLeft: 5}}>
+                      Cancel
+                    </Text>
+                  </View>
+                </Touchable>
+              }
+              iconRight={
+                this.state.title
+                  ? <Touchable style={{paddingRight: 10}} onPress={this.post}>
+                      <View
+                        style={{flexDirection: 'row', alignItems: 'center'}}
+                      >
+                        <Text
+                          style={{
+                            fontSize: 18,
+                            color: 'orange',
+                            marginLeft: 5,
+                          }}
+                        >
+                          Post
+                        </Text>
+                      </View>
+                    </Touchable>
+                  : <View style={{paddingRight: 10}}>
+                      <View
+                        style={{flexDirection: 'row', alignItems: 'center'}}
+                      >
+                        <Text
+                          style={{
+                            fontSize: 18,
+                            color: 'rgba(200,200,200,0.8)',
+                            marginLeft: 5,
+                          }}
+                        >
+                          Post
+                        </Text>
+                      </View>
+                    </View>
+              }
+              width={width}
+              height={60}
+              title="New Question"
+            />
+            <ScrollView
+              style={[styles.bodyHolder, global.user.primaryTheme ()]}
+              bounces={false}
+            >
+              <View
+                style={{
+                  width,
+                  backgroundColor: global.user.getSecondaryTheme (),
+                  borderTopWidth: StyleSheet.hairlineWidth,
+                  borderBottomWidth: StyleSheet.hairlineWidth,
+                  borderColor: global.user.getBorderColor (),
+                }}
+              >
+                <View
+                  style={{
+                    width,
+                    height: 50,
+                    flexDirection: 'row',
+                    paddingLeft: 20,
+                  }}
+                >
+                  <TextInput
+                    style={{
+                      flexGrow: 1,
+                      height: 50,
+                      fontSize: 22,
+                      color: global.user.getSecondaryTextColor (),
+                      borderBottomWidth: StyleSheet.hairlineWidth,
+                      borderColor: global.user.getBorderColor (),
+                    }}
+                    onChangeText={this.updateTitle}
+                    placeholderTextColor={global.user.getTertiaryTextColor ()}
+                    placeholder="Question Title"
+                  />
+                </View>
+                <View
+                  style={{
+                    width,
+                    minHeight: 50,
+                    flexDirection: 'row',
+                    paddingLeft: 20,
+                    paddingBottom: 5,
+                  }}
+                >
+                  <TextInput
+                    style={{
+                      flexGrow: 1,
+                      minHeight: 50,
+                      fontSize: 22,
+                      color: global.user.getSecondaryTextColor (),
+                      paddingTop: 15,
+                    }}
+                    multiline={true}
+                    onChangeText={this.updateBody}
+                    placeholderTextColor={global.user.getTertiaryTextColor ()}
+                    placeholder="Question Body (optional)"
+                  />
+                </View>
+                <ImagePicker
+                  imageFunction={this.imageFunction}
+                  displayImages={true}
+                  style={{
+                    marginBottom: 0,
+                    borderTopWidth: StyleSheet.hairlineWidth,
+                    borderTopColor: global.user.getBorderColor (),
+                  }}
+                />
+              </View>
+            </ScrollView>
+          </View>
+        </Modal>
+      </View>
+    );
+  }
+}
+
+function dateToTimestamp (date) {
+  let difference = new Date ().getTime () - date.getTime ();
+  if (difference > 86400000) {
+    return [
+      Math.round (moment.duration (moment ().diff (moment (date))).asDays ()),
+      'd',
+    ];
+  } else if (difference > 3600000) {
+    return [
+      Math.round (moment.duration (moment ().diff (moment (date))).asHours ()),
+      'h',
+    ];
+  } else if (difference > 60000) {
+    return [
+      Math.round (
+        moment.duration (moment ().diff (moment (date))).asMinutes ()
+      ),
+      'm',
+    ];
+  } else {
+    return [
+      Math.round (
+        moment.duration (moment ().diff (moment (date))).asSeconds ()
+      ),
+      's',
+    ];
+  }
+}
+
+class Question extends React.Component {
+  constructor (props) {
+    super (props);
+    this.state = {
+      inActiveZone: false,
+      scale: new Animated.Value (1),
+    };
+  }
+  inZone = () => {
+    this.setState ({inActiveZone: true});
+    Animated.sequence ([
+      Animated.timing (this.state.scale, {
+        toValue: 1.25,
+        duration: 70,
+      }),
+      Animated.timing (this.state.scale, {
+        toValue: 1,
+        duration: 100,
+      }),
+    ]).start ();
+  };
+  outOfZone = () => {
+    this.setState ({inActiveZone: false});
+    Animated.sequence ([
+      Animated.timing (this.state.scale, {
+        toValue: 1.25,
+        duration: 70,
+      }),
+      Animated.timing (this.state.scale, {
+        toValue: 1,
+        duration: 100,
+      }),
+    ]).start ();
+  };
+  openPost = () => {
+    setTimeout (() => {
+      this.props.parent.props.navigation.navigate ('Question', {
+        question: this.props.question,
+      });
+    }, 300);
+  };
+  render () {
+    return (
+      <View style={{marginTop: 5, position: 'relative'}}>
+        <Swipeable
+          style={{zIndex: 1}}
+          rightButtons={[]}
+          rightActionActivationDistance={80}
+          rightContent={
+            <View
+              style={{
+                width: 0,
+                height: 0,
+                backgroundColor: 'rgba(0,0,0,0)',
+              }}
+            />
+          }
+          bounceOnMount={this.props.index == 0}
+          onRightActionActivate={this.inZone}
+          onRightActionDeactivate={this.outOfZone}
+          onRightActionRelease={this.openPost}
+          // onRightActionDeactivate = {() => console.log("gone")}
+        >
+          <View
+            style={[
+              styles.post,
+              global.user.secondaryTheme (),
+              global.user.borderColor (),
+            ]}
+          >
+            <Text style={[styles.postTitle, global.user.secondaryTextColor ()]}>
+              {this.props.question.title}
+            </Text>
+            <Text
+              style={[
+                styles.postBody,
+                global.user.tertiaryTextColor (),
+                {marginBottom: 10},
+              ]}
+              numberOfLines={3}
+            >
+              {this.props.question.body || ''}
+            </Text>
+            <Text
+              style={{
+                marginBottom: 7,
+                fontSize: 12,
+                fontWeight: '300',
+                color: global.user.getTertiaryTextColor (),
+              }}
+            >
+              by {this.props.question.username}
+            </Text>
+            <View
+              style={{
+                alignSelf: 'stretch',
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+              }}
+            >
+              <View style={{flexDirection: 'row'}}>
+                <MessageIcon
+                  color={global.user.getTertiaryTextColor ()}
+                  style={{marginRight: 3}}
+                />
+                <Text
+                  style={[global.user.tertiaryTextColor (), {marginRight: 10}]}
+                >
+                  {this.props.question.comments.length}
+                </Text>
+                <ClockIcon
+                  color={global.user.getTertiaryTextColor ()}
+                  style={{marginRight: 3}}
+                />
+                <Text
+                  style={[global.user.tertiaryTextColor (), {marginRight: 10}]}
+                >
+                  {dateToTimestamp (new Date (this.props.question.date)).join (
+                    ''
+                  )}
+                </Text>
+              </View>
+              <Touchable
+                hitSlop={{top: 20, bottom: 20, left: 20, right: 20}}
+                onPress={() => this.props.showActionSheet(this.props.question)}
+              >
+                <EllipsisIcon
+                  size={20}
+                  color={global.user.getTertiaryTextColor ()}
+                  style={{marginRight: 20}}
+                />
+              </Touchable>
+            </View>
+          </View>
+        </Swipeable>
+        <View
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            bottom: 0,
+            right: 0,
+            zIndex: 0,
+            flexDirection: 'row',
+            justifyContent: 'flex-end',
+            backgroundColor: '#64d7fa',
+          }}
+        >
+          <Animated.View
+            style={{
+              alignSelf: 'stretch',
+              width: 80,
+              flexDirection: 'row',
+              justifyContent: 'center',
+              alignItems: 'center',
+              transform: [{scale: this.state.scale}],
+            }}
+          >
+            <ReplyIcon
+              size={35}
+              color={
+                this.state.inActiveZone ? 'white' : 'rgba(255,255,255,0.3)'
+              }
+            />
+          </Animated.View>
+        </View>
+      </View>
+    );
+  }
+}
+
+class CustomActionSheet extends React.Component {
+  constructor (props) {
+    super (props);
+    this.state = {
+      question: {},
+    }
+    this.actionSheet = React.createRef();
+  }
+  show(question) {
+    this.state.question = question;
+    this.actionSheet.current.show();
+  }
+  actionSheetAction = (index) => {
+    if (index == 0) {
+      this.props.parent.props.navigation.navigate ('Question', {
+        question: this.state.question,
+      });
+    }
+  }
+  render () {
+    return (
+      <ActionSheet
+        ref={this.actionSheet}
+        options={['Open', 'Report', 'Cancel']}
+        cancelButtonIndex={2}
+        destructiveButtonIndex={1}
+        onPress={this.actionSheetAction}
+      />
+    );
+  }
+}
+
+export default class QuestionsScreen extends React.Component {
+  constructor (props) {
+    super (props);
+    this.props = props;
+    this.state = {
+      questions: [],
+      limit: 20,
+    };
+    this.createQuestion = React.createRef ();
+    this.actionSheet = React.createRef ();
+  }
+  static navigationOptions = ({navigation}) => {
+    return {
+      header: null,
+    };
+  };
+  loadQuestions = (limit = 20, callback) => {
+    let api = new ApexAPI (global.user);
+    api
+      .get (
+        `posts?find_fields=school&school=${global.school.id}&order_by=date&order_direction=-1&populate=resources&limit=${limit}`
+      )
+      .then (data => data.json ())
+      .then (data => {
+        console.log (data.body);
+        if (data.status == 'ok') {
+          callback (null, data.body);
+        } else {
+          callback (data.body, []);
+        }
+      })
+      .catch (e => {
+        console.log (e);
+        callback (e, []);
+      });
+  };
+  componentDidMount () {
+    this.loadQuestions (this.state.limit, (err, questions) => {
+      this.setState ({questions});
+    });
+  }
+  openCreate = () => {
+    this.createQuestion.current.setState ({isBackdropVisible: true});
+  };
+  showActionSheet = (question) => {
+    this.actionSheet.current.show (question);
+  };
+  render () {
+    return (
+      <View style={[styles.container, global.user.primaryTheme ()]}>
+        <HeaderBar
+          iconLeft={
+            <Touchable
+              onPress={() => this.props.navigation.goBack ()}
+              style={{paddingLeft: 0, paddingRight: 45}}
+            >
+              <LeftIcon size={28} />
+            </Touchable>
+          }
+          iconRight={
+            <Touchable style={{paddingRight: 10}} onPress={this.openCreate}>
+              <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                <PlusIcon size={20} color="orange" />
+                <Text style={{fontSize: 24, color: 'orange', marginLeft: 5}}>
+                  New
+                </Text>
+              </View>
+            </Touchable>
+          }
+          width={width}
+          height={60}
+          title="Questions"
+        />
+        <View style={[styles.bodyHolder, global.user.primaryTheme ()]}>
+          <FlatList
+            data={this.state.questions.length != 0 ? this.state.questions : []}
+            renderItem={({item, index}) => (
+              <Question
+                showActionSheet={this.showActionSheet}
+                parent={this}
+                index={index}
+                question={item}
+              />
+            )}
+            keyExtractor={(item, index) => item._id}
+          />
+        </View>
+        <CreateQuestion
+          parent={this}
+          ref={this.createQuestion}
+          callback={(err, questions) => {
+            this.setState ({questions});
+          }}
+        />
+        <CustomActionSheet
+          ref={this.actionSheet}
+          parent={this}
+        />
+      </View>
+    );
+  }
+}
+
+const styles = StyleSheet.create ({
+  container: {
+    width,
+    flexGrow: 1,
+    backgroundColor: '#f0f0f0',
+  },
+  bodyHolder: {
+    zIndex: 1,
+    height: ifIphoneX (height - 80, height - 60),
+  },
+  post: {
+    width,
+    paddingTop: 15,
+    paddingBottom: 15,
+    paddingLeft: 10,
+    paddingRight: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'column',
+    justifyContent: 'flex-start',
+  },
+  postTitle: {
+    fontSize: 22,
+    fontWeight: '300',
+    marginBottom: 0,
+  },
+  postBody: {
+    fontSize: 14,
+    fontWeight: '500',
+    opacity: 0.9,
+  },
+});
