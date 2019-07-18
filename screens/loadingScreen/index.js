@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   Image,
   CameraRoll,
+  StatusBar,
 } from 'react-native';
 
 // import {AppLoading} from "expo";
@@ -227,6 +228,7 @@ export default class LoadingScreen extends React.Component {
     }
   };
   async componentDidMount () {
+    StatusBar.setHidden(true);
     this._notificationSubscription = Notifications.addListener (
       this._handleNotification
     );
@@ -235,22 +237,25 @@ export default class LoadingScreen extends React.Component {
       if (!loggedIn) {
         this.props.navigation.navigate ('Login');
       } else {
-        let {status} = await Permissions.askAsync (Permissions.CAMERA_ROLL);
+        let {status} = await Permissions.getAsync (Permissions.CAMERA_ROLL);
+        global.status = status;
         global.cameraRollImages = [];
-        global.getCameraRollImages = (callback) => {
-          if (status !== "granted") {
-            callback([]);
+        global.getCameraRollImages = callback => {
+          if (status !== 'granted') {
+            callback ([]);
           } else {
-            callback(global.cameraRollImages);
+            callback (global.cameraRollImages);
           }
-        }
-        if (status == "granted") {
+        };
+
+        if (status == 'granted') {
           let photos = await CameraRoll.getPhotos ({
-            first: 50,
+            first: 500,
             assetType: 'Photos',
             groupTypes: 'All',
           });
-          global.cameraRollImages = photos.edges;
+          photos.edges.sort((a, b) => b.node.timestamp - a.node.timestamp);
+          global.cameraRollImages = photos.edges.slice(0, 70);
         }
 
         let user = await User._retrieveFromStorage ();
@@ -276,10 +281,10 @@ export default class LoadingScreen extends React.Component {
         global.assignments = allAssignments || [];
         global.notes = allNotes || [];
         global.activity = {
-          name: "Before School",
+          name: 'Before School',
           page: 0,
-          key: "beforeSchoolActivities"
-        }
+          key: 'beforeSchoolActivities',
+        };
         global.completedAssignments = completedAssignments;
         global.semesterMap = semesterMap;
         global.dayMap = school['dayMap'];

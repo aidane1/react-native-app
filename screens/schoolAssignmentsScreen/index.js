@@ -365,6 +365,7 @@ export default class SchoolAssignmentsScreen extends React.Component {
       assignments: {},
     };
     this.displayModal = React.createRef ();
+    this._isMounted = false;
   }
 
   static navigationOptions = ({navigation}) => {
@@ -383,11 +384,16 @@ export default class SchoolAssignmentsScreen extends React.Component {
       isBackdropVisible: false,
     });
   };
+  componentWillUnmount () {
+    this._isMounted = false;
+  }
   componentDidMount () {
+    this._isMounted = true;
     let api = new ApexAPI (global.user);
     api
       .get (
-        `district-assignments?username=${global.user.username}&password=${global.user.password}&district=sd83`
+        `district-assignments?username=${global.user.username}&password=${global.user.password}&district=sd83`,
+        this.abortController
       )
       .then (data => data.json ())
       .then (data => {
@@ -441,7 +447,7 @@ export default class SchoolAssignmentsScreen extends React.Component {
             }
             assignments[key].marks = marks;
           }
-          this.setState ({assignments, updated: true});
+          this._isMounted && this.setState ({assignments, updated: true});
         }
       });
   }

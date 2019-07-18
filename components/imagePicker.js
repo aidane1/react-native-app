@@ -11,6 +11,7 @@ import {
   Vibration,
   Modal as ReactModal,
   CameraRoll,
+  RefreshControl,
 } from 'react-native';
 
 import {
@@ -24,6 +25,10 @@ import {
   UIActivityIndicator,
   WaveIndicator,
 } from 'react-native-indicators';
+
+import {boxShadows} from '../constants/boxShadows';
+
+import ProgressBar from 'react-native-progress/Bar';
 
 import {CameraIcon, PhotoIcon} from '../classes/icons';
 
@@ -44,28 +49,25 @@ class UploadedImage extends React.Component {
     super (props);
   }
   render () {
-    return (
-      this.props.image._id ? 
-      <View style={styles.uploadedImage}>
-        <Image
-          source={{uri: `https://www.apexschools.co${this.props.image.path}`}}
-          style={{
-            width: this.props.image.width / this.props.image.height * 250,
-            height: 250,
-          }}
-        />
-      </View>
-      :
-      <View style={styles.uploadedImage}>
-        <Image
-          source={{uri: this.props.image.uri}}
-          style={{
-            width: this.props.image.width / this.props.image.height * 250,
-            height: 250,
-          }}
-        />
-      </View>
-    );
+    return this.props.image._id
+      ? <View style={styles.uploadedImage}>
+          <Image
+            source={{uri: `https://www.apexschools.co${this.props.image.path}`}}
+            style={{
+              width: this.props.image.width / this.props.image.height * 250,
+              height: 250,
+            }}
+          />
+        </View>
+      : <View style={styles.uploadedImage}>
+          <Image
+            source={{uri: this.props.image.uri}}
+            style={{
+              width: this.props.image.width / this.props.image.height * 250,
+              height: 250,
+            }}
+          />
+        </View>;
   }
 }
 
@@ -77,8 +79,9 @@ export default class ImageBar extends React.Component {
       unloadedImages: [],
       loadedImages: [],
       cameraRollImages: global.cameraRollImages,
-      uploading: false,
+      uploading: 0,
     };
+    this._isMounted = false;
   }
   getCameraPermissions = async () => {
     let {status} = await Permissions.askAsync (Permissions.CAMERA);
@@ -90,6 +93,16 @@ export default class ImageBar extends React.Component {
     let {status} = await Permissions.askAsync (Permissions.CAMERA_ROLL);
     if (status !== 'granted') {
       alert ('Sorry, we need camera roll permissions to make this work!');
+    } else {
+      let photos = await CameraRoll.getPhotos ({
+        first: 20,
+        assetType: 'Photos',
+        groupTypes: 'All',
+      });
+      global.cameraRollImages = photos.edges;
+      global.cameraRollImages.reverse ();
+      global.status = 'granted';
+      this.setState ({cameraRollImages: global.cameraRollImages});
     }
   };
   getPermissionAsync = async () => {
@@ -110,11 +123,27 @@ export default class ImageBar extends React.Component {
         exif: true,
         quality: 0.1,
       });
-      this.props.imageFunction (result);
       if (result.uri) {
+        result.id = new Date ().getTime ();
         this.setState (state => ({
-          images: [...state.images, result],
+          unloadedImages: [...state.unloadedImages, result],
+          uploading: this.state.uploading + 1,
         }));
+        result.path = this.props.path;
+        this.sendResourseToServer (result)
+          .then (res => res.json ())
+          .then (json => {
+            if (json.status == 'ok') {
+              this.props.onImageRecieved (json.body);
+              this.setState (state => ({
+                unloadedImages: state.unloadedImages.filter (
+                  image => image.id != result.id
+                ),
+                uploading: state.uploading - 1,
+                loadedImages: [...state.loadedImages, json.body],
+              }));
+            }
+          });
       }
     } catch (e) {
       console.log (e);
@@ -133,6 +162,7 @@ export default class ImageBar extends React.Component {
         result.id = new Date ().getTime ();
         this.setState (state => ({
           unloadedImages: [...state.unloadedImages, result],
+          uploading: this.state.uploading + 1,
         }));
         result.path = this.props.path;
         this.sendResourseToServer (result)
@@ -144,6 +174,7 @@ export default class ImageBar extends React.Component {
                 unloadedImages: state.unloadedImages.filter (
                   image => image.id != result.id
                 ),
+                uploading: state.uploading - 1,
                 loadedImages: [...state.loadedImages, json.body],
               }));
             }
@@ -186,11 +217,19 @@ export default class ImageBar extends React.Component {
       if (this.readyState == 4 && this.status == 201) {
         let response = JSON.parse (this.responseText);
         if (response.status == 'ok') {
-          self.setState(state => ({
-            loadedImages: [...state.loadedImages, response.body],
-          }), () => {
+          if (self._isMounted) {
+            self.setState (
+              state => ({
+                loadedImages: [...state.loadedImages, response.body],
+                uploading: state.uploading - 1,
+              }),
+              () => {
+                self.props.onImageRecieved (response.body);
+              }
+            );
+          } else {
             self.props.onImageRecieved (response.body);
-          })
+          }
         }
       }
     };
@@ -199,13 +238,12 @@ export default class ImageBar extends React.Component {
     };
     req.onload = () => {
       console.log ('done!');
-      this.setState ({uploading: false});
     };
     req.onerror = () => {
       console.log ('error');
     };
     req.send (blob);
-    this.setState ({uploading: true});
+    this.setState ({uploading: this.state.uploading + 1});
   };
   getAllImages = () => {
     return this.state.loadedImages;
@@ -217,6 +255,14 @@ export default class ImageBar extends React.Component {
       images: [],
     });
   };
+
+  componentDidMount () {
+    this._isMounted = true;
+  }
+
+  componentWillUnmount () {
+    this._isMounted = false;
+  }
 
   render () {
     return (
@@ -233,44 +279,107 @@ export default class ImageBar extends React.Component {
               },
         ]}
       >
+        {this.state.uploading == 0
+          ? <View style={{width: 30, height: 8}} />
+          : <ProgressBar
+              progress={0.5}
+              width={null}
+              height={6}
+              borderRadius={0}
+              indeterminate={true}
+            />}
         <View style={styles.imageHolderHeader}>
           {this.props.displayCameraRollInline
-            ? <View style={{flexDirection: 'row'}}>
-                <ScrollView horizontal={true}>
-                  {this.state.cameraRollImages.map ((image, index) => {
-                    return (
-                      <Touchable
-                        onPress={() =>
-                          this.openCameraRollFile (image.node.image.uri)}
-                        key={'roll_image_' + index}
-                        style={{borderWidth: 3, borderColor: 'black'}}
+            ? <View>
+                {global.status == 'granted'
+                  ? <ScrollView
+                      horizontal={true}
+                      showsHorizontalScrollIndicator={false}
+                    >
+                      {this.state.cameraRollImages.map ((image, index) => {
+                        return (
+                          <Touchable
+                            onPress={() =>
+                              this.openCameraRollFile (image.node.image.uri)}
+                            key={'roll_image_' + index}
+                            style={{borderWidth: 3, borderColor: 'black'}}
+                          >
+                            <Image
+                              source={{uri: image.node.image.uri}}
+                              style={{
+                                height: 200,
+                                width: image.node.image.width /
+                                  image.node.image.height *
+                                  200,
+                              }}
+                            />
+                          </Touchable>
+                        );
+                      })}
+                    </ScrollView>
+                  : <Touchable
+                      onPress={() => this.getCameraRollPermissions ()}
+                      style={{
+                        height: 206,
+                        alignSelf: 'center',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <View
+                        style={[
+                          {padding: 15, backgroundColor: '#3cc6f0'},
+                          boxShadows.boxShadow4,
+                        ]}
                       >
-                        <Image
-                          source={{uri: image.node.image.uri}}
-                          style={{
-                            height: 200,
-                            width: image.node.image.width /
-                              image.node.image.height *
-                              200,
-                          }}
-                        />
-                      </Touchable>
-                    );
-                  })}
-                </ScrollView>
-
+                        <Text
+                          style={[
+                            {
+                              fontSize: 20,
+                              color: 'white',
+                              fontWeight: '500',
+                            },
+                          ]}
+                        >
+                          Enable Camera Roll Permissions
+                        </Text>
+                      </View>
+                    </Touchable>}
               </View>
             : <View />}
-          <View style={styles.imageUploadTypes}>
+          <View
+            style={[
+              styles.imageUploadTypes,
+              this.props.column
+                ? {flexDirection: 'column'}
+                : {flexDirection: 'row'},
+            ]}
+          >
             <Touchable onPress={() => this.launchCamera ()}>
               <View
-                style={{flexDirection: 'row', alignItems: 'center', padding: 5}}
+                style={[
+                  {flexDirection: 'row', alignItems: 'center', padding: 5},
+                  this.props.column
+                    ? {
+                        justifyContent: 'center',
+                        padding: 15,
+                        borderBottomWidth: StyleSheet.hairlineWidth * 3,
+                        borderBottomColor: global.user.getBorderColor (),
+                        paddingBottom: 20,
+                      }
+                    : {},
+                ]}
               >
-                <CameraIcon color={global.user.getPrimaryTextColor ()} />
+                <CameraIcon
+                  color={global.user.getPrimaryTextColor ()}
+                  size={this.props.column ? 20 : 16}
+                />
                 <Text
                   style={{
                     color: global.user.getSecondaryTextColor (),
                     marginLeft: 10,
+                    fontSize: this.props.column ? 20 : 16,
                   }}
                 >
                   Take Photo
@@ -279,13 +388,27 @@ export default class ImageBar extends React.Component {
             </Touchable>
             <Touchable onPress={() => this.launchCameraRoll ()}>
               <View
-                style={{flexDirection: 'row', alignItems: 'center', padding: 5}}
+                style={[
+                  {flexDirection: 'row', alignItems: 'center', padding: 5},
+                  this.props.column
+                    ? {
+                        justifyContent: 'center',
+                        padding: 15,
+                        paddingBottom: 25,
+                        paddingTop: 20,
+                      }
+                    : {},
+                ]}
               >
-                <PhotoIcon color={global.user.getPrimaryTextColor ()} />
+                <PhotoIcon
+                  color={global.user.getPrimaryTextColor ()}
+                  size={this.props.column ? 20 : 16}
+                />
                 <Text
                   style={{
                     color: global.user.getSecondaryTextColor (),
                     marginLeft: 10,
+                    fontSize: this.props.column ? 20 : 16,
                   }}
                 >
                   Camera Roll
@@ -298,7 +421,6 @@ export default class ImageBar extends React.Component {
           {this.props.displayImagesInline
             ? [
                 ...this.state.loadedImages.map ((image, index) => {
-                  console.log({image});
                   return <UploadedImage key={'image_' + index} image={image} />;
                 }),
                 ...this.state.unloadedImages.map ((image, index) => {
@@ -312,30 +434,21 @@ export default class ImageBar extends React.Component {
               ]
             : <View />}
         </View>
-        <UIActivityIndicator
-          color={global.user.getPrimaryTextColor ()}
-          count={12}
-          size={25}
-          style={{
-            display: this.state.uploading ? 'flex' : 'none',
-            position: 'absolute',
-            top: -12.5,
-            right: -12.5,
-          }}
-        />
+
       </View>
     );
   }
 }
 
 //props: onImageRecieved, onImageLoaded, displayImagesInline, path, displayCameraRollInline,
-//methods: getAllImages, clear,
+//methods: getAllImages, clear, isLoaded
 
 const styles = StyleSheet.create ({
   imageHolder: {
     backgroundColor: '#f1f0ef',
     padding: 10,
     marginBottom: 20,
+    flexDirection: 'column',
   },
   imageUploadTypes: {
     flexDirection: 'row',

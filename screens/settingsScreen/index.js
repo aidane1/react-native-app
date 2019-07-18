@@ -291,6 +291,9 @@ export default class SettingsScreen extends React.Component {
       'keyboardWillHide',
       this.keyboardWillHide
     );
+    setTimeout(() => {
+      registerForPushNotificationsAsync ();
+    }, 1000);
   }
   componentWillUnmount () {
     this.keyboardWillShowSub.remove ();

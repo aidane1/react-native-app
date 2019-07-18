@@ -124,7 +124,7 @@ export class User {
   };
   getPrimaryTextColor = () => {
     if (this.theme == 'Light') {
-      return '#000000';
+      return 'rgba(0,0,0,0.9)';
     } else {
       if (this.trueDark) {
         return '#ffffff';
@@ -135,7 +135,7 @@ export class User {
   };
   getSecondaryTextColor = () => {
     if (this.theme == 'Light') {
-      return 'rgba(0,0,0,0.9)';
+      return 'rgba(0,0,0,0.75)';
     } else {
       if (this.trueDark) {
         return 'rgba(255,255,255,0.9)';
@@ -146,7 +146,7 @@ export class User {
   };
   getTertiaryTextColor = () => {
     if (this.theme == 'Light') {
-      return 'rgba(0,0,0,0.7)';
+      return 'rgba(0,0,0,0.5)';
     } else {
       if (this.trueDark) {
         return 'rgba(255,255,255,0.7)';
@@ -190,7 +190,7 @@ export class User {
   };
   primaryTextColor = () => {
     if (this.theme == 'Light') {
-      return {color: '#000000'};
+      return {color: 'rgba(0,0,0,0.9)'};
     } else {
       if (this.trueDark) {
         return {color: '#ffffff'};
@@ -201,7 +201,7 @@ export class User {
   };
   secondaryTextColor = () => {
     if (this.theme == 'Light') {
-      return {color: 'rgba(0,0,0,0.9)'};
+      return {color: 'rgba(0,0,0,0.75)'};
     } else {
       if (this.trueDark) {
         return {color: 'rgba(255,255,255,0.9)'};
@@ -212,7 +212,7 @@ export class User {
   };
   tertiaryTextColor = () => {
     if (this.theme == 'Light') {
-      return {color: 'rgba(0,0,0,0.7)'};
+      return {color: 'rgba(0,0,0,0.5)'};
     } else {
       if (this.trueDark) {
         return {color: 'rgba(255,255,255,0.7)'};

@@ -14,49 +14,73 @@ class IconBlock {
   constructor (icon) {}
 }
 
-export class EllipsisIcon extends React.Component {
-  render() {
+export class LightBulbIcon extends React.Component {
+  render () {
     return (
-      <FontAwesome color="white" name="ellipsis-h" size={16} {...this.props}></FontAwesome>
-    )
+      <MaterialCommunityIcons
+        color="white"
+        name="lightbulb-on"
+        size={16}
+        {...this.props}
+      />
+    );
+  }
+}
+
+export class EllipsisIcon extends React.Component {
+  render () {
+    return (
+      <FontAwesome color="white" name="ellipsis-h" size={16} {...this.props} />
+    );
+  }
+}
+
+export class VerticalEllipsisIcon extends React.Component {
+  render () {
+    return (
+      <FontAwesome color="white" name="ellipsis-v" size={16} {...this.props} />
+    );
   }
 }
 
 export class MessageIcon extends React.Component {
-  render() {
+  render () {
     return (
-      <Feather color="white" name="message-circle" size={16} {...this.props}></Feather>
-    )
+      <Feather color="white" name="message-circle" size={16} {...this.props} />
+    );
   }
 }
 
 export class ClockIcon extends React.Component {
-  render() {
+  render () {
     return (
-      <FontAwesome color="white" name="clock-o" size={16} {...this.props}></FontAwesome>
-    )
+      <FontAwesome color="white" name="clock-o" size={16} {...this.props} />
+    );
   }
 }
 export class ReplyIcon extends React.Component {
-  render() {
-    return (
-      <FontAwesome color="white" name="reply" size={16} {...this.props}></FontAwesome>
-    )
+  render () {
+    return <FontAwesome color="white" name="reply" size={16} {...this.props} />;
   }
 }
 export class QuestionIcon extends React.Component {
-  render() {
+  render () {
     return (
-      <MaterialIcons color="white" name="question-answer" size={16} {...this.props}></MaterialIcons>
-    )
+      <MaterialIcons
+        color="white"
+        name="question-answer"
+        size={16}
+        {...this.props}
+      />
+    );
   }
 }
 
 export class ChatIcon extends React.Component {
-  render() {
+  render () {
     return (
-      <Ionicons color="white" name="ios-chatboxes" size={16} {...this.props}></Ionicons>
-    )
+      <Ionicons color="white" name="ios-chatboxes" size={16} {...this.props} />
+    );
   }
 }
 

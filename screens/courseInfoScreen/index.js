@@ -23,8 +23,8 @@ import {
   EmptyIcon,
   CheckBoxOpenIcon,
   XIcon,
-  SendIcon,
-  PhotoIcon,
+  VerticalEllipsisIcon,
+  LightBulbIcon,
   TrashIcon,
   SchoolAssignmentsIcon,
   BeforeSchoolIcon,
@@ -63,6 +63,8 @@ import ImageBar from '../../components/imagePicker';
 import ChatRoom from './chatroom';
 
 import {ifIphoneX} from 'react-native-iphone-x-helper';
+
+import ActionSheet from 'react-native-actionsheet';
 
 const width = Dimensions.get ('window').width; //full width
 const height = Dimensions.get ('window').height; //full height
@@ -197,40 +199,467 @@ class AssignmentRow extends React.Component {
         <View style={styles.assignmentCompleted}>
           <CheckButton assignment={this.props.assignment} />
         </View>
-        <TouchableWithoutFeedback
-          onPress={() => {
-            this.props.openAssignment (this.props.assignment);
+        <View
+          style={{
+            flexGrow: 1,
+            width: 0,
+            paddingRight: 20,
+            flexDirection: 'row',
           }}
-          style={{width: 0, flexGrow: 1, flexDirection: 'row'}}
         >
-          <View style={styles.assignmentInfo}>
-            <View style={styles.assignmentTitle}>
-              <Text
-                style={{
-                  fontSize: 16,
-                  color: global.user.getSecondaryTextColor (),
-                }}
+          <Touchable
+            onPress={() => {
+              this.props.openAssignment (this.props.assignment);
+            }}
+            style={{width: 0, flexGrow: 1, flexDirection: 'row', zIndex: 2}}
+          >
+            <View style={[styles.assignmentInfo, {overflow: 'hidden'}]}>
+              <View style={styles.assignmentTitle}>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    color: global.user.getSecondaryTextColor (),
+                  }}
+                  numberOfLines={1}
+                >
+                  {this.props.assignment.assignmentTitle}
+                </Text>
+              </View>
+              <View
+                style={{flexDirection: 'row', justifyContent: 'space-between'}}
                 numberOfLines={1}
               >
-                {this.props.assignment.assignmentTitle}
-              </Text>
+                <Text
+                  numberOfLines={1}
+                  style={{
+                    fontSize: 14,
+                    color: global.user.getTertiaryTextColor (),
+                  }}
+                >
+                  {this.props.assignment.dueDate}
+                </Text>
+                <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                  <LightBulbIcon
+                    size={14}
+                    color={global.user.getTertiaryTextColor ()}
+                  />
+                  <Text
+                    numberOfLines={1}
+                    style={{
+                      fontSize: 12,
+                      color: this.props.assignment.userVote == -1
+                        ? '#e03634'
+                        : this.props.assignment.userVote == 1
+                            ? '#20d67b'
+                            : global.user.getTertiaryTextColor (),
+                      marginLeft: 5,
+                    }}
+                  >
+                    {this.props.assignment.helpful == 0 &&
+                      this.props.assignment.unhelpful == 0
+                      ? 'Unkown % '
+                      : `${Math.round (this.props.assignment.helpful / (this.props.assignment.helpful + this.props.assignment.unhelpful) * 100)}% `}
+                    Helpful
+                  </Text>
+                </View>
+
+              </View>
             </View>
-            <View style={styles.assignmentDue} numberOfLines={1}>
-              <Text
-                style={{
-                  fontSize: 14,
-                  color: global.user.getTertiaryTextColor (),
-                }}
-              >
-                {this.props.assignment.dueDate}
-              </Text>
-            </View>
+          </Touchable>
+          <View
+            style={{
+              zIndex: 1,
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              flexDirection: 'row',
+              justifyContent: 'flex-end',
+              alignItems: 'center',
+            }}
+          >
+            <Touchable
+              onPress={() =>
+                this.props.showActionSheet (
+                  this.props.assignment,
+                  'assignment'
+                )}
+              hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}
+            >
+              <VerticalEllipsisIcon
+                size={20}
+                color={global.user.getTertiaryTextColor ()}
+              />
+            </Touchable>
+
           </View>
-        </TouchableWithoutFeedback>
+        </View>
       </View>
     );
   }
 }
+
+class CustomActionSheet extends React.Component {
+  constructor (props) {
+    super (props);
+    this.state = {
+      resource: {},
+      type: '_',
+    };
+    this.actionSheet = React.createRef ();
+  }
+  show (resource, type) {
+    this.state.resource = resource;
+    this.state.type = type;
+    this.actionSheet.current.show ();
+  }
+  actionSheetAction = index => {
+    if (
+      this.state.type == 'assignment' &&
+      this.state.resource.id &&
+      this.state.resource.id != '_'
+    ) {
+      let api = new ApexAPI (global.user);
+      switch (index) {
+        case 0:
+          this.props.openAssignment (this.state.resource);
+          break;
+        case 1:
+          api
+            .get (`vote/assignments/${this.state.resource.id}?vote=helpful`)
+            .then (data => data.json ())
+            .then (async data => {
+              if (data.status == 'ok') {
+                global.assignments = global.assignments.map (assignment => {
+                  if (assignment.id == data.body._id) {
+                    assignment.helpful = data.body.helpful_votes.length;
+                    assignment.unhelpful = data.body.unhelpful_votes.length;
+                    assignment.userVote = data.body.helpful_votes.indexOf (
+                      global.user.id
+                    ) >= 0
+                      ? 1
+                      : data.body.unhelpful_votes.indexOf (global.user.id) >= 0
+                          ? -1
+                          : 0;
+                    return assignment;
+                  } else {
+                    return assignment;
+                  }
+                });
+                await Assignments._saveToStorage (global.assignments);
+                let assignments = [...this.props.parent.state.assignments];
+                setTimeout (() => {
+                  this.props.parent.setState ({assignments});
+                }, 0);
+              } else {
+                Alert.alert (
+                  'Error',
+                  res.body,
+                  [
+                    {
+                      text: 'Try Again',
+                      onPress: () => this.createAssignment (),
+                    },
+                    {
+                      text: 'Cancel',
+                      onPress: () => {
+                        this.setState ({
+                          isBackdropVisible: false,
+                          images: [],
+                        });
+                      },
+                      style: 'cancel',
+                    },
+                  ],
+                  {cancelable: false}
+                );
+              }
+            })
+            .catch (e => {
+              console.log (e);
+              if (e.message == "JSON Parse error: Unrecognized token '<'") {
+                Alert.alert (
+                  'Connection Error',
+                  'Unable to connect to the server',
+                  [
+                    {text: 'Try Again', onPress: () => this.onPress ()},
+                    {
+                      text: 'Cancel',
+                      onPress: () => {
+                        console.log ('cancelled');
+                      },
+                      style: 'cancel',
+                    },
+                  ],
+                  {cancelable: false}
+                );
+              }
+            });
+          break;
+        case 2:
+          api
+            .get (`vote/assignments/${this.state.resource.id}?vote=unhelpful`)
+            .then (data => data.json ())
+            .then (async data => {
+              if (data.status == 'ok') {
+                global.assignments = global.assignments.map (assignment => {
+                  if (assignment.id == data.body._id) {
+                    assignment.helpful = data.body.helpful_votes.length;
+                    assignment.unhelpful = data.body.unhelpful_votes.length;
+                    assignment.userVote = data.body.helpful_votes.indexOf (
+                      global.user.id
+                    ) >= 0
+                      ? 1
+                      : data.body.unhelpful_votes.indexOf (global.user.id) >= 0
+                          ? -1
+                          : 0;
+                    return assignment;
+                  } else {
+                    return assignment;
+                  }
+                });
+                await Assignments._saveToStorage (global.assignments);
+                let assignments = [...this.props.parent.state.assignments];
+                setTimeout (() => {
+                  this.props.parent.setState ({assignments});
+                }, 0);
+              } else {
+                Alert.alert (
+                  'Error',
+                  res.body,
+                  [
+                    {
+                      text: 'Try Again',
+                      onPress: () => this.createAssignment (),
+                    },
+                    {
+                      text: 'Cancel',
+                      onPress: () => {
+                        this.setState ({
+                          isBackdropVisible: false,
+                          images: [],
+                        });
+                      },
+                      style: 'cancel',
+                    },
+                  ],
+                  {cancelable: false}
+                );
+              }
+            })
+            .catch (e => {
+              console.log (e);
+              if (e.message == "JSON Parse error: Unrecognized token '<'") {
+                Alert.alert (
+                  'Connection Error',
+                  'Unable to connect to the server',
+                  [
+                    {text: 'Try Again', onPress: () => this.onPress ()},
+                    {
+                      text: 'Cancel',
+                      onPress: () => {
+                        console.log ('cancelled');
+                      },
+                      style: 'cancel',
+                    },
+                  ],
+                  {cancelable: false}
+                );
+              }
+            });
+          break;
+        case 3:
+          break;
+      }
+    } else if (
+      this.state.type == 'note' &&
+      this.state.resource &&
+      this.state.resource.id
+    ) {
+      let api = new ApexAPI (global.user);
+      switch (index) {
+        case 0:
+          this.props.openNote (this.state.resource);
+          break;
+        case 1:
+          api
+            .get (`vote/notes/${this.state.resource.id}?vote=helpful`)
+            .then (data => data.json ())
+            .then (async data => {
+              if (data.status == 'ok') {
+                global.notes = global.notes.map (note => {
+                  if (note.id == data.body._id) {
+                    note.helpful = data.body.helpful_votes.length;
+                    note.unhelpful = data.body.unhelpful_votes.length;
+                    note.userVote = data.body.helpful_votes.indexOf (
+                      global.user.id
+                    ) >= 0
+                      ? 1
+                      : data.body.unhelpful_votes.indexOf (global.user.id) >= 0
+                          ? -1
+                          : 0;
+                    return note;
+                  } else {
+                    return note;
+                  }
+                });
+                await Notes._saveToStorage (global.notes);
+                let notes = [...this.props.parent.state.notes];
+                setTimeout (() => {
+                  this.props.parent.setState ({notes});
+                }, 0);
+              } else {
+                Alert.alert (
+                  'Error',
+                  res.body,
+                  [
+                    {
+                      text: 'Try Again',
+                      onPress: () => this.createAssignment (),
+                    },
+                    {
+                      text: 'Cancel',
+                      onPress: () => {
+                        this.setState ({
+                          isBackdropVisible: false,
+                          images: [],
+                        });
+                      },
+                      style: 'cancel',
+                    },
+                  ],
+                  {cancelable: false}
+                );
+              }
+            })
+            .catch (e => {
+              console.log (e);
+              if (e.message == "JSON Parse error: Unrecognized token '<'") {
+                Alert.alert (
+                  'Connection Error',
+                  'Unable to connect to the server',
+                  [
+                    {text: 'Try Again', onPress: () => this.onPress ()},
+                    {
+                      text: 'Cancel',
+                      onPress: () => {
+                        console.log ('cancelled');
+                      },
+                      style: 'cancel',
+                    },
+                  ],
+                  {cancelable: false}
+                );
+              }
+            });
+          break;
+        case 2:
+          api
+            .get (`vote/notes/${this.state.resource.id}?vote=unhelpful`)
+            .then (data => data.json ())
+            .then (async data => {
+              if (data.status == 'ok') {
+                global.notes = global.notes.map (note => {
+                  if (note.id == data.body._id) {
+                    note.helpful = data.body.helpful_votes.length;
+                    note.unhelpful = data.body.unhelpful_votes.length;
+                    note.userVote = data.body.helpful_votes.indexOf (
+                      global.user.id
+                    ) >= 0
+                      ? 1
+                      : data.body.unhelpful_votes.indexOf (global.user.id) >= 0
+                          ? -1
+                          : 0;
+                    return note;
+                  } else {
+                    return note;
+                  }
+                });
+                await Notes._saveToStorage (global.notes);
+                let notes = [...this.props.parent.state.notes];
+                setTimeout (() => {
+                  this.props.parent.setState ({notes});
+                }, 0);
+              } else {
+                Alert.alert (
+                  'Error',
+                  res.body,
+                  [
+                    {
+                      text: 'Try Again',
+                      onPress: () => this.createAssignment (),
+                    },
+                    {
+                      text: 'Cancel',
+                      onPress: () => {
+                        this.setState ({
+                          isBackdropVisible: false,
+                          images: [],
+                        });
+                      },
+                      style: 'cancel',
+                    },
+                  ],
+                  {cancelable: false}
+                );
+              }
+            })
+            .catch (e => {
+              console.log (e);
+              if (e.message == "JSON Parse error: Unrecognized token '<'") {
+                Alert.alert (
+                  'Connection Error',
+                  'Unable to connect to the server',
+                  [
+                    {text: 'Try Again', onPress: () => this.onPress ()},
+                    {
+                      text: 'Cancel',
+                      onPress: () => {
+                        console.log ('cancelled');
+                      },
+                      style: 'cancel',
+                    },
+                  ],
+                  {cancelable: false}
+                );
+              }
+            });
+          break;
+        case 3:
+          break;
+      }
+    }
+  };
+  render () {
+    let assignmentOptions = [
+      'Open',
+      'Vote as Helpful',
+      'Vote as Unhelpful',
+      'Report',
+      'Cancel',
+    ];
+    let noteOptions = [
+      'Open',
+      'Vote as Helpful',
+      'Vote as Unhelpful',
+      'Report',
+      'Cancel',
+    ];
+    return (
+      <ActionSheet
+        ref={this.actionSheet}
+        options={
+          this.state.type == 'assignment' ? assignmentOptions : noteOptions
+        }
+        cancelButtonIndex={4}
+        destructiveButtonIndex={3}
+        onPress={this.actionSheetAction}
+      />
+    );
+  }
+}
+
 class AssignmentBubble extends React.Component {
   constructor (props) {
     super (props);
@@ -258,6 +687,7 @@ class AssignmentBubble extends React.Component {
               last={index == array.length - 1}
               assignment={assignment}
               completed={this.props.completedAssignments}
+              showActionSheet={this.props.showActionSheet}
             />
           );
         })}
@@ -284,6 +714,9 @@ class CreateButton extends React.Component {
       duration: 100,
     }).start ();
   };
+  onPress = () => {
+    this.props.onPress ();
+  };
   render () {
     let {scaleVal} = this.state;
     return (
@@ -291,7 +724,7 @@ class CreateButton extends React.Component {
         onPressIn={this.handleClick}
         onPressOut={this.handlePressOut}
         style={{width: 140}}
-        onPress={this.props.onPress}
+        onPress={this.onPress}
       >
         <Animated.View
           style={[
@@ -358,19 +791,6 @@ class ModalInput extends React.Component {
       />
     );
   }
-}
-
-function sendResourseToServer (resource) {
-  return fetch ('https://www.apexschools.co/api/v1/resources?base64=true', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': global.user['x-api-key'],
-      'x-id-key': global.user['x-id-key'],
-      school: global.user['school'],
-    },
-    body: JSON.stringify (resource),
-  });
 }
 
 class ImageViewerModal extends React.Component {
@@ -461,11 +881,8 @@ class DisplayAssignmentModal extends React.Component {
           response_resources: resource._id,
         }
       )
-      .then (data => data.json ())
-      .then (json => {
-        console.log (json);
-      })
       .catch (e => {
+        console.log (e);
         if (e.message == "JSON Parse error: Unrecognized token '<'") {
           Alert.alert (
             'Connection Error',
@@ -489,53 +906,9 @@ class DisplayAssignmentModal extends React.Component {
       });
   };
   imageFunction = async result => {
-    if (result.uri) {
-      result.path = `/courses/${global.courseInfoCourse.id}/resources`;
-      sendResourseToServer (result)
-        .then (res => res.json ())
-        .then (json => {
-          if (json.status == 'ok') {
-            this.state.images.push (json.body);
-            this.setState ({images: this.state.images});
-            this.pushResultImage (json.body);
-          } else {
-            Alert.alert (
-              'Error',
-              json.body,
-              [
-                {text: 'Try Again', onPress: () => this.imageFunction (result)},
-                {
-                  text: 'Cancel',
-                  onPress: () => {
-                    console.log ('cancelled');
-                  },
-                  style: 'cancel',
-                },
-              ],
-              {cancelable: false}
-            );
-          }
-        })
-        .catch (e => {
-          if (e.message == "JSON Parse error: Unrecognized token '<'") {
-            Alert.alert (
-              'Connection Error',
-              'Unable to connect to the server',
-              [
-                {text: 'Try Again', onPress: () => this.imageFunction (result)},
-                {
-                  text: 'Cancel',
-                  onPress: () => {
-                    console.log ('cancelled');
-                  },
-                  style: 'cancel',
-                },
-              ],
-              {cancelable: false}
-            );
-          }
-        });
-    }
+    this.state.images.push (result);
+    this.setState ({images: this.state.images});
+    this.pushResultImage (result);
   };
   render () {
     let topicsMap = Topics._makeTopicMap (global.topics);
@@ -702,8 +1075,10 @@ class DisplayAssignmentModal extends React.Component {
                     })}
                   </View>
                   <ImageBar
-                    displayImages={false}
-                    imageFunction={this.imageFunction}
+                    displayImagesInline={false}
+                    onImageRecieved={this.imageFunction}
+                    displayCameraRollInline={false}
+                    path={`/courses/${global.courseInfoCourse.id}/assignments`}
                   />
                 </View>
               </ScrollView>
@@ -721,7 +1096,6 @@ class AssignmentModal extends React.Component {
     this.state = {
       isBackdropVisible: false,
       images: [],
-      imageIDs: [],
       topics: Topics._MakeCourseTopicList (
         global.courseInfoCourse.id,
         global.topics
@@ -778,7 +1152,7 @@ class AssignmentModal extends React.Component {
   };
 
   imageFunction = result => {
-    console.log(result);
+    this.state.images.push (result);
   };
 
   createAssignment () {
@@ -788,7 +1162,7 @@ class AssignmentModal extends React.Component {
       due_date: this.state.due,
       assignment_notes: this.state.notes,
       reference_course: global.courseInfoCourse.id,
-      resources: this.state.imageIDs.map (image => image._id),
+      resources: this.state.images.map (image => image._id),
     };
     if (this.state.topic.topicType == 'id' && this.state.topic.topic != '_') {
       postObject.topic = this.state.topic.topic;
@@ -797,7 +1171,7 @@ class AssignmentModal extends React.Component {
       .post ('assignments?populate=resources', postObject)
       .then (res => res.json ())
       .then (async res => {
-        this.setState ({isBackdropVisible: false, images: [], imageIDs: []});
+        this.setState ({isBackdropVisible: false, images: []});
         if (res.status == 'ok') {
           let assignment = {
             topic: res.body.topic || '_',
@@ -808,6 +1182,11 @@ class AssignmentModal extends React.Component {
             date: res.body.date,
             referenceCourse: res.body.reference_course,
             resources: res.body.resources,
+            helpful: res.body.helpful_votes.length,
+            unhelpful: res.body.unhelpful_votes.length,
+            userVote: res.body.helpful_votes.indexOf (global.user.id) >= 0
+              ? 1
+              : res.body.unhelpful_votes.indexOf (global.user.id) >= 0 ? -1 : 0,
           };
           assignment = new Assignment (assignment);
           let assignments = [...this.props.parent.state.assignments];
@@ -816,7 +1195,9 @@ class AssignmentModal extends React.Component {
           let storageAssignments = await Assignments._retrieveFromStorage ();
           storageAssignments.push (assignment);
           await Assignments._saveToStorage (storageAssignments);
-          this.props.parent.setState ({assignments});
+          setTimeout (() => {
+            this.props.parent.setState ({assignments});
+          }, 500);
         } else {
           Alert.alert (
             'Error',
@@ -829,7 +1210,6 @@ class AssignmentModal extends React.Component {
                   this.setState ({
                     isBackdropVisible: false,
                     images: [],
-                    imageIDs: [],
                   });
                 },
                 style: 'cancel',
@@ -840,6 +1220,7 @@ class AssignmentModal extends React.Component {
         }
       })
       .catch (e => {
+        console.log (e);
         if (e.message == "JSON Parse error: Unrecognized token '<'") {
           Alert.alert (
             'Connection Error',
@@ -906,6 +1287,7 @@ class AssignmentModal extends React.Component {
             }
           })
           .catch (e => {
+            console.log (e);
             if (e.message == "JSON Parse error: Unrecognized token '<'") {
               Alert.alert (
                 'Connection Error',
@@ -934,7 +1316,6 @@ class AssignmentModal extends React.Component {
     this.due.current.setState ({value: ''});
     this.notes.current.setState ({value: ''});
     this.images = [];
-    this.imageIDs = [];
     this.topic = {
       topic: '_',
       topicType: 'id',
@@ -944,6 +1325,7 @@ class AssignmentModal extends React.Component {
     return (
       <View>
         <Modal
+          onModalHide={this.modalHide}
           animationIn="zoomIn"
           animationOut="zoomOut"
           isVisible={this.state.isBackdropVisible}
@@ -1029,7 +1411,8 @@ class AssignmentModal extends React.Component {
                   <ImageBar
                     displayImagesInline={true}
                     onImageRecieved={this.imageFunction}
-                    displayCameraRollInline={true}
+                    displayCameraRollInline={false}
+                    path={`/courses/${global.courseInfoCourse.id}/response_assignments`}
                   />
                 </ScrollView>
               </View>
@@ -1057,7 +1440,6 @@ class NoteModal extends React.Component {
     this.state = {
       isBackdropVisible: false,
       images: [],
-      imageIDs: [],
       topics: Topics._MakeCourseTopicList (
         global.courseInfoCourse.id,
         global.topics
@@ -1110,58 +1492,14 @@ class NoteModal extends React.Component {
   };
 
   imageFunction = result => {
-    if (result.uri) {
-      result.path = `/courses/${global.courseInfoCourse.id}/resources`;
-      sendResourseToServer (result)
-        .then (res => res.json ())
-        .then (json => {
-          if (json.status == 'ok') {
-            this.state.imageIDs.push (json.body);
-          } else {
-            Alert.alert (
-              'Error',
-              json.body,
-              [
-                {text: 'Try Again', onPress: () => this.imageFunction (result)},
-                {
-                  text: 'Cancel',
-                  onPress: () => {
-                    console.log ('cancelled');
-                  },
-                  style: 'cancel',
-                },
-              ],
-              {cancelable: false}
-            );
-          }
-        })
-        .catch (e => {
-          if (e.message == "JSON Parse error: Unrecognized token '<'") {
-            Alert.alert (
-              'Connection Error',
-              'Unable to connect to the server',
-              [
-                {text: 'Try Again', onPress: () => this.imageFunction (result)},
-                {
-                  text: 'Cancel',
-                  onPress: () => {
-                    console.log ('cancelled');
-                  },
-                  style: 'cancel',
-                },
-              ],
-              {cancelable: false}
-            );
-          }
-        });
-    }
+    this.state.images.push (result);
   };
 
   createAssignment () {
     let api = new ApexAPI (global.user);
     let postObject = {
       note: this.state.note,
-      resources: this.state.imageIDs.map (image => image._id),
+      resources: this.state.images.map (image => image._id),
       reference_course: global.courseInfoCourse.id,
     };
     if (this.state.topic.topicType == 'id' && this.state.topic.topic != '_') {
@@ -1180,6 +1518,11 @@ class NoteModal extends React.Component {
             id: res.body._id,
             date: new Date (res.body.date),
             referenceCourse: global.courseInfoCourse.id,
+            helpful: res.body.helpful_votes.length,
+            unhelpful: res.body.unhelpful_votes.length,
+            userVote: res.body.helpful_votes.indexOf (global.user.id) >= 0
+              ? 1
+              : res.body.unhelpful_votes.indexOf (global.user.id) >= 0 ? -1 : 0,
           };
           note = new Note (note);
           let notes = [...this.props.parent.state.notes];
@@ -1188,7 +1531,11 @@ class NoteModal extends React.Component {
           let storageNotes = await Notes._retrieveFromStorage ();
           storageNotes.push (note);
           await Notes._saveToStorage (storageNotes);
-          this.props.parent.setState ({notes});
+          this.setState ({isBackdropVisible: false}, () => {
+            setTimeout (() => {
+              this.props.parent.setState ({notes});
+            }, 500);
+          });
         } else {
           Alert.alert (
             'Error',
@@ -1212,6 +1559,7 @@ class NoteModal extends React.Component {
         }
       })
       .catch (e => {
+        console.log (e);
         if (e.message == "JSON Parse error: Unrecognized token '<'") {
           Alert.alert (
             'Connection Error',
@@ -1278,6 +1626,7 @@ class NoteModal extends React.Component {
             }
           })
           .catch (e => {
+            console.log (e);
             if (e.message == "JSON Parse error: Unrecognized token '<'") {
               Alert.alert (
                 'Connection Error',
@@ -1306,7 +1655,6 @@ class NoteModal extends React.Component {
     this.due.current.setState ({value: ''});
     this.notes.current.setState ({value: ''});
     this.images = [];
-    this.imageIDs = [];
     this.topic = {
       topic: '_',
       topicType: 'id',
@@ -1378,8 +1726,10 @@ class NoteModal extends React.Component {
                     Images
                   </Text>
                   <ImageBar
-                    displayImages={true}
-                    imageFunction={this.imageFunction}
+                    displayImagesInline={true}
+                    onImageRecieved={this.imageFunction}
+                    displayCameraRollInline={false}
+                    path={`/courses/${global.courseInfoCourse.id}/notes`}
                   />
                 </ScrollView>
               </View>
@@ -1582,6 +1932,7 @@ class NoteBubble extends React.Component {
               key={'note_' + index}
               last={index == array.length - 1}
               note={note}
+              showActionSheet={this.props.showActionSheet}
             />
           );
         })}
@@ -1602,38 +1953,101 @@ class NoteRow extends React.Component {
           this.props.last ? styles.assignmentRowLast : styles.assignmentRow
         }
       >
-        <TouchableWithoutFeedback
-          onPress={() => {
-            this.props.openNote (this.props.note);
+        <View
+          style={{
+            flexGrow: 1,
+            width: 0,
+            paddingRight: 20,
+            paddingLeft: 20,
+            flexDirection: 'row',
           }}
-          style={{width: 0, flexGrow: 1, flexDirection: 'row'}}
         >
-          <View style={styles.assignmentInfo}>
-            <View style={styles.assignmentTitle}>
-              <Text
-                style={{
-                  fontSize: 16,
-                  color: global.user.getSecondaryTextColor (),
-                }}
+          <Touchable
+            onPress={() => {
+              this.props.openNote (this.props.note);
+            }}
+            style={{width: 0, flexGrow: 1, flexDirection: 'row', zIndex: 2}}
+          >
+            <View style={[styles.assignmentInfo, {overflow: 'hidden'}]}>
+              <View style={styles.assignmentTitle}>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    color: global.user.getSecondaryTextColor (),
+                  }}
+                  numberOfLines={1}
+                >
+                  {this.props.note.note}
+                </Text>
+              </View>
+              <View
+                style={{flexDirection: 'row', justifyContent: 'space-between'}}
                 numberOfLines={1}
               >
-                {this.props.note.note}
-              </Text>
+                <Text
+                  numberOfLines={1}
+                  style={{
+                    fontSize: 14,
+                    color: global.user.getTertiaryTextColor (),
+                  }}
+                >
+                  {this.props.note.topic == '_'
+                    ? 'No Topic'
+                    : topicsMap[this.props.note.topic].topic}
+                </Text>
+                <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                  <LightBulbIcon
+                    size={14}
+                    color={global.user.getTertiaryTextColor ()}
+                  />
+                  <Text
+                    numberOfLines={1}
+                    style={{
+                      fontSize: 12,
+                      color: this.props.note.userVote == -1
+                        ? '#e03634'
+                        : this.props.note.userVote == 1
+                            ? '#20d67b'
+                            : global.user.getTertiaryTextColor (),
+                      marginLeft: 5,
+                    }}
+                  >
+                    {this.props.note.helpful == 0 &&
+                      this.props.note.unhelpful == 0
+                      ? 'Unkown % '
+                      : `${Math.round (this.props.note.helpful / (this.props.note.helpful + this.props.note.unhelpful) * 100)}% `}
+                    Helpful
+                  </Text>
+                </View>
+
+              </View>
             </View>
-            <View style={styles.assignmentDue} numberOfLines={1}>
-              <Text
-                style={{
-                  fontSize: 14,
-                  color: global.user.getTertiaryTextColor (),
-                }}
-              >
-                {this.props.note.topic == '_'
-                  ? 'No Topic'
-                  : topicsMap[this.props.note.topic].topic}
-              </Text>
-            </View>
+          </Touchable>
+          <View
+            style={{
+              zIndex: 1,
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              flexDirection: 'row',
+              justifyContent: 'flex-end',
+              alignItems: 'center',
+            }}
+          >
+            <Touchable
+              onPress={() =>
+                this.props.showActionSheet (this.props.note, 'note')}
+              hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}
+            >
+              <VerticalEllipsisIcon
+                size={20}
+                color={global.user.getTertiaryTextColor ()}
+              />
+            </Touchable>
           </View>
-        </TouchableWithoutFeedback>
+        </View>
       </View>
     );
   }
@@ -1659,6 +2073,7 @@ export default class CourseInfoScreen extends React.Component {
     this.chatroom = React.createRef ();
     this.displayNoteModal = React.createRef ();
     this.noteModal = React.createRef ();
+    this.actionSheet = React.createRef ();
   }
   static navigationOptions = ({navigation}) => {
     return {
@@ -1723,6 +2138,10 @@ export default class CourseInfoScreen extends React.Component {
       shouldOpenImageModal: false,
       isBackdropVisible: false,
     });
+  };
+
+  showActionSheet = (resource, type = 'assignment') => {
+    this.actionSheet.current.show (resource, type);
   };
 
   closeImageViewer = () => {};
@@ -1811,6 +2230,7 @@ export default class CourseInfoScreen extends React.Component {
                       key={'topic_' + index}
                       assignments={assignmentsMap[topic]}
                       title={topic == '_' ? 'No Topic' : topicsMap[topic].topic}
+                      showActionSheet={this.showActionSheet}
                     />
                   );
                 })}
@@ -1829,6 +2249,7 @@ export default class CourseInfoScreen extends React.Component {
                       closeNote={this.closeNote}
                       notes={notesMap[date]}
                       date={date}
+                      showActionSheet={this.showActionSheet}
                     />
                   );
                 })}
@@ -1875,7 +2296,7 @@ export default class CourseInfoScreen extends React.Component {
             }
           >
             <View style={styles.switchHeader}>
-              <TouchableWithoutFeedback onPress={() => this.changePage (0)}>
+              <TouchableWithoutFeedback onPressIn={() => this.changePage (0)}>
                 <View
                   style={[
                     styles.switchOption,
@@ -1889,7 +2310,7 @@ export default class CourseInfoScreen extends React.Component {
                   </Text>
                 </View>
               </TouchableWithoutFeedback>
-              <TouchableWithoutFeedback onPress={() => this.changePage (1)}>
+              <TouchableWithoutFeedback onPressIn={() => this.changePage (1)}>
                 <View
                   style={[
                     styles.switchOption,
@@ -1901,7 +2322,7 @@ export default class CourseInfoScreen extends React.Component {
                   <Text style={{color: 'white', fontSize: 14}}>Notes</Text>
                 </View>
               </TouchableWithoutFeedback>
-              <TouchableWithoutFeedback onPress={() => this.changePage (2)}>
+              <TouchableWithoutFeedback onPressIn={() => this.changePage (2)}>
                 <View
                   style={[
                     styles.switchOption,
@@ -1929,6 +2350,12 @@ export default class CourseInfoScreen extends React.Component {
           parent={this}
         />
         <ImageViewerModal ref={this.imageViewerModal} parent={this} />
+        <CustomActionSheet
+          ref={this.actionSheet}
+          parent={this}
+          openAssignment={this.openAssignment}
+          openNote={this.openNote}
+        />
       </View>
     );
   }
@@ -2098,6 +2525,10 @@ const styles = StyleSheet.create ({
     backgroundColor: 'white',
     overflow: 'hidden',
     flexDirection: 'column',
+  },
+  assignnmentDue: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
   modalBodySection: {
     paddingLeft: 30,

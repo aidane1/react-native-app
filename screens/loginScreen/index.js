@@ -224,28 +224,6 @@ function constructCourseList (serverData) {
   return courses;
 }
 
-function constructDayMap (serverData) {
-  let dayMap = {};
-  for (var key in serverData) {
-    let events = [];
-    for (var i = 0; i < serverData[key][3].length; i++) {
-      serverData[key][3][i].id = serverData[key][3][i]._id;
-      let event = new Event (serverData[key][3][i]);
-      events.push (event);
-    }
-    let currentDay = {
-      scheduleWeek: serverData[key][0][0],
-      scheduleDay: serverData[key][0][1],
-      events: events,
-      dayDisplayed: serverData[key][1],
-      hasEvents: serverData[key][2],
-    };
-    let day = new Day (currentDay);
-    dayMap[key] = day;
-  }
-  return dayMap;
-}
-
 function constructSemesterList (serverData) {
   let semesters = [];
   for (var i = 0; i < serverData.length; i++) {
@@ -282,6 +260,7 @@ function constructSchoolObject (serverData) {
 
 function constructUserObject (serverData) {
   let user = new User (serverData);
+  console.log(user);
   return user;
 }
 

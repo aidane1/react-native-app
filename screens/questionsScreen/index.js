@@ -19,6 +19,8 @@ import {
   MessageIcon,
   ClockIcon,
   EllipsisIcon,
+  LightBulbIcon,
+  SchoolIcons,
 } from '../../classes/icons';
 
 import Modal from 'react-native-modal';
@@ -42,19 +44,6 @@ import ActionSheet from 'react-native-actionsheet';
 const width = Dimensions.get ('window').width; //full width
 const height = Dimensions.get ('window').height; //full height
 
-function sendResourseToServer (resource) {
-  return fetch ('https://www.apexschools.co/api/v1/resources?base64=true', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': global.user['x-api-key'],
-      'x-id-key': global.user['x-id-key'],
-      school: global.user['school'],
-    },
-    body: JSON.stringify (resource),
-  });
-}
-
 class CreateQuestion extends React.Component {
   constructor (props) {
     super (props);
@@ -62,7 +51,9 @@ class CreateQuestion extends React.Component {
       isBackdropVisible: false,
       title: '',
       body: '',
-      imageIDs: [],
+      images: [],
+      tags: [],
+      tag: '',
     };
   }
   updateTitle = text => {
@@ -77,7 +68,8 @@ class CreateQuestion extends React.Component {
       .post ('posts', {
         title: this.state.title,
         body: this.state.body,
-        resources: this.state.imageIDs.map (image => image._id),
+        resources: this.state.images.map (image => image._id),
+        tags: this.state.tags,
       })
       .then (data => data.json ())
       .then (data => {
@@ -86,7 +78,13 @@ class CreateQuestion extends React.Component {
             this.props.parent.state.limit,
             this.props.callback
           );
-          this.setState ({isBackdropVisible: false});
+          this.setState ({
+            isBackdropVisible: false,
+            images: [],
+            body: '',
+            tag: '',
+            title: '',
+          });
         } else {
         }
       })
@@ -95,52 +93,42 @@ class CreateQuestion extends React.Component {
       });
   };
   imageFunction = result => {
-    if (result.uri) {
-      result.path = `/questions`;
-      sendResourseToServer (result)
-        .then (res => res.json ())
-        .then (json => {
-          console.log (json);
-          if (json.status == 'ok') {
-            this.state.imageIDs.push (json.body);
-          } else {
-            Alert.alert (
-              'Error',
-              json.body,
-              [
-                {text: 'Try Again', onPress: () => this.imageFunction (result)},
-                {
-                  text: 'Cancel',
-                  onPress: () => {
-                    console.log ('cancelled');
-                  },
-                  style: 'cancel',
-                },
-              ],
-              {cancelable: false}
-            );
-          }
-        })
-        .catch (e => {
-          if (e.message == "JSON Parse error: Unrecognized token '<'") {
-            Alert.alert (
-              'Connection Error',
-              'Unable to connect to the server',
-              [
-                {text: 'Try Again', onPress: () => this.imageFunction (result)},
-                {
-                  text: 'Cancel',
-                  onPress: () => {
-                    console.log ('cancelled');
-                  },
-                  style: 'cancel',
-                },
-              ],
-              {cancelable: false}
-            );
-          }
-        });
+    this.state.images.push (result);
+  };
+  updateTag = text => {
+    this.setState ({tag: text});
+  };
+  addTag = (tag, colour) => {
+    this.state.tags.push ([tag, colour]);
+    this.setState (state => ({
+      tags: state.tags,
+    }));
+  };
+  addCustomTag = () => {
+    if (this.state.tag) {
+      this.state.tags.push ([this.state.tag, '#ffffff']);
+      this.setState (state => ({
+        tags: state.tags,
+        tag: '',
+      }));
+    } else {
+      Alert.alert (
+        'Error',
+        'Tags must contain text',
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel',
+          },
+        ],
+        {cancelable: false}
+      );
     }
+  };
+  removeTag = tag => {
+    this.setState (state => ({
+      tags: state.tags.filter (stateTag => stateTag[0] != tag),
+    }));
   };
   render () {
     return (
@@ -237,9 +225,155 @@ class CreateQuestion extends React.Component {
                       borderColor: global.user.getBorderColor (),
                     }}
                     onChangeText={this.updateTitle}
+                    value={this.state.title}
                     placeholderTextColor={global.user.getTertiaryTextColor ()}
                     placeholder="Question Title"
                   />
+                </View>
+                <View
+                  style={{
+                    width,
+                    height: 50,
+                    flexDirection: 'row',
+                    paddingLeft: 20,
+                  }}
+                >
+                  <TextInput
+                    style={{
+                      width: 170,
+                      height: 50,
+                      fontSize: 22,
+                      color: global.user.getSecondaryTextColor (),
+                      borderBottomWidth: StyleSheet.hairlineWidth,
+                      borderColor: global.user.getBorderColor (),
+                    }}
+                    onChangeText={this.updateTag}
+                    value={this.state.tag}
+                    placeholderTextColor={global.user.getTertiaryTextColor ()}
+                    placeholder="Add Tag"
+                    maxLength={12}
+                  />
+                  <View
+                    style={{
+                      width: 40,
+                      height: 50,
+                      flexDirection: 'row',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      borderBottomWidth: StyleSheet.hairlineWidth,
+                      borderColor: global.user.getBorderColor (),
+                    }}
+                  >
+                    <Touchable
+                      hitSlop={{top: 15, left: 15, bottom: 15, right: 15}}
+                      onPress={this.addCustomTag}
+                    >
+                      <PlusIcon
+                        size={30}
+                        color={global.user.getSecondaryTextColor ()}
+                      />
+                    </Touchable>
+                  </View>
+                  <ScrollView
+                    horizontal={true}
+                    showsHorizontalScrollIndicator={false}
+                    style={{
+                      borderBottomWidth: StyleSheet.hairlineWidth,
+                      borderColor: global.user.getBorderColor (),
+                    }}
+                    contentContainerStyle={{
+                      alignItems: 'center',
+                      flexDirection: 'row',
+                    }}
+                  >
+                    {global.userCourses.map ((course, index) => {
+                      return (
+                        <Touchable
+                          key={'course_' + course.id}
+                          onPress={() =>
+                            this.addTag (
+                              course.course,
+                              SchoolIcons.getIcon (course.category)[1]
+                            )}
+                        >
+                          <View
+                            style={{
+                              paddingLeft: 8,
+                              paddingRight: 8,
+                              paddingTop: 3,
+                              paddingBottom: 3,
+                              borderRadius: 15,
+                              backgroundColor: SchoolIcons.getIcon (
+                                course.category
+                              )[1],
+                              marginRight: 5,
+                            }}
+                          >
+                            <Text>
+                              {course.course}
+                            </Text>
+                          </View>
+                        </Touchable>
+                      );
+                    })}
+                  </ScrollView>
+                </View>
+                <View
+                  style={{
+                    width,
+                    height: 50,
+                    flexDirection: 'row',
+                    paddingLeft: 20,
+                  }}
+                >
+                  <ScrollView
+                    horizontal={true}
+                    contentContainerStyle={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'flex-start',
+                    }}
+                    showsHorizontalScrollIndicator={false}
+                    style={{
+                      height: 50,
+                      borderBottomWidth: StyleSheet.hairlineWidth,
+                      borderColor: global.user.getBorderColor (),
+                    }}
+                  >
+                    {this.state.tags.length
+                      ? this.state.tags.map ((tag, index) => {
+                          return (
+                            <Touchable
+                              key={'tag_' + index}
+                              onPress={() => this.removeTag (tag[0])}
+                            >
+                              <View
+                                style={{
+                                  paddingLeft: 8,
+                                  paddingRight: 8,
+                                  paddingTop: 3,
+                                  paddingBottom: 3,
+                                  borderRadius: 15,
+                                  backgroundColor: tag[1],
+                                  marginRight: 5,
+                                }}
+                              >
+                                <Text>
+                                  {tag[0]}
+                                </Text>
+                              </View>
+                            </Touchable>
+                          );
+                        })
+                      : <Text
+                          style={{
+                            fontSize: 22,
+                            color: global.user.getTertiaryTextColor (),
+                          }}
+                        >
+                          No Tags
+                        </Text>}
+                  </ScrollView>
                 </View>
                 <View
                   style={{
@@ -260,13 +394,15 @@ class CreateQuestion extends React.Component {
                     }}
                     multiline={true}
                     onChangeText={this.updateBody}
+                    value={this.state.body}
                     placeholderTextColor={global.user.getTertiaryTextColor ()}
                     placeholder="Question Body (optional)"
                   />
                 </View>
                 <ImagePicker
-                  imageFunction={this.imageFunction}
-                  displayImages={true}
+                  onImageRecieved={this.imageFunction}
+                  displayImagesInline={true}
+                  displayCameraRollInline={true}
                   style={{
                     marginBottom: 0,
                     borderTopWidth: StyleSheet.hairlineWidth,
@@ -353,6 +489,13 @@ class Question extends React.Component {
     }, 300);
   };
   render () {
+    this.props.question.userVote = this.props.question.helpful_votes.indexOf (
+      global.user.id
+    ) >= 0
+      ? 1
+      : this.props.question.unhelpful_votes.indexOf (global.user.id) >= 0
+          ? -1
+          : 0;
     return (
       <View style={{marginTop: 5, position: 'relative'}}>
         <Swipeable
@@ -372,7 +515,6 @@ class Question extends React.Component {
           onRightActionActivate={this.inZone}
           onRightActionDeactivate={this.outOfZone}
           onRightActionRelease={this.openPost}
-          // onRightActionDeactivate = {() => console.log("gone")}
         >
           <View
             style={[
@@ -381,6 +523,30 @@ class Question extends React.Component {
               global.user.borderColor (),
             ]}
           >
+            <View style={{flexDirection: "row", justifyContent: "flex-start", flexWrap: "wrap", marginBottom: 3}}>
+            {this.props.question.tags.map ((tag, index) => {
+              return (
+                <View
+                  key={'tag_' + index}
+                  style={{
+                    paddingLeft: 8,
+                    paddingRight: 8,
+                    paddingTop: 3,
+                    paddingBottom: 3,
+                    borderRadius: 15,
+                    backgroundColor: tag[1],
+                    marginRight: 5,
+                    alignSelf: 'flex-start',
+                  }}
+                >
+                  <Text>
+                    {tag[0]}
+                  </Text>
+                </View>
+              );
+            })}
+            </View>
+  
             <Text style={[styles.postTitle, global.user.secondaryTextColor ()]}>
               {this.props.question.title}
             </Text>
@@ -390,7 +556,8 @@ class Question extends React.Component {
                 global.user.tertiaryTextColor (),
                 {marginBottom: 10},
               ]}
-              numberOfLines={3}
+              numberOfLines={5}
+              selectable={true}
             >
               {this.props.question.body || ''}
             </Text>
@@ -433,9 +600,33 @@ class Question extends React.Component {
                   )}
                 </Text>
               </View>
+              <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                <LightBulbIcon
+                  size={14}
+                  color={global.user.getTertiaryTextColor ()}
+                />
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: this.props.question.userVote == -1
+                      ? '#e03634'
+                      : this.props.question.userVote == 1
+                          ? '#20d67b'
+                          : global.user.getTertiaryTextColor (),
+                    marginLeft: 5,
+                  }}
+                >
+                  {this.props.question.helpful_votes.length +
+                    this.props.question.unhelpful_votes.length >
+                    0
+                    ? `${Math.round (this.props.question.helpful_votes.length / (this.props.question.helpful_votes.length + this.props.question.unhelpful_votes.length) * 100)}% `
+                    : 'Unkown % '}
+                  Helpful
+                </Text>
+              </View>
               <Touchable
                 hitSlop={{top: 20, bottom: 20, left: 20, right: 20}}
-                onPress={() => this.props.showActionSheet(this.props.question)}
+                onPress={() => this.props.showActionSheet (this.props.question)}
               >
                 <EllipsisIcon
                   size={20}
@@ -487,27 +678,164 @@ class CustomActionSheet extends React.Component {
     super (props);
     this.state = {
       question: {},
-    }
-    this.actionSheet = React.createRef();
+    };
+    this.actionSheet = React.createRef ();
   }
-  show(question) {
+  show (question) {
     this.state.question = question;
-    this.actionSheet.current.show();
+    this.actionSheet.current.show ();
   }
-  actionSheetAction = (index) => {
-    if (index == 0) {
-      this.props.parent.props.navigation.navigate ('Question', {
-        question: this.state.question,
-      });
+  actionSheetAction = index => {
+    let api = new ApexAPI (global.user);
+    switch (index) {
+      case 0:
+        this.props.parent.props.navigation.navigate ('Question', {
+          question: this.state.question,
+        });
+        break;
+      case 1:
+        api
+          .get (`vote/posts/${this.state.question._id}?vote=helpful`)
+          .then (data => data.json ())
+          .then (async data => {
+            if (data.status == 'ok') {
+              let questions = this.props.parent.state.questions.map (
+                question => {
+                  if (question._id == data.body._id) {
+                    return data.body;
+                  } else {
+                    return question;
+                  }
+                }
+              );
+              setTimeout (() => {
+                this.props.parent.setState ({questions});
+              }, 0);
+            } else {
+              Alert.alert (
+                'Error',
+                res.body,
+                [
+                  {
+                    text: 'Try Again',
+                    onPress: () => this.createAssignment (),
+                  },
+                  {
+                    text: 'Cancel',
+                    onPress: () => {
+                      this.setState ({
+                        isBackdropVisible: false,
+                        images: [],
+                      });
+                    },
+                    style: 'cancel',
+                  },
+                ],
+                {cancelable: false}
+              );
+            }
+          })
+          .catch (e => {
+            console.log (e);
+            if (e.message == "JSON Parse error: Unrecognized token '<'") {
+              Alert.alert (
+                'Connection Error',
+                'Unable to connect to the server',
+                [
+                  {text: 'Try Again', onPress: () => this.onPress ()},
+                  {
+                    text: 'Cancel',
+                    onPress: () => {
+                      console.log ('cancelled');
+                    },
+                    style: 'cancel',
+                  },
+                ],
+                {cancelable: false}
+              );
+            }
+          });
+        break;
+      case 2:
+        api
+          .get (`vote/posts/${this.state.question._id}?vote=unhelpful`)
+          .then (data => data.json ())
+          .then (async data => {
+            if (data.status == 'ok') {
+              let questions = this.props.parent.state.questions.map (
+                question => {
+                  if (question._id == data.body._id) {
+                    return data.body;
+                  } else {
+                    return question;
+                  }
+                }
+              );
+              setTimeout (() => {
+                this.props.parent.setState ({questions});
+              }, 0);
+            } else {
+              Alert.alert (
+                'Error',
+                res.body,
+                [
+                  {
+                    text: 'Try Again',
+                    onPress: () => this.createAssignment (),
+                  },
+                  {
+                    text: 'Cancel',
+                    onPress: () => {
+                      this.setState ({
+                        isBackdropVisible: false,
+                        images: [],
+                      });
+                    },
+                    style: 'cancel',
+                  },
+                ],
+                {cancelable: false}
+              );
+            }
+          })
+          .catch (e => {
+            console.log (e);
+            if (e.message == "JSON Parse error: Unrecognized token '<'") {
+              Alert.alert (
+                'Connection Error',
+                'Unable to connect to the server',
+                [
+                  {text: 'Try Again', onPress: () => this.onPress ()},
+                  {
+                    text: 'Cancel',
+                    onPress: () => {
+                      console.log ('cancelled');
+                    },
+                    style: 'cancel',
+                  },
+                ],
+                {cancelable: false}
+              );
+            }
+          });
+        break;
+      case 3:
+        break;
     }
-  }
+  };
   render () {
     return (
       <ActionSheet
         ref={this.actionSheet}
-        options={['Open', 'Report', 'Cancel']}
-        cancelButtonIndex={2}
-        destructiveButtonIndex={1}
+        options={[
+          'Open',
+          'Vote as Helpful',
+          'Vote as Unhelpful',
+          'Report',
+          'Cancel',
+        ]}
+        cancelButtonIndex={4}
+        destructiveButtonIndex={3}
         onPress={this.actionSheetAction}
       />
     );
@@ -524,6 +852,7 @@ export default class QuestionsScreen extends React.Component {
     };
     this.createQuestion = React.createRef ();
     this.actionSheet = React.createRef ();
+    this._isMounted = false;
   }
   static navigationOptions = ({navigation}) => {
     return {
@@ -538,10 +867,9 @@ export default class QuestionsScreen extends React.Component {
       )
       .then (data => data.json ())
       .then (data => {
-        console.log (data.body);
-        if (data.status == 'ok') {
+        if (data.status == 'ok' && this._isMounted) {
           callback (null, data.body);
-        } else {
+        } else if (this._isMounted) {
           callback (data.body, []);
         }
       })
@@ -550,15 +878,19 @@ export default class QuestionsScreen extends React.Component {
         callback (e, []);
       });
   };
+  componentWillUnmount () {
+    this._isMounted = false;
+  }
   componentDidMount () {
+    this._isMounted = true;
     this.loadQuestions (this.state.limit, (err, questions) => {
-      this.setState ({questions});
+      this._isMounted && this.setState ({questions});
     });
   }
   openCreate = () => {
     this.createQuestion.current.setState ({isBackdropVisible: true});
   };
-  showActionSheet = (question) => {
+  showActionSheet = question => {
     this.actionSheet.current.show (question);
   };
   render () {
@@ -605,13 +937,10 @@ export default class QuestionsScreen extends React.Component {
           parent={this}
           ref={this.createQuestion}
           callback={(err, questions) => {
-            this.setState ({questions});
+            this._isMounted && this.setState ({questions});
           }}
         />
-        <CustomActionSheet
-          ref={this.actionSheet}
-          parent={this}
-        />
+        <CustomActionSheet ref={this.actionSheet} parent={this} />
       </View>
     );
   }

@@ -9,9 +9,17 @@ import {
   TouchableWithoutFeedback,
   View,
   Dimensions,
+  CameraRoll,
   AsyncStorage,
   Button,
 } from 'react-native';
+
+import {
+  ChatIcon,
+  QuestionIcon,
+  NotesIcon,
+  AssignmentsIcon,
+} from '../../classes/icons';
 
 import HeaderBar from '../../components/header';
 
@@ -40,6 +48,10 @@ import {ifIphoneX} from 'react-native-iphone-x-helper';
 import Constants from 'expo-constants';
 
 import * as Speech from 'expo-speech';
+
+import {FloatingAction} from 'react-native-floating-action';
+
+import {StackActions, NavigationActions} from 'react-navigation';
 
 const width = Dimensions.get ('window').width; //full width
 const height = Dimensions.get ('window').height; //full height
@@ -130,6 +142,14 @@ export default class HomeScreen extends React.Component {
                   referenceCourse: assignment.reference_course,
                   resources: assignment.resources || [],
                   responseResources: assignment.response_resources || [],
+                  helpful: assignment.helpful_votes.length,
+                  unhelpful: assignment.unhelpful_votes.length,
+                  userVote: assignment.helpful_votes.indexOf (global.user.id) >=
+                    0
+                    ? 1
+                    : assignment.unhelpful_votes.indexOf (global.user.id) >= 0
+                        ? -1
+                        : 0,
                 };
               })
             );
@@ -155,6 +175,13 @@ export default class HomeScreen extends React.Component {
                   date: note.date,
                   referenceCourse: note.reference_course,
                   resources: note.resources || [],
+                  helpful: note.helpful_votes.length,
+                  unhelpful: note.unhelpful_votes.length,
+                  userVote: note.helpful_votes.indexOf (global.user.id) >= 0
+                    ? 1
+                    : note.unhelpful_votes.indexOf (global.user.id) >= 0
+                        ? -1
+                        : 0,
                 };
               })
             );
@@ -165,39 +192,79 @@ export default class HomeScreen extends React.Component {
           console.log (e);
         });
     }
+    if (global.status == 'granted') {
+      CameraRoll.getPhotos ({
+        first: 500,
+        assetType: 'Photos',
+        groupTypes: 'All',
+      }).then (photos => {
+        photos.edges.sort ((a, b) => b.node.timestamp - a.node.timestamp);
+        global.cameraRollImages = photos.edges.slice (0, 70);
+      });
+    }
   }
   readOut = section => {
     if (!this.speaking) {
       this.speaking = true;
-      let speech = `Current Time: ${new Date().getHours()%12}: ${new Date().getMinutes()}: `;
-      if (section == "today") {
-        let timesOne = this.current.secondary.split(" - ");
-        let timesTwo = this.next.secondary.split(" - ");
-        if (timesOne.length == 2) timesOne = `${timesOne[0]}: to ${timesOne[1]}:`;
-        if (timesTwo.length == 2) timesTwo = `${timesTwo[0]}: to ${timesTwo[1]}:`;
+      let speech = `Current Time: ${new Date ().getHours () % 12}: ${new Date ().getMinutes ()}: `;
+      if (section == 'today') {
+        let timesOne = this.current.secondary.split (' - ');
+        let timesTwo = this.next.secondary.split (' - ');
+        if (timesOne.length == 2)
+          timesOne = `${timesOne[0]}: to ${timesOne[1]}:`;
+        if (timesTwo.length == 2)
+          timesTwo = `${timesTwo[0]}: to ${timesTwo[1]}:`;
         speech += `Today: ${this.dayTitle}: current class: ${this.current.main}: from ${timesOne}. Next Class: ${this.next.main}: from ${timesTwo}:`;
-      } else if (section == "courses") {
-        this.courses.forEach(course => {
-          speech += `${course.course} with ${course.teacher}: . . . ${formatUnit(course.time_num.start_hour, course.time_num.start_minute)} to ${formatUnit(course.time_num.end_hour, course.time_num.end_minute)}:`;
-        })
+      } else if (section == 'courses') {
+        this.courses.forEach (course => {
+          speech += `${course.course} with ${course.teacher}: . . . ${formatUnit (course.time_num.start_hour, course.time_num.start_minute)} to ${formatUnit (course.time_num.end_hour, course.time_num.end_minute)}:`;
+        });
       } else {
-  
       }
       Speech.speak (speech, {
         voice: 'com.apple.ttsbundle.siri_male_en-AU_compact',
-        onDone: () => { this.speaking = false },
+        onDone: () => {
+          this.speaking = false;
+        },
         rate: 0.8,
       });
     } else {
-      Speech.stop();
+      Speech.stop ();
       this.speaking = false;
     }
-    
   };
-  longPress = section => {
-
-  }
+  longPress = section => {};
   render () {
+    const actions = [
+      {
+        text: 'Questions',
+        // icon: require ('./images/ic_accessibility_white.png'),
+        icon: <QuestionIcon size={22} />,
+        name: 'Questions',
+        position: 2,
+      },
+      {
+        text: 'Chatrooms',
+        // icon: require ('./images/ic_language_white.png'),
+        icon: <ChatIcon size={22} style={{marginTop: 3}} />,
+        name: 'Chatrooms',
+        position: 1,
+      },
+      {
+        text: 'Notes',
+        // icon: require ('./images/ic_room_white.png'),
+        icon: <NotesIcon size={22} />,
+        name: 'Notes',
+        position: 3,
+      },
+      {
+        text: 'Assignments',
+        // icon: require ('./images/ic_videocam_white.png'),
+        icon: <AssignmentsIcon size={22} />,
+        name: 'Assignments',
+        position: 4,
+      },
+    ];
     let {currentDate} = this.state;
     let currentSemesters = global.semesters
       .filter (semester => {
@@ -358,10 +425,17 @@ export default class HomeScreen extends React.Component {
             global.topics
           );
           let topicsMap = Topics._makeTopicMap (topicsList);
-          return {
-            ...courseAssignments[0],
-            topic: topicsMap[courseAssignments[0].topic].topic,
-          };
+          if (topicsMap[courseAssignments[0].topic]) {
+            return {
+              ...courseAssignments[0],
+              topic: topicsMap[courseAssignments[0].topic].topic,
+            };
+          } else {
+            return {
+              ...courseAssignments[0],
+              topic: 'No Topic',
+            };
+          }
         }
       });
     if (assignments.length == 0) {
@@ -420,14 +494,14 @@ export default class HomeScreen extends React.Component {
                 <Touchable
                   style={styles.accessButton}
                   onPress={() => this.readOut ('today')}
-                  onLongPress={() => this.longPress("today")}
+                  onLongPress={() => this.longPress ('today')}
                 >
                   <Text style={styles.accessButtonText}>Today</Text>
                 </Touchable>
                 <Touchable
                   style={styles.accessButton}
                   onPress={() => this.readOut ('courses')}
-                  onLongPress={() => this.longPress("courses")}
+                  onLongPress={() => this.longPress ('courses')}
                 >
                   <Text style={styles.accessButtonText}>Courses</Text>
                 </Touchable>
@@ -473,6 +547,14 @@ export default class HomeScreen extends React.Component {
               </View>
               <TabBar tapFunction={this} />
             </View>}
+
+        <FloatingAction
+          actions={actions}
+          distanceToEdge={ifIphoneX (70, 50)}
+          onPressItem={name => {
+            this.props.navigation.navigate (name);
+          }}
+        />
       </View>
     );
   }

@@ -11,6 +11,9 @@ export class Assignment {
     this.referenceCourse = courseObject.referenceCourse || '_';
     this.resources = courseObject.resources || [];
     this.responseResources = courseObject.responseResources || [];
+    this.helpful = courseObject.helpful || 0;
+    this.unhelpful = courseObject.unhelpful || 0;
+    this.userVote = courseObject.userVote || 0; // -1, 0, 1
   }
   toJson () {
     return {
@@ -23,6 +26,9 @@ export class Assignment {
       referenceCourse: this.referenceCourse,
       resources: this.resources,
       responseResources: this.responseResources,
+      helpful: this.helpful, 
+      unhelpful: this.unhelpful,
+      userVote: this.userVote,
     };
   }
 }

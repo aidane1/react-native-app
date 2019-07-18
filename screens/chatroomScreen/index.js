@@ -331,6 +331,7 @@ export default class ChatroomScreen extends React.Component {
       if (global.courseInfoCourse.id != '_') {
         global.websocketPath = `courses/${global.courseInfoCourse.id}`;
         global.textPath = `course-texts?reference_course=${global.courseInfoCourse.id}&order_by=date&order_direction=-1&populate=resources`;
+        global.resourcePath = `/chatrooms/courses/${id}`;
         global.chatroomName = `${global.courseInfoCourse.course}`;
         this.props.navigation.navigate ('PureChatroom');
       }
@@ -348,6 +349,7 @@ export default class ChatroomScreen extends React.Component {
       global.websocketPath = `schools/${global.school.id}/grade/${grade}`;
       global.textPath = `grade-texts?find_fields=school,grade&school=${global.school.id}&grade=${grade}&order_by=date&order_direction=-1&populate=resources`;
       global.chatroomName = `Grade ${grade}`;
+      global.resourcePath = `/chatrooms/grades/${grade}`;
       this.props.navigation.navigate ('PureChatroom');
     } catch (e) {
       console.log (e);
@@ -358,6 +360,7 @@ export default class ChatroomScreen extends React.Component {
       global.websocketPath = `schools/${global.school.id}`;
       global.textPath = `school-texts?find_fields=school&school=${global.school.id}&order_by=date&order_direction=-1&populate=resources`;
       global.chatroomName = `${grade}`;
+      global.resourcePath = `/chatrooms/school/`;
       this.props.navigation.navigate ('PureChatroom');
     } catch (e) {
       console.log (e);

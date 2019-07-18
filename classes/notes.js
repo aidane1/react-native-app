@@ -8,6 +8,9 @@ export class Note {
     this.date = new Date (courseObject.date) || new Date ();
     this.referenceCourse = courseObject.referenceCourse || '_';
     this.resources = courseObject.resources || [];
+    this.helpful = courseObject.helpful || 0;
+    this.unhelpful = courseObject.unhelpful || 0;
+    this.userVote = courseObject.userVote || 0; // -1, 0, 1
   }
   toJson () {
     return {
@@ -17,6 +20,9 @@ export class Note {
       date: this.date,
       referenceCourse: this.referenceCourse,
       resources: this.resources,
+      helpful: this.helpful,
+      unhelpful: this.unhelpful,
+      userVote: this.userVote,
     };
   }
 }

@@ -39,57 +39,10 @@ import ImagePicker from '../../components/imagePicker';
 
 import Swipeable from 'react-native-swipeable-row';
 
+import ImageViewerModal from '../../components/imageViewer';
+
 const width = Dimensions.get ('window').width; //full width
 const height = Dimensions.get ('window').height; //full height
-
-function sendResourseToServer (resource) {
-  return fetch (
-    'https://www.apexschools.co/api/v1/resources?base64=true&populate=resources',
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': global.user['x-api-key'],
-        'x-id-key': global.user['x-id-key'],
-        school: global.user['school'],
-      },
-      body: JSON.stringify (resource),
-    }
-  );
-}
-
-class ImageViewerModal extends React.Component {
-  constructor (props) {
-    super (props);
-    this.state = {
-      isBackdropVisible: false,
-      index: 0,
-      images: [],
-    };
-  }
-  swipeDown = () => {
-    this.setState ({isBackdropVisible: false});
-  };
-  render () {
-    return (
-      <View>
-        <ReactModal
-          visible={this.state.isBackdropVisible}
-          transparent={true}
-          onRequestClose={() => this.setState ({modalVisible: false})}
-        >
-          <ImageViewer
-            onSwipeDown={this.swipeDown}
-            enableSwipeDown={true}
-            enablePreload={true}
-            index={this.state.index}
-            imageUrls={this.state.images}
-          />
-        </ReactModal>
-      </View>
-    );
-  }
-}
 
 class CreateComment extends React.Component {
   constructor (props) {
@@ -98,7 +51,7 @@ class CreateComment extends React.Component {
       isBackdropVisible: false,
       comment: '',
       parents: [],
-      imageIDs: [],
+      images: [],
     };
   }
   updateComment = text => {
@@ -112,17 +65,17 @@ class CreateComment extends React.Component {
         parent: this.props.question._id,
         parents: this.state.parents,
         depth: this.state.parents.length - 1,
-        resources: this.state.imageIDs.map (image => image._id),
+        resources: this.state.images.map (image => image._id),
       })
       .then (data => data.json ())
       .then (data => {
         if (data.status == 'ok') {
-          this.setState({comment: "", imageIDs: []});
+          this.setState ({comment: '', imageIDs: []});
           this.props.parent.loadComments (
             this.props.question._id,
             this.props.callback
           );
-          this.setState ({isBackdropVisible: false});
+          this.setState ({isBackdropVisible: false, images: []});
         } else {
         }
       })
@@ -131,51 +84,7 @@ class CreateComment extends React.Component {
       });
   };
   imageFunction = result => {
-    if (result.uri) {
-      result.path = `/questions`;
-      sendResourseToServer (result)
-        .then (res => res.json ())
-        .then (json => {
-          if (json.status == 'ok') {
-            this.state.imageIDs.push (json.body);
-          } else {
-            Alert.alert (
-              'Error',
-              json.body,
-              [
-                {text: 'Try Again', onPress: () => this.imageFunction (result)},
-                {
-                  text: 'Cancel',
-                  onPress: () => {
-                    console.log ('cancelled');
-                  },
-                  style: 'cancel',
-                },
-              ],
-              {cancelable: false}
-            );
-          }
-        })
-        .catch (e => {
-          if (e.message == "JSON Parse error: Unrecognized token '<'") {
-            Alert.alert (
-              'Connection Error',
-              'Unable to connect to the server',
-              [
-                {text: 'Try Again', onPress: () => this.imageFunction (result)},
-                {
-                  text: 'Cancel',
-                  onPress: () => {
-                    console.log ('cancelled');
-                  },
-                  style: 'cancel',
-                },
-              ],
-              {cancelable: false}
-            );
-          }
-        });
-    }
+    this.state.images.push (result);
   };
   render () {
     return (
@@ -278,8 +187,9 @@ class CreateComment extends React.Component {
                   />
                 </View>
                 <ImagePicker
-                  imageFunction={this.imageFunction}
-                  displayImages={true}
+                  onImageRecieved={this.imageFunction}
+                  displayImagesInline={true}
+                  displayCameraRollInline={true}
                   style={{
                     marginBottom: 0,
                     borderTopWidth: StyleSheet.hairlineWidth,
@@ -354,7 +264,7 @@ class Comment extends React.Component {
             ? 'rgba(0,0,0,0)'
             : this.colors[this.props.comment.depth % 8],
           width: width - this.props.comment.depth * 15,
-          minWidth: width*0.5,
+          minWidth: width * 0.5,
           marginTop: 5,
           position: 'relative',
           alignSelf: 'flex-end',
@@ -383,7 +293,10 @@ class Comment extends React.Component {
               styles.comment,
               global.user.primaryTheme (),
               global.user.borderColor (),
-              {width: width - this.props.comment.depth * 15, minWidth: width*0.5},
+              {
+                width: width - this.props.comment.depth * 15,
+                minWidth: width * 0.5,
+              },
               {flexDirection: 'column'},
             ]}
           >
@@ -395,43 +308,18 @@ class Comment extends React.Component {
             >
               {this.props.comment.username}
             </Text>
-            <Text
-              style={[styles.commentBody, global.user.primaryTextColor ()]}
-            >
+            <Text style={[styles.commentBody, global.user.primaryTextColor ()]}>
               {this.props.comment.body}
             </Text>
             {this.props.comment.resources.map ((resource, index, array) => {
               return (
                 <Touchable
-                  key={'image_' + index}
                   onPress={() => {
-                    this.props.imageViewer (array, index);
+                    this.props.openImageViewer (array, index);
                   }}
+                  key={'image_' + resource._id}
                 >
-                  <View
-                    style={{
-                      padding: 15,
-                      backgroundColor: global.user.getSecondaryTheme (),
-                      marginTop: 5,
-                      marginBottom: 5,
-                      width: (width - this.props.comment.depth * 15)*0.9,
-                      minWidth: width*0.4,
-                      borderRadius: 4,
-                      borderWidth: StyleSheet.hairlineWidth * 5,
-                      borderColor: global.user.getBorderColor (),
-                    }}
-                  >
-                    <Text
-                      style={{
-                        fontSize: 18,
-                        fontStyle: 'italic',
-                        color: global.user.getTertiaryTextColor (),
-                      }}
-                      numberOfLines={1}
-                    >
-                      Image {index} https://www.apexschools.co{resource.path}
-                    </Text>
-                  </View>
+                  <InlineImage resource={resource} index={index} style={{width: (width - this.props.comment.depth * 15)*0.95}} />
                 </Touchable>
               );
             })}
@@ -473,6 +361,83 @@ class Comment extends React.Component {
   }
 }
 
+class InlineImage extends React.Component {
+  constructor (props) {
+    super (props);
+  }
+  render () {
+    let {resource} = this.props;
+    return (
+      <View
+        style={[{
+          padding: 5,
+          backgroundColor: global.user.getSecondaryTheme (),
+          marginTop: 5,
+          marginBottom: 2,
+          width: width * 0.9,
+          borderRadius: 2,
+          borderWidth: StyleSheet.hairlineWidth * 5,
+          borderColor: global.user.getBorderColor (),
+          overflow: 'hidden',
+          flexDirection: 'row',
+          justifyContent: 'flex-start',
+          alignItems: 'center',
+        }, this.props.style || {}]}
+      >
+        <View
+          style={{
+            paddingRight: 10,
+            borderRightWidth: StyleSheet.hairlineWidth * 2,
+            borderRightColor: global.user.getBorderColor (),
+            marginRight: 10,
+          }}
+        >
+          <Image
+            source={{
+              uri: `https://www.apexschools.co${resource.path}`,
+            }}
+            style={{
+              height: 35,
+              width: resource.width / resource.height * 35,
+            }}
+          />
+        </View>
+        <View
+          style={{
+            flexGrow: 1,
+            flexDirection: 'column',
+            justifyContent: 'space-evenly',
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 14,
+              color: global.user.getSecondaryTextColor (),
+            }}
+          >
+            Image
+            {' '}
+            {this.props.index}
+          </Text>
+          <Text
+            style={{
+              alignSelf: 'stretch',
+              fontSize: 12,
+              fontStyle: 'italic',
+              color: global.user.getTertiaryTextColor (),
+            }}
+            numberOfLines={1}
+          >
+            {' '}
+            https://www.apexschools.co
+            {resource.path}
+          </Text>
+        </View>
+      </View>
+    );
+  }
+}
+
 export default class QuestionScreen extends React.Component {
   constructor (props) {
     super (props);
@@ -484,6 +449,7 @@ export default class QuestionScreen extends React.Component {
     };
     this.createComment = React.createRef ();
     this.imageViewerModal = React.createRef ();
+    this._isMounted = false;
   }
   static navigationOptions = ({navigation}) => {
     return {
@@ -509,9 +475,13 @@ export default class QuestionScreen extends React.Component {
         callback (e, []);
       });
   };
+  componentWillMount () {
+    this._isMounted = false;
+  }
   componentDidMount () {
+    this._isMounted = true;
     this.loadComments (this.question._id, (err, comments) => {
-      this.setState ({comments});
+      this._isMounted && this.setState ({comments});
     });
   }
   openCreate = () => {
@@ -635,39 +605,12 @@ export default class QuestionScreen extends React.Component {
                 {this.question.resources.map ((resource, index, array) => {
                   return (
                     <Touchable
-                      key={'image_' + index}
                       onPress={() => {
                         this.openImageViewer (array, index);
                       }}
+                      key={'image_' + resource._id}
                     >
-                      <View
-                        style={{
-                          padding: 15,
-                          backgroundColor: global.user.getSecondaryTheme (),
-                          marginTop: 5,
-                          marginBottom: 5,
-                          width: width * 0.9,
-                          borderRadius: 4,
-                          borderWidth: StyleSheet.hairlineWidth * 5,
-                          borderColor: global.user.getBorderColor (),
-                        }}
-                      >
-                        <Text
-                          style={{
-                            fontSize: 18,
-                            fontStyle: 'italic',
-                            color: global.user.getTertiaryTextColor (),
-                          }}
-                          numberOfLines={1}
-                        >
-                          Image
-                          {' '}
-                          {index}
-                          {' '}
-                          https://www.apexschools.co
-                          {resource.path}
-                        </Text>
-                      </View>
+                      <InlineImage resource={resource} index={index} />
                     </Touchable>
                   );
                 })}
@@ -693,7 +636,7 @@ export default class QuestionScreen extends React.Component {
               data={commentList}
               renderItem={({item, index}) => (
                 <Comment
-                  imageViewer={this.openImageViewer}
+                  openImageViewer={this.openImageViewer}
                   parent={this}
                   index={index}
                   comment={item}

@@ -25,11 +25,7 @@ import {
   XIcon,
   SendIcon,
   PhotoIcon,
-  TrashIcon,
-  SchoolAssignmentsIcon,
-  BeforeSchoolIcon,
-  LunchTimeIcon,
-  AfterSchoolIcon,
+  CloseCircleIcon,
 } from '../../classes/icons';
 
 import {
@@ -43,6 +39,8 @@ import {
   UIActivityIndicator,
   WaveIndicator,
 } from 'react-native-indicators';
+
+import Modal from 'react-native-modal';
 
 import HeaderBar from '../../components/header';
 
@@ -62,6 +60,49 @@ import {ifIphoneX} from 'react-native-iphone-x-helper';
 
 const width = Dimensions.get ('window').width; //full width
 const height = Dimensions.get ('window').height; //full height
+
+class ImagePickerPopup extends React.Component {
+  constructor (props) {
+    super (props);
+    this.state = {
+      isBackdropVisible: false,
+    };
+  }
+  render () {
+    return (
+      <View>
+        <Modal
+          style={{
+            margin: 0,
+            paddingBottom: 0,
+            flexDirection: 'column',
+            justifyContent: 'flex-end',
+          }}
+          animationIn="slideInUp"
+          animationOut="slideOutDown"
+          isVisible={this.state.isBackdropVisible}
+          backdropColor={
+            global.user.theme == 'Light' ? 'black' : 'rgba(255,255,255,0.4)'
+          }
+          onBackdropPress={() => this.setState ({isBackdropVisible: false})}
+          propagateSwipe={true}
+        >
+
+          <View>
+            <ImageBar
+              style={{marginBottom: 0, padding: 0}}
+              displayImagesInline={false}
+              onImageRecieved={this.props.onImageRecieved}
+              displayCameraRollInline={true}
+              column={true}
+              path={global.resourcePath}
+            />
+          </View>
+        </Modal>
+      </View>
+    );
+  }
+}
 
 class ChatBox extends React.Component {
   constructor (props) {
@@ -132,11 +173,10 @@ class CreateChatBar extends React.Component {
   constructor (props) {
     super (props);
     this.state = {
-      keyboardHeight: new Animated.Value (0),
       value: '',
     };
     this.text = React.createRef ();
-    this.dropTextBar = true;
+    this.keyboardIsUp = false;
     this.canSendMessage = true;
   }
   componentDidMount () {
@@ -154,13 +194,13 @@ class CreateChatBar extends React.Component {
     this.keyboardWillHideSub.remove ();
   }
   keyboardWillShow = event => {
+    this.keyboardIsUp = true;
     this.props.compactScrollView (event);
     this.dropTextBar = true;
   };
   keyboardWillHide = event => {
-    if (this.dropTextBar) {
-      this.props.openScrollView (event);
-    }
+    this.props.openScrollView (event);
+    this.keyboardIsUp = false;
   };
   sendMessage = () => {
     if (this.canSendMessage) {
@@ -169,8 +209,8 @@ class CreateChatBar extends React.Component {
         message: this.state.value,
         'x-api-key': global.user['x-api-key'],
         'x-id-key': global.user['x-id-key'],
+        resources: this.props.images.map (image => image._id),
       };
-      this.props.imageBar.current.clearImages ();
       this.props.sendMessage (message);
       this.text.current.clear ();
       this.setState ({value: ''});
@@ -196,47 +236,119 @@ class CreateChatBar extends React.Component {
     }
   };
   sendPhoto = () => {
-    if (this.dropTextBar) {
-      this.dropTextBar = false;
-      Keyboard.dismiss ();
+    if (this.keyboardIsUp) {
+      setTimeout (() => {
+        this.props.imagePickerPopup.current.setState ({
+          isBackdropVisible: true,
+        });
+      }, 250);
     } else {
-      this.text.current.focus ();
-      this.dropTextBar = true;
+      this.props.imagePickerPopup.current.setState ({isBackdropVisible: true});
     }
+    Keyboard.dismiss ();
+    this.keyboardIsUp = false;
+  };
+  removeImage = image => {
+    this.props.parent.setState ({
+      images: this.props.images.filter (
+        stateImage => image._id != stateImage._id
+      ),
+    });
   };
   render () {
     return (
-      <Animated.View
+      <View
         style={[
           ChatRoomStyles.createChat,
           boxShadows.boxShadow3,
-          {top: this.state.keyboardHeight},
           global.user.secondaryTheme (),
         ]}
       >
-        <Touchable onPress={this.sendPhoto}>
-          <View style={ChatRoomStyles.photoChat}>
-            <PhotoIcon color={global.user.getPrimaryTextColor ()} size={20} />
-          </View>
-        </Touchable>
-        <TextInput
-          value={this.state.value}
-          onChangeText={text => this.setState ({value: text})}
-          ref={this.text}
-          style={[
-            ChatRoomStyles.createChatText,
-            global.user.secondaryTextColor (),
-          ]}
-          placeholder="Write a message"
-          placeholderTextColor={global.user.getTertiaryTextColor ()}
-          keyboardAppearance={global.user.theme.toLowerCase ()}
-        />
-        <Touchable onPress={this.sendMessage}>
-          <View style={ChatRoomStyles.sendChat}>
-            <SendIcon color={global.user.getPrimaryTextColor ()} size={20} />
-          </View>
-        </Touchable>
-      </Animated.View>
+        {this.props.images.length == 0
+          ? <View />
+          : <View
+              style={[
+                {
+                  width,
+                  height: 80,
+                  backgroundColor: global.user.getSecondaryTheme (),
+                },
+              ]}
+            >
+              <ScrollView
+                horizontal={true}
+                showsHorizontalScrollIndicator={false}
+                style={{paddingTop: 10, paddingLeft: 10}}
+              >
+                {this.props.images.map ((image, index) => {
+                  return (
+                    <View key={'barImage_' + index}>
+                      <Touchable
+                        onPress={() => this.removeImage (image)}
+                        style={{
+                          position: 'absolute',
+                          top: -5,
+                          left: 0,
+                          zIndex: 1,
+                        }}
+                        hitSlop={{top: 10, left: 10, bottom: 10, right: 10}}
+                      >
+                        <CloseCircleIcon
+                          size={20}
+                          style={{
+                            width: 20,
+                            height: 20,
+                            color: 'black',
+                            backgroundColor: 'white',
+                            borderRadius: 10,
+                            overflow: 'hidden',
+                          }}
+                        />
+                      </Touchable>
+                      <Image
+                        source={{
+                          uri: `https://www.apexschools.co${image.path}`,
+                        }}
+                        style={{
+                          zIndex: 0,
+                          height: 70,
+                          width: image.width / image.height * 70,
+                          backgroundColor: 'black',
+                          marginLeft: 10,
+                          marginRight: 10,
+                        }}
+                      />
+                    </View>
+                  );
+                })}
+              </ScrollView>
+            </View>}
+
+        <View style={{width, flexDirection: 'row'}}>
+          <Touchable onPress={this.sendPhoto}>
+            <View style={ChatRoomStyles.photoChat}>
+              <PhotoIcon color={global.user.getPrimaryTextColor ()} size={20} />
+            </View>
+          </Touchable>
+          <TextInput
+            value={this.state.value}
+            onChangeText={text => this.setState ({value: text})}
+            ref={this.text}
+            style={[
+              ChatRoomStyles.createChatText,
+              global.user.secondaryTextColor (),
+            ]}
+            placeholder="Write a message"
+            placeholderTextColor={global.user.getTertiaryTextColor ()}
+            keyboardAppearance={global.user.theme.toLowerCase ()}
+          />
+          <Touchable onPress={this.sendMessage}>
+            <View style={ChatRoomStyles.sendChat}>
+              <SendIcon color={global.user.getPrimaryTextColor ()} size={20} />
+            </View>
+          </Touchable>
+        </View>
+      </View>
     );
   }
 }
@@ -274,22 +386,6 @@ class ImageViewerModal extends React.Component {
   }
 }
 
-function sendResourseToServer (resource) {
-  return fetch (
-    'https://www.apexschools.co/api/v1/resources?base64=true&populate=resources',
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': global.user['x-api-key'],
-        'x-id-key': global.user['x-id-key'],
-        school: global.user['school'],
-      },
-      body: JSON.stringify (resource),
-    }
-  );
-}
-
 export default class ChatRoom extends React.Component {
   constructor (props) {
     super (props);
@@ -304,6 +400,7 @@ export default class ChatRoom extends React.Component {
     this.error = false;
     this.errorMessage = '';
     this.imageViewerModal = React.createRef ();
+    this.imagePickerPopup = React.createRef();
     this.tryAgain = () => {};
     this.state = {
       chats: [],
@@ -347,7 +444,7 @@ export default class ChatRoom extends React.Component {
     };
   };
   sendMessage = message => {
-    if (this.canSendMessages && message.message) {
+    if (this.canSendMessages && (message.message || message.resources.length > 0)) {
       message.resources = this.state.images.map (image => image._id);
       this.websocket.send (JSON.stringify (message));
       this.setState ({images: []});
@@ -470,22 +567,15 @@ export default class ChatRoom extends React.Component {
       delay: 0,
     }).start ();
   };
-  addImage = async result => {
-    if (result.uri) {
-      result.path = `/courses/${global.courseInfoCourse.id}/resources`;
-      sendResourseToServer (result).then (res => res.json ()).then (json => {
-        if (json.status == 'ok') {
-          this.state.images.push (json.body);
-          this.setState ({images: this.state.images});
-        }
-      });
-    }
+  imageFunction = result => {
+    this.state.images.push (result);
+    this.setState ({images: this.state.images});
   };
   _onRefresh = () => {
     this.setState ({refreshing: true, limit: this.state.limit + 50}, () => {
       this.loadChats (this.state.limit, (err, body) => {
         if (err) {
-          this.setState({refreshing: false, chats: []});
+          this.setState ({refreshing: false, chats: []});
         } else {
           this.setState ({refreshing: false, chats: body});
         }
@@ -560,30 +650,20 @@ export default class ChatRoom extends React.Component {
                   />}
             </ScrollView>
             <CreateChatBar
-              imageBar={this.imageBar}
+              imagePickerPopup={this.imagePickerPopup}
               compactScrollView={this.compactScrollView}
               openScrollView={this.openScrollView}
               sendMessage={this.sendMessage}
+              images={this.state.images}
+              parent={this}
             />
           </Animated.View>
-          <View
-            style={{
-              width,
-              height: 0,
-              flexGrow: 1,
-              backgroundColor: global.user.getSecondaryTheme (),
-            }}
-          >
-            <ScrollView style={{width}}>
-              <ImageBar
-                ref={this.imageBar}
-                displayImages={true}
-                imageFunction={this.addImage}
-              />
-            </ScrollView>
-          </View>
         </View>
         <ImageViewerModal ref={this.imageViewerModal} parent={this} />
+        <ImagePickerPopup
+          ref={this.imagePickerPopup}
+          onImageRecieved={this.imageFunction}
+        />
       </View>
     );
   }
@@ -633,10 +713,9 @@ const ChatRoomStyles = StyleSheet.create ({
   },
   createChat: {
     width,
-    height: 55,
     backgroundColor: 'white',
     position: 'relative',
-    flexDirection: 'row',
+    flexDirection: 'column',
   },
   createChatText: {
     width: width - 100,

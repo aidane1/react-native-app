@@ -250,7 +250,14 @@ function getBlock (block, courses, colorMap) {
   } else if (block.type == 'time') {
     return (
       <View>
-        <Text style={{textAlign: 'right', fontSize: 18, fontWeight: '500', color: global.user.getSecondaryTextColor()}}>
+        <Text
+          style={{
+            textAlign: 'right',
+            fontSize: 18,
+            fontWeight: '500',
+            color: global.user.getSecondaryTextColor (),
+          }}
+        >
           {formatTime (block.time)}
         </Text>
       </View>
@@ -264,7 +271,14 @@ function getBlock (block, courses, colorMap) {
           justifyContent: 'flex-end',
         }}
       >
-        <Text style={{textAlign: 'center', fontSize: 18, fontWeight: '500', color: global.user.getSecondaryTextColor()}}>
+        <Text
+          style={{
+            textAlign: 'center',
+            fontSize: 18,
+            fontWeight: '500',
+            color: global.user.getSecondaryTextColor (),
+          }}
+        >
           {block.title}
         </Text>
       </View>
@@ -278,10 +292,10 @@ export default class ScheduleScreenTile extends React.Component {
   constructor (props) {
     super (props);
     let images = global.user.scheduleImages;
-    this.state = {
+    (images = Array.isArray (images) ? images : []), (this.state = {
       scheduleType: global.user.scheduleType,
       images,
-    };
+    });
     this.imageViewerModal = React.createRef ();
     let currentDate = new Date (2019, 10, 8);
     let currentSemesters = global.semesters
@@ -323,54 +337,21 @@ export default class ScheduleScreenTile extends React.Component {
       .catch (e => {});
   };
   changeScheduleImage = async result => {
-    if (result.uri) {
-      result.path = `/users/${global.user.id}/schedules`;
-      sendResourseToServer (result)
-        .then (res => res.json ())
-        .then (async json => {
-          if (json.status == 'ok') {
-            this.state.images.push (json.body);
-            global.user.scheduleImages = this.state.images;
-            await User._saveToStorage (global.user);
-            const imageAssets = await cacheImages (
-              this.state.images.map (
-                image => `https://www.apexschools.co${image.path}`
-              )
-            );
-            this.setState ({images: this.state.images});
-            let api = new ApexAPI (global.user);
-            api
-              .put (`users/${global.user.id}`, {
-                schedule_images: global.user.scheduleImages,
-              })
-              .then (data => data.json ())
-              .then (data => {})
-              .catch (e => {});
-          }
-        })
-        .catch (e => {
-          if (e.message == "JSON Parse error: Unrecognized token '<'") {
-            Alert.alert (
-              'Connection Error',
-              'Unable to connect to the server',
-              [
-                {
-                  text: 'Try Again',
-                  onPress: () => this.changeScheduleImage (result),
-                },
-                {
-                  text: 'Cancel',
-                  onPress: () => {
-                    console.log ('cancelled');
-                  },
-                  style: 'cancel',
-                },
-              ],
-              {cancelable: false}
-            );
-          }
-        });
-    }
+    this.state.images.push (result);
+    global.user.scheduleImages = [result];
+    await User._saveToStorage (global.user);
+    const imageAssets = await cacheImages ([
+      `https://www.apexschools.co${result.path}`,
+    ]);
+    this.setState ({images: [result]});
+    let api = new ApexAPI (global.user);
+    api
+      .put (`users/${global.user.id}`, {
+        schedule_images: [result._id],
+      })
+      .then (data => data.json ())
+      .then (data => {})
+      .catch (e => {});
   };
   removeImage = async resource => {
     let images = [...global.user.scheduleImages];
@@ -415,97 +396,97 @@ export default class ScheduleScreenTile extends React.Component {
               Schedule
             </Text>
           </View>
-          <View
-            style={[
-              boxShadows.boxShadow2,
-              styles.choiceBar,
-              {marginBottom: 30},
-            ]}
-          >
-            <Touchable onPress={() => this.changeScheduleType ('image')}>
-              <View
-                style={[
-                  styles.choiceOption,
-                  styles.choiceOptionLeft,
-                  this.state.scheduleType == 'image'
-                    ? styles.choiceOptionSelected
-                    : {},
-                ]}
-              >
-                <Text style={{fontSize: 18, fontWeight: '500'}}>Image</Text>
-              </View>
-            </Touchable>
-            <Touchable onPress={() => this.changeScheduleType ('schedule')}>
-              <View
-                style={[
-                  styles.choiceOption,
-                  styles.choiceOptionRight,
-                  this.state.scheduleType == 'schedule'
-                    ? styles.choiceOptionSelected
-                    : {},
-                ]}
-              >
-                <Text style={{fontSize: 18, fontWeight: '500'}}>Schedule</Text>
-              </View>
-            </Touchable>
-          </View>
           {this.state.scheduleType == 'image'
-            ? <View style={{flexDirection: 'column', alignItems: 'center'}}>
-                {this.state.images.map ((resource, index, array) => {
-                  return (
-                    <View
-                      key={'image_' + index}
-                      style={[
-                        boxShadows.boxShadow5,
-                        {postion: 'relative', marginTop: 15, marginBottom: 15},
-                      ]}
-                    >
-                      <Touchable
-                        onPress={() => {
-                          this.openImageModal (index, array);
-                        }}
-                      >
-                        <Image
-                          source={{
-                            uri: `https://www.apexschools.co${resource.path}`,
-                          }}
+            ? <View
+                style={{
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  paddingTop: 10,
+                }}
+              >
+                <View
+                  style={[{
+                    width: width * 0.95,
+                    paddingTop: 40,
+                    paddingBottom: 40,
+                    backgroundColor: global.user.getSecondaryTheme (),
+                    opacity: 0.9,
+                    borderRadius: 10,
+                  }, boxShadows.boxShadow7]}
+                >
+                  {this.state.images.length != 0
+                    ? this.state.images.map ((resource, index, array) => {
+                        return (
+                          <View
+                            key={'image_' + index}
+                            style={[
+                              boxShadows.boxShadow5,
+                              {
+                                postion: 'relative',
+                                marginTop: 15,
+                                marginBottom: 15,
+                                flexDirection: 'row',
+                                justifyContent: 'center',
+                                // maxHeight: 150,
+                                // overflow: "hidden"
+                              },
+                            ]}
+                          >
+                            <Touchable
+                              onPress={() => {
+                                this.openImageModal (index, array);
+                              }}
+                            >
+                              <Image
+                                source={{
+                                  uri: `https://www.apexschools.co${resource.path}`,
+                                }}
+                                style={{
+                                  width: width * 0.93,
+                                  height: resource.height /
+                                    resource.width *
+                                    width *
+                                    0.93,
+                                }}
+                              />
+                            </Touchable>
+                          </View>
+                        );
+                      })
+                    : <View>
+                        <View
                           style={{
-                            width: width * 0.7,
-                            height: resource.height /
-                              resource.width *
-                              width *
-                              0.7,
+                            flexDirection: 'row',
+                            justifyContent: 'center',
                           }}
-                        />
-                      </Touchable>
-                      <Touchable
-                        onPress={() => this.removeImage (resource)}
-                        style={{position: 'absolute', top: -15, left: -15}}
-                        hitSlop={{top: 10, left: 10, bottom: 10, right: 10}}
-                      >
-                        <CloseCircleIcon
-                          size={30}
-                          style={{
-                            width: 30,
-                            height: 30,
-                            color: 'black',
-                            backgroundColor: 'white',
-                            borderRadius: 15,
-                            overflow: 'hidden',
-                          }}
-                        />
-                      </Touchable>
-                    </View>
-                  );
-                })}
+                        >
+                          <Text
+                            style={{
+                              width: width * 0.93,
+                              fontSize: 30,
+                              fontWeight: '500',
+                              backgroundColor: global.user.getPrimaryTheme (),
+                              textAlign: 'center',
+                              color: global.user.getPrimaryTextColor (),
+                              paddingTop: 40,
+                              paddingBottom: 40,
+                            }}
+                          >
+                            No Images Yet
+                          </Text>
+                        </View>
+                      </View>}
+                </View>
+
                 <ImageBar
                   style={{
-                    backgroundColor: '#e5e5e5',
-                    width: width * 0.85,
+                    width: width * 0.95,
                     marginTop: 20,
                   }}
-                  displayImages={false}
-                  imageFunction={this.changeScheduleImage}
+                  displayImagesInline={false}
+                  displayCameraRollInline={false}
+                  path={`/users/${global.user.id}/schedule_images`}
+                  onImageRecieved={this.changeScheduleImage}
                 />
               </View>
             : <View>
@@ -575,6 +556,38 @@ export default class ScheduleScreenTile extends React.Component {
                       No semesters currently active!
                     </Text>}
               </View>}
+          <View
+            style={[
+              boxShadows.boxShadow2,
+              styles.choiceBar,
+              {marginBottom: 30},
+            ]}
+          >
+            <Touchable onPress={() => this.changeScheduleType ('image')}>
+              <View
+                style={[
+                  styles.choiceOption,
+                  this.state.scheduleType == 'image'
+                    ? styles.choiceOptionSelected
+                    : {},
+                ]}
+              >
+                <Text style={{fontSize: 18, fontWeight: '500', color: this.state.scheduleType == 'image' ? "white" : "black"}}>Image</Text>
+              </View>
+            </Touchable>
+            <Touchable onPress={() => this.changeScheduleType ('schedule')}>
+              <View
+                style={[
+                  styles.choiceOption,
+                  this.state.scheduleType == 'schedule'
+                    ? styles.choiceOptionSelected
+                    : {},
+                ]}
+              >
+                <Text style={{fontSize: 18, fontWeight: '500', color: this.state.scheduleType !== 'image' ? "white" : "black"}}>Schedule</Text>
+              </View>
+            </Touchable>
+          </View>
         </ScrollView>
         <ImageViewerModal ref={this.imageViewerModal} parent={this} />
       </View>
@@ -586,7 +599,7 @@ const styles = StyleSheet.create ({
   scheduleWeek: {
     flexDirection: 'row',
     width: 780,
-    marginTop: 10,
+    marginTop: 0,
     marginBottom: 40,
     marginRight: 30,
   },
@@ -617,16 +630,15 @@ const styles = StyleSheet.create ({
     fontWeight: 'bold',
   },
   choiceBar: {
-    width: width * 0.85,
+    width: width * 0.95,
     height: 40,
     backgroundColor: '#ddd',
-    borderRadius: 20,
     flexDirection: 'row',
     alignSelf: 'center',
     marginTop: 20,
   },
   choiceOption: {
-    width: width * 0.85 / 2,
+    width: width * 0.95 / 2,
     height: 40,
     flexDirection: 'column',
     justifyContent: 'center',
@@ -635,15 +647,7 @@ const styles = StyleSheet.create ({
     opacity: 0.6,
   },
   choiceOptionSelected: {
-    backgroundColor: '#6593cf',
+    backgroundColor: '#3cc6f0',
     opacity: 1,
-  },
-  choiceOptionLeft: {
-    borderTopLeftRadius: 20,
-    borderBottomLeftRadius: 20,
-  },
-  choiceOptionRight: {
-    borderTopRightRadius: 20,
-    borderBottomRightRadius: 20,
   },
 });
