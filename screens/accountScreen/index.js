@@ -4,7 +4,7 @@ import {
   View,
   Dimensions,
   ActivityIndicator,
-  TouchableWithoutFeedback,
+  Image,
   Text,
 } from 'react-native';
 
@@ -209,10 +209,9 @@ export default class AccountScreen extends React.Component {
                   marginTop: 20,
                 }}
               >
-                <AccountIcon
-                  size={45}
-                  color={global.user.getPrimaryTextColor ()}
-                />
+                {global.user.profile_picture !== ''
+                ? <Image source={{uri: `https://www.apexschools.co${global.user.profile_picture}`}} style={{width: 45, height: 45, borderRadius: 22.5, overflow: "hidden", marginTop: 5}}/>
+                : <AccountIcon color={global.user.getPrimaryTextColor ()} size={45} />}
                 <View
                   style={{
                     flexDirection: 'column',

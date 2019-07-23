@@ -14,6 +14,7 @@ import {
   AppState,
   Alert,
   RefreshControl,
+  KeyboardAvoidingView,
 } from 'react-native';
 
 import {
@@ -22,7 +23,7 @@ import {
   CheckBoxFilledIcon,
   EmptyIcon,
   CheckBoxOpenIcon,
-  XIcon,
+  AccountIcon,
   SendIcon,
   PhotoIcon,
   CloseCircleIcon,
@@ -42,9 +43,11 @@ import {
 
 import Modal from 'react-native-modal';
 
+import moment from 'moment';
+
 import HeaderBar from '../../components/header';
 
-import {ScrollView} from 'react-native-gesture-handler';
+import {ScrollView, FlatList} from 'react-native-gesture-handler';
 
 import Touchable from 'react-native-platform-touchable';
 
@@ -119,53 +122,149 @@ class ChatBox extends React.Component {
     });
   };
   render () {
-    return (
-      <View style={{width, flexDirection: 'column'}}>
-        <Text
-          style={[
-            ChatRoomStyles.chatBoxUsername,
-            this.props.sent
-              ? ChatRoomStyles.usernameSent
-              : ChatRoomStyles.usernameRecieved,
-            global.user.tertiaryTextColor (),
-          ]}
-        >
-          {this.props.message.username}
-        </Text>
+    if (this.props.showName) {
+      return (
         <View
-          style={[
-            ChatRoomStyles.chatBox,
-            this.props.sent
-              ? ChatRoomStyles.chatBoxSent
-              : ChatRoomStyles.chatBoxRecieved,
-          ]}
+          style={{
+            flexDirection: 'row',
+            width,
+            paddingLeft: 5,
+            alignItems: 'flex-start',
+            marginTop: 10,
+          }}
         >
-          <Text style={{fontSize: 16}}>
-            {this.props.message.message}
-          </Text>
-          {this.props.message.resources.map ((resource, index, array) => {
-            return (
-              <Touchable
-                key={'image_' + index}
-                onPress={() => {
-                  this.openImageViewer (array, index);
+          {this.props.message.profile_picture !== ''
+            ? <Image
+                source={{
+                  uri: `https://www.apexschools.co${this.props.message.profile_picture}`,
+                }}
+                style={{
+                  width: 45,
+                  height: 45,
+                  borderRadius: 22.5,
+                  overflow: 'hidden',
+                  marginTop: 5,
+                }}
+              />
+            : <AccountIcon
+                size={45}
+                color={global.user.getPrimaryTextColor ()}
+              />}
+          {/* <AccountIcon size={45} color={global.user.getPrimaryTextColor ()} /> */}
+          <View style={ChatRoomStyles.chatBoxHolder}>
+            <View style={{flexDirection: 'row', alignItems: 'flex-end'}}>
+              <Text
+                style={[
+                  ChatRoomStyles.chatBoxUsername,
+                  global.user.primaryTextColor (),
+                ]}
+              >
+                {this.props.message.username}
+              </Text>
+              <Text
+                style={[
+                  ChatRoomStyles.chatBoxTime,
+                  global.user.tertiaryTextColor (),
+                ]}
+              >
+                {moment (this.props.message.date).calendar ()}
+              </Text>
+            </View>
+            <View style={[ChatRoomStyles.chatBox]}>
+              <Text
+                style={{
+                  fontSize: 13,
+                  opacity: 0.9,
+                  fontWeight: '200',
+                  color: global.user.getPrimaryTextColor (),
                 }}
               >
-                <Image
-                  source={{uri: `https://www.apexschools.co${resource.path}`}}
-                  style={{
-                    width: width * 0.7,
-                    height: resource.height / resource.width * width * 0.7,
-                    marginTop: 10,
-                    marginBottom: 10,
-                  }}
-                />
-              </Touchable>
-            );
-          })}
+                {this.props.message.message}
+              </Text>
+              {this.props.message.resources.map ((resource, index, array) => {
+                return (
+                  <View style={boxShadows.boxShadow4} key={resource._id}>
+                    <Touchable
+                      onPress={() => {
+                        this.openImageViewer (array, index);
+                      }}
+                    >
+                      <Image
+                        source={{
+                          uri: `https://www.apexschools.co${resource.path}`,
+                        }}
+                        style={{
+                          width: width * 0.6,
+                          height: resource.height /
+                            resource.width *
+                            width *
+                            0.6,
+                          alignSelf: 'center',
+                          marginTop: 10,
+                          marginBottom: 10,
+                          marginRight: 25,
+                        }}
+                      />
+                    </Touchable>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
         </View>
-      </View>
-    );
+      );
+    } else {
+      return (
+        <View
+          style={{
+            flexDirection: 'row',
+            width,
+            paddingLeft: 50,
+            alignItems: 'flex-start',
+            marginTop: 0,
+          }}
+        >
+          <View style={ChatRoomStyles.chatBoxHolder}>
+            <View style={[ChatRoomStyles.chatBox, {marginTop: 0}]}>
+              <Text
+                style={{
+                  fontSize: 13,
+                  opacity: 0.9,
+                  fontWeight: '200',
+                  color: global.user.getPrimaryTextColor (),
+                }}
+              >
+                {this.props.message.message}
+              </Text>
+              {this.props.message.resources.map ((resource, index, array) => {
+                return (
+                  <Touchable
+                    key={'image_' + index}
+                    onPress={() => {
+                      this.openImageViewer (array, index);
+                    }}
+                  >
+                    <Image
+                      source={{
+                        uri: `https://www.apexschools.co${resource.path}`,
+                      }}
+                      style={{
+                        width: width * 0.6,
+                        height: resource.height / resource.width * width * 0.6,
+                        alignSelf: 'center',
+                        marginTop: 10,
+                        marginBottom: 10,
+                        marginRight: 25,
+                      }}
+                    />
+                  </Touchable>
+                );
+              })}
+            </View>
+          </View>
+        </View>
+      );
+    }
   }
 }
 
@@ -214,9 +313,7 @@ class CreateChatBar extends React.Component {
       this.props.sendMessage (message);
       this.text.current.clear ();
       this.setState ({value: ''});
-      setTimeout (() => {
-        this.canSendMessage = true;
-      }, 3000);
+      this.canSendMessage = true;
     } else {
       Alert.alert (
         'Error',
@@ -386,13 +483,74 @@ class ImageViewerModal extends React.Component {
   }
 }
 
+class WSConnection {
+  constructor (parent, messageBuffer = []) {
+    this.parent = parent;
+    this.ws = new WebSocket (
+      `https://www.apexschools.co/web-sockets/app/${global.websocketPath}?x-api-key=${global.user['x-api-key']}&x-id-key=${global.user['x-id-key']}`
+    );
+    this.ws.onopen = this.onopen;
+    this.ws.onmessage = this.onmessage;
+    this.ws.onerror = this.onerror;
+    this.ws.onclose = this.onclose;
+    this.messageBuffer = messageBuffer;
+    this.isLoaded = false;
+  }
+  onopen = () => {
+    console.log ('socket is open!');
+    this.isLoaded = true;
+    this.parent.canSendMessages = true;
+  };
+
+  onmessage = message => {
+    if (this.isLoaded) {
+      console.log ('socket got message!');
+      console.log (message.data);
+      message = JSON.parse (message.data);
+      if (message.status === 'error') {
+      } else {
+        if (this.parent.state.appState == 'active') {
+          let chats = [];
+          if (this.messageBuffer.length > 0) {
+            chats = [...this.parent.state.chats, ...this.messageBuffer, message];
+            this.messageBuffer = [];
+          } else {
+            chats = [...this.parent.state.chats, message];
+          }
+          this.parent.test ();
+          this.parent.updateState({chats});
+          // this.parent.setState ({chats}, () => {
+            
+          // });
+        } else {
+          this.messageBuffer.push(message.data);
+        }
+      }
+      return false;
+    }
+  };
+
+  onerror = error => {
+    console.log ('error');
+  };
+  onclose = () => {
+    console.log ('closed');
+    this.isLoaded = false;
+    setTimeout (() => {
+      this.parent.updateWebSocket(this.messageBuffer);
+      this.parent.websocket = new WSConnection (this.parent, this.messageBuffer);
+    }, 1000);
+  };
+  sendMessage = message => {
+    this.ws.send (message);
+  };
+}
+
 export default class ChatRoom extends React.Component {
   constructor (props) {
     super (props);
     this.scrollView = React.createRef ();
-    this.websocket = new WebSocket (
-      `https://www.apexschools.co/web-sockets/app/${global.websocketPath}?x-api-key=${global.user['x-api-key']}&x-id-key=${global.user['x-id-key']}`
-    );
+    this.websocket = new WSConnection (this);
     this.canSendMessages = false;
     this.scrollToBottom = true;
     this.imageBar = React.createRef ();
@@ -400,7 +558,7 @@ export default class ChatRoom extends React.Component {
     this.error = false;
     this.errorMessage = '';
     this.imageViewerModal = React.createRef ();
-    this.imagePickerPopup = React.createRef();
+    this.imagePickerPopup = React.createRef ();
     this.tryAgain = () => {};
     this.state = {
       chats: [],
@@ -412,41 +570,30 @@ export default class ChatRoom extends React.Component {
       limit: 50,
     };
     this.scrollViewHeight = 0;
-    this.websocket.onopen = () => {
-      this.canSendMessages = true;
-    };
-    this.websocket.onmessage = message => {
-      message = JSON.parse (message.data);
-      let chats = [...this.state.chats, message];
-      this.setState ({chats}, () => {
-        this.scrollView.current.scrollTo ({
-          x: 0,
-          y: this.scrollViewHeight,
-          animated: 'true',
-        });
-      });
-      return false;
-    };
-    this.websocket.onerror = () => {
-      this.canSendMessages = false;
-    };
-    this.websocket.onclose = () => {
-      this.canSendMessages = false;
-      this.websocket = new WebSocket (
-        `https://www.apexschools.co/web-sockets/app/${global.websocketPath}?x-api-key=${global.user['x-api-key']}&x-id-key=${global.user['x-id-key']}`
-      );
-      this.webSocketOpen = false;
-    };
+    this.previousChatLength = 0;
+    this.refreshingScrollView = false;
   }
   static navigationOptions = ({navigation}) => {
     return {
       header: null,
     };
   };
+  test = () => {
+    console.log ('parent is active');
+  };
+  updateWebSocket = messageBuffer => {
+    this.websocket = new WSConnection(this, messageBuffer);
+  }
+  updateState = state => {
+    this.setState(state);
+  }
   sendMessage = message => {
-    if (this.canSendMessages && (message.message || message.resources.length > 0)) {
+    if (
+      this.canSendMessages &&
+      (message.message || message.resources.length > 0)
+    ) {
       message.resources = this.state.images.map (image => image._id);
-      this.websocket.send (JSON.stringify (message));
+      this.websocket.sendMessage (JSON.stringify (message));
       this.setState ({images: []});
     } else {
       if (message.message) {
@@ -492,6 +639,7 @@ export default class ChatRoom extends React.Component {
       .then (res => {
         if (res.status == 'ok') {
           res.body = res.body.reverse ();
+          this.previousChatLength = res.body.length;
           callback (null, res.body);
         } else {
           this.error = true;
@@ -510,6 +658,7 @@ export default class ChatRoom extends React.Component {
       });
   };
   componentDidMount () {
+    console.log ('mounting');
     AppState.addEventListener ('change', this._handleAppStateChange);
     this.loadChats (this.state.limit, (err, body) => {
       if (err) {
@@ -520,19 +669,22 @@ export default class ChatRoom extends React.Component {
     });
   }
   componentWillUnmount () {
+    console.log("unmounting, daddy!");
     AppState.removeEventListener ('change', this._handleAppStateChange);
+    this.props.navigation.goBack ();
   }
   _handleAppStateChange = nextAppState => {
     if (
       this.state.appState.match (/inactive|background/) &&
       nextAppState === 'active'
     ) {
-      if (!this.webSocketOpen) {
-        this.websocket = new WebSocket (
-          `https://www.apexschools.co/web-sockets/app/${global.websocketPath}?x-api-key=${global.user['x-api-key']}&x-id-key=${global.user['x-id-key']}`
-        );
-      }
-      console.log ('App has come to the foreground!');
+      this.loadChats (this.state.limit, (err, body) => {
+        if (err) {
+          this.setState ({chats: [], updated: true});
+        } else {
+          this.setState ({chats: body, updated: true});
+        }
+      });
     }
     this.setState ({appState: nextAppState});
   };
@@ -540,32 +692,36 @@ export default class ChatRoom extends React.Component {
     let scrollPos =
       event.nativeEvent.contentOffset.y +
       event.nativeEvent.layoutMeasurement.height;
+    // console.log (scrollPos);
     let bottom = event.nativeEvent.contentSize.height;
-    this.scrollToBottom = Math.abs (scrollPos - bottom) < 100;
+    // console.log(bottom);
+    this.scrollToBottom = Math.abs (scrollPos - bottom) < 200;
   };
   compactScrollView = event => {
-    Animated.timing (this.state.height, {
-      toValue: ifIphoneX (height - 80, height - 60) -
-        event.endCoordinates.height,
-      easing: Easing.bezier (0.2, 0.73, 0.33, 0.99),
-      duration: 280,
-      delay: 50,
-    }).start (() => {
-      this.scrollView.current.scrollTo ({
-        x: 0,
-        y: this.scrollViewHeight,
-        animated: 'true',
-      });
-    });
-    this.scrollToBottom = true;
+    // Animated.timing (this.state.height, {
+    //   toValue: ifIphoneX (height - 80, height - 60) -
+    //     event.endCoordinates.height,
+    //   easing: Easing.bezier (0.2, 0.73, 0.33, 0.99),
+    //   duration: 280,
+    //   delay: 50,
+    // }).start (() => {
+    //   this.scrollView.current.scrollTo ({
+    //     x: 0,
+    //     y: this.scrollViewHeight,
+    //     animated: 'true',
+    //   });
+    // });
+    if (this.scrollToBottom) {
+      this.scrollView.current.scrollToEnd ({animated: true});
+    }
   };
   openScrollView = event => {
-    Animated.timing (this.state.height, {
-      toValue: ifIphoneX (height - 80, height - 60),
-      easing: Easing.bezier (0.2, 0.73, 0.33, 0.99),
-      duration: 280,
-      delay: 0,
-    }).start ();
+    // Animated.timing (this.state.height, {
+    //   toValue: ifIphoneX (height - 80, height - 60),
+    //   easing: Easing.bezier (0.2, 0.73, 0.33, 0.99),
+    //   duration: 280,
+    //   delay: 0,
+    // }).start ();
   };
   imageFunction = result => {
     this.state.images.push (result);
@@ -577,6 +733,7 @@ export default class ChatRoom extends React.Component {
         if (err) {
           this.setState ({refreshing: false, chats: []});
         } else {
+          this.refreshingScrollView = true;
           this.setState ({refreshing: false, chats: body});
         }
       });
@@ -605,13 +762,80 @@ export default class ChatRoom extends React.Component {
             flexDirection: 'column',
           }}
         >
-          <Animated.View
+          {/* <Animated.View
             style={[
               ChatRoomStyles.chatroom,
               {height: this.state.height},
               global.user.primaryTheme (),
             ]}
+          > */}
+          <KeyboardAvoidingView
+            style={[ChatRoomStyles.chatroom, global.user.primaryTheme ()]}
+            behavior={'height'}
+            enabled
+            keyboardVerticalOffset={60}
           >
+            {/* this  flatlist is a posibility if need be, but try to avoid using it  */}
+            {/* <FlatList
+              onScroll={this.onScroll}
+              keyboardDismissMode={'on-drag'}
+              keyboardShouldPersistTaps={'always'}
+              scrollEventThrottle={25}
+              onContentSizeChange={(contentWidth, contentHeight) => {
+                if (this.scrollToBottom) {
+                  this.scrollView.current.scrollToEnd ({animated: true});
+                } else if (this.refreshingScrollView) {
+                  this.refreshingScrollView = false;
+                  this.scrollView.current.scrollToIndex({animated: false, index: 50});
+                  // this.scrollView.current.scrollTo ({
+                  //   x: 0,
+                  //   y: contentHeight - this.scrollViewHeight,
+                  //   animated: false,
+                  // });
+                }
+                this.scrollViewHeight = contentHeight;
+              }}
+              data={this.state.chats}
+              keyExtractor={(item, index) => {
+                return item._id;
+              }}
+              renderItem={({item, index}) => {
+                let chat = item;
+                let showName = true;
+                if (index != 0) {
+                  if (this.state.chats[index - 1].username == chat.username) {
+                    showName = false;
+                    chat.date = new Date (chat.date);
+                    this.state.chats[index - 1].date = new Date (
+                      this.state.chats[index - 1].date
+                    );
+                    if (
+                      chat.date.getTime () -
+                        this.state.chats[index - 1].date.getTime () >
+                      216000
+                    ) {
+                      showName = true;
+                    }
+                  }
+                }
+                return (
+                  <ChatBox
+                    showName={showName}
+                    imageViewer={this.imageViewerModal}
+                    sent={global.user.username == chat.username}
+                    message={chat}
+                  />
+                );
+              }}
+              refreshing={this.state.refreshing}
+              refreshControl={
+                <RefreshControl
+                  refreshing={this.state.refreshing}
+                  onRefresh={this._onRefresh}
+                />
+              }
+              ref={this.scrollView}
+            /> */}
             <ScrollView
               ref={this.scrollView}
               onScroll={this.onScroll}
@@ -619,10 +843,17 @@ export default class ChatRoom extends React.Component {
               keyboardShouldPersistTaps={'always'}
               scrollEventThrottle={25}
               onContentSizeChange={(contentWidth, contentHeight) => {
-                this.scrollViewHeight = contentHeight;
                 if (this.scrollToBottom) {
                   this.scrollView.current.scrollToEnd ({animated: true});
+                } else if (this.refreshingScrollView) {
+                  this.refreshingScrollView = false;
+                  this.scrollView.current.scrollTo ({
+                    x: 0,
+                    y: contentHeight - this.scrollViewHeight,
+                    animated: false,
+                  });
                 }
+                this.scrollViewHeight = contentHeight;
               }}
               refreshControl={
                 <RefreshControl
@@ -633,8 +864,28 @@ export default class ChatRoom extends React.Component {
             >
               {this.state.updated
                 ? this.state.chats.map ((chat, index) => {
+                    let showName = true;
+                    if (index != 0) {
+                      if (
+                        this.state.chats[index - 1].username == chat.username
+                      ) {
+                        showName = false;
+                        chat.date = new Date (chat.date);
+                        this.state.chats[index - 1].date = new Date (
+                          this.state.chats[index - 1].date
+                        );
+                        if (
+                          chat.date.getTime () -
+                            this.state.chats[index - 1].date.getTime () >
+                          216000
+                        ) {
+                          showName = true;
+                        }
+                      }
+                    }
                     return (
                       <ChatBox
+                        showName={showName}
                         imageViewer={this.imageViewerModal}
                         key={'chat_' + index}
                         sent={global.user.username == chat.username}
@@ -648,6 +899,8 @@ export default class ChatRoom extends React.Component {
                     size={20}
                     style={{marginTop: 80}}
                   />}
+
+              <View style={{width, height: 20}} />
             </ScrollView>
             <CreateChatBar
               imagePickerPopup={this.imagePickerPopup}
@@ -657,7 +910,8 @@ export default class ChatRoom extends React.Component {
               images={this.state.images}
               parent={this}
             />
-          </Animated.View>
+            {/* </Animated.View> */}
+          </KeyboardAvoidingView>
         </View>
         <ImageViewerModal ref={this.imageViewerModal} parent={this} />
         <ImagePickerPopup
@@ -676,40 +930,23 @@ const ChatRoomStyles = StyleSheet.create ({
     backgroundColor: '#Fdfdfd',
   },
   chatBox: {
-    maxWidth: width * 0.8,
-    padding: 8,
-    borderRadius: 3,
-    marginTop: 2,
-    marginBottom: 10,
+    marginTop: 5,
+    marginBottom: 15,
+  },
+  chatBoxTime: {
+    opacity: 0.5,
+    fontWeight: '500',
+    fontSize: 10,
+  },
+  chatBoxHolder: {
+    width: width - 50,
+    flexDirection: 'column',
+    paddingLeft: 10,
+    paddingRight: 20,
   },
   chatBoxUsername: {
-    marginTop: 10,
-    fontSize: 12,
-    fontStyle: 'italic',
-  },
-  usernameSent: {
-    alignSelf: 'flex-end',
-    position: 'relative',
-    right: 15,
-    color: 'rgba(0,0,0,0.5)',
-    display: 'none',
-  },
-  usernameRecieved: {
-    position: 'relative',
-    left: 15,
-    alignSelf: 'flex-start',
-  },
-  chatBoxSent: {
-    backgroundColor: '#6ec7fa',
-    alignSelf: 'flex-end',
-    position: 'relative',
-    right: 15,
-  },
-  chatBoxRecieved: {
-    backgroundColor: '#e1e1e1',
-    position: 'relative',
-    left: 15,
-    alignSelf: 'flex-start',
+    fontSize: 14,
+    marginRight: 10,
   },
   createChat: {
     width,

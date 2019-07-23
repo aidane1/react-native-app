@@ -1,22 +1,19 @@
 import {AsyncStorage} from 'react-native';
 
+
 export class Event {
   constructor (event) {
-    this.id = event.id;
-    this.date = event.date;
-    this.dayRolled = event.dayRolled;
-    this.displayedEvent = event.displayedEvent;
-    this.info = event.info;
+    this._id = event._id;
+    this.event_date = new Date(event.event_date);
+    this.title = event.title;
     this.time = event.time;
   }
   toJson () {
     return {
-      id: this.id,
-      date: this.date,
-      dayRolled: this.dayRolled,
-      displayedEvent: this.displayedEvent,
-      info: this.info,
       time: this.time,
+      title: this.title,
+      event_date: this.event_date.toISOString(),
+      _id: this._id,
     };
   }
 }
@@ -36,7 +33,7 @@ export class Events {
       storageEvents = JSON.parse (storageEvents);
       let events = [];
       for (var i = 0; i < storageEvents.length; i++) {
-        let event = new Semester (storageEvents[i]);
+        let event = new Event (storageEvents[i]);
         events.push (event);
       }
       return events;

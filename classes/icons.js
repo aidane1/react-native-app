@@ -27,6 +27,43 @@ export class LightBulbIcon extends React.Component {
   }
 }
 
+export class CompassIcon extends React.Component {
+  render () {
+    return (
+      <FontAwesome
+        color="white"
+        name="compass"
+        size={16}
+        {...this.props}
+      />
+    );
+  }
+}
+
+export class BoldArrowUpIcon extends React.Component {
+  render () {
+    return (
+      <Entypo color="white" name="arrow-bold-up" size={16} {...this.props} />
+    );
+  }
+}
+
+export class BoldArrowDownIcon extends React.Component {
+  render () {
+    return (
+      <Entypo color="white" name="arrow-bold-down" size={16} {...this.props} />
+    );
+  }
+}
+
+export class FlagIcon extends React.Component {
+  render () {
+    return (
+      <FontAwesome color="white" name="flag" size={16} {...this.props} />
+    );
+  }
+}
+
 export class EllipsisIcon extends React.Component {
   render () {
     return (

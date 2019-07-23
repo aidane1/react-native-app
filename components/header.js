@@ -50,7 +50,7 @@ export default class HeaderBar extends React.Component {
           <View style={styles.iconLeft}>
             {this.props.iconLeft}
           </View>
-          <Text style={styles.headerText}>
+          <Text style={[styles.headerText, {maxWidth: this.props.width*0.7}]} numberOfLines={1}>
             {this.props.title}
           </Text>
           <View style={styles.iconRight}>

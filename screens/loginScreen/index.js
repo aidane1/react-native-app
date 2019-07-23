@@ -235,16 +235,12 @@ function constructSemesterList (serverData) {
 }
 
 function constructEventList (serverData) {
-  let events = [];
-  for (var i = 0; i < serverData.length; i++) {
-    serverData[i].id = serverData[i]._id;
-    let current = new Event (serverData[i]);
-    events.push (current);
-  }
+  let events = serverData.map (event => new Event (event));
   return events;
 }
 
-function constructSchoolObject (serverData) {
+function constructSchoolObject (serverData, blocks) {
+  serverData.blocks = blocks;
   return {
     schedule: serverData.schedule,
     rawSchedule: serverData.rawSchedule,
@@ -255,12 +251,12 @@ function constructSchoolObject (serverData) {
     id: serverData._id,
     name: serverData.name,
     district: serverData.district,
+    day_titles: serverData.day_titles,
   };
 }
 
 function constructUserObject (serverData) {
   let user = new User (serverData);
-  console.log(user);
   return user;
 }
 
@@ -306,15 +302,17 @@ class LoginButton extends React.Component {
           await Topics._saveToStorage (
             constructTopicList (response.body.topics)
           );
-          console.log(response.body.school.name);
           await School._saveToStorage (
-            constructSchoolObject (response.body.school)
+            constructSchoolObject (response.body.school, response.body.blocks)
           );
           await User._saveToStorage (
             constructUserObject ({
               scheduleImages: response.body.user.schedule_images,
+              permission_level: response.body.permission_level,
               scheduleType: response.body.schedule_type,
+              profile_image: response.body.user.profile_image,
               id: response.body.user._id,
+              accountId: response.body.accountId,
               firstName: response.body.user.first_name,
               lastName: response.body.user.last_name,
               studentNumber: response.body.user.student_number,
@@ -512,51 +510,55 @@ export default class LoginScreen extends React.Component {
   render () {
     return (
       <View style={styles.container}>
-        <LinearGradient
-          style={{flexGrow: 1, flexDirection: 'column'}}
-          colors={['#ffc371', '#ff5f6d']}
-          start={{x: 1, y: 0}}
-          end={{x: 0, y: 1}}
-        >
-          <Animated.View
-            style={{
-              width,
-              flexDirection: 'column',
-              alignItems: 'center',
-              position: 'relative',
-              top: this.state.height,
-            }}
+        <ScrollView style={{width, height, flexDirection: "column"}} bounces={false}>
+          <LinearGradient
+            style={{flexGrow: 1, flexDirection: 'column'}}
+            colors={['#ffc371', '#ff5f6d']}
+            start={{x: 1, y: 0}}
+            end={{x: 0, y: 1}}
           >
-            <View style={styles.imageContainer}>
-              <Image
-                source={require ('../../assets/logo_transparent.png')}
-                style={styles.logo}
+            <Animated.View
+              style={{
+                width,
+                height,
+                flexDirection: 'column',
+                alignItems: 'center',
+                position: 'relative',
+                top: this.state.height,
+              }}
+            >
+              <View style={styles.imageContainer}>
+                <Image
+                  source={require ('../../assets/logo_transparent.png')}
+                  style={styles.logo}
+                />
+              </View>
+              <UsernameInput
+                updateText={this.updateText}
+                name="username"
+                ref={this.username}
               />
-            </View>
-            <UsernameInput
-              updateText={this.updateText}
-              name="username"
-              ref={this.username}
-            />
-            <PasswordInput
-              updateText={this.updateText}
-              name="password"
-              ref={this.password}
-            />
-            <Touchable onPress={this.openModal}>
-              <SchoolInput
-                name="school"
-                ref={this.school}
-                schools={this.state.schools}
+              <PasswordInput
+                updateText={this.updateText}
+                name="password"
+                ref={this.password}
               />
-            </Touchable>
-            <LoginButton
-              ref={this.loginButton}
-              navigation={this.props.navigation}
-              inputs={[this.username, this.password, this.school]}
-            />
-          </Animated.View>
-        </LinearGradient>
+              <Touchable onPress={this.openModal}>
+                <SchoolInput
+                  name="school"
+                  ref={this.school}
+                  schools={this.state.schools}
+                />
+              </Touchable>
+              <LoginButton
+                ref={this.loginButton}
+                navigation={this.props.navigation}
+                inputs={[this.username, this.password, this.school]}
+              />
+            </Animated.View>
+          </LinearGradient>
+        </ScrollView>
+
         <ModalSelect
           name="modal"
           ref={this.modal}

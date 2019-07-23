@@ -66,6 +66,8 @@ import {ifIphoneX} from 'react-native-iphone-x-helper';
 
 import ActionSheet from 'react-native-actionsheet';
 
+import * as Haptics from 'expo-haptics';
+
 const width = Dimensions.get ('window').width; //full width
 const height = Dimensions.get ('window').height; //full height
 
@@ -80,6 +82,9 @@ class CheckButton extends React.Component {
     };
   }
   handleClick = () => {
+    // Haptics.selectionAsync();
+    // Haptics.notificationAsync(Haptics.ImpactFeedbackStyle.Error);
+    // Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
     if (this.state.completed) {
       global.completedAssignments = global.completedAssignments.filter (id => {
         return id !== this.props.assignment.id;
@@ -93,6 +98,7 @@ class CheckButton extends React.Component {
     }
   };
   handlePressIn = () => {
+    Haptics.impactAsync (Haptics.ImpactFeedbackStyle.Light);
     Animated.timing (this.state.scaleVal, {
       toValue: 1.05,
       duration: 100,
@@ -305,14 +311,45 @@ class CustomActionSheet extends React.Component {
     super (props);
     this.state = {
       resource: {},
+      options: [],
       type: '_',
     };
     this.actionSheet = React.createRef ();
   }
   show (resource, type) {
-    this.state.resource = resource;
-    this.state.type = type;
-    this.actionSheet.current.show ();
+    let assignmentOptions = [
+      'Open',
+      'Vote as Helpful',
+      'Vote as Unhelpful',
+      'Report',
+      'Cancel',
+    ];
+    let noteOptions = [
+      'Open',
+      'Vote as Helpful',
+      'Vote as Unhelpful',
+      'Report',
+      'Cancel',
+    ];
+    if (
+      global.user.permission_level >= 3 ||
+      resource.uploaded_by == global.user.accountId
+    ) {
+      assignmentOptions[3] = 'Delete';
+      noteOptions[3] = 'Delete';
+    }
+    this.setState (
+      {
+        options: this.state.type == 'assignment'
+          ? assignmentOptions
+          : noteOptions,
+        resource,
+        type,
+      },
+      () => {
+        this.actionSheet.current.show ();
+      }
+    );
   }
   actionSheetAction = index => {
     if (
@@ -326,6 +363,7 @@ class CustomActionSheet extends React.Component {
           this.props.openAssignment (this.state.resource);
           break;
         case 1:
+          Haptics.notificationAsync (Haptics.ImpactFeedbackStyle.Success);
           api
             .get (`vote/assignments/${this.state.resource.id}?vote=helpful`)
             .then (data => data.json ())
@@ -398,6 +436,7 @@ class CustomActionSheet extends React.Component {
             });
           break;
         case 2:
+          Haptics.notificationAsync (Haptics.ImpactFeedbackStyle.Error);
           api
             .get (`vote/assignments/${this.state.resource.id}?vote=unhelpful`)
             .then (data => data.json ())
@@ -470,6 +509,64 @@ class CustomActionSheet extends React.Component {
             });
           break;
         case 3:
+          if (
+            global.user.permission_level >= 3 ||
+            this.state.resource.uploaded_by == global.user.accountId
+          ) {
+            api
+              .delete (`assignments/${this.state.resource.id}`)
+              .then (data => data.json ())
+              .then (async data => {
+                if (data.status == 'ok') {
+                  global.assignments = global.assignments.filter (
+                    assignment => {
+                      return assignment.id != data.body._id;
+                    }
+                  );
+                  await Assignments._saveToStorage (global.assignments);
+                  let assignments = [
+                    ...this.props.parent.state.assignments,
+                  ].filter (assignment => assignment.id != data.body._id);
+                  setTimeout (() => {
+                    this.props.parent.setState ({assignments});
+                  }, 0);
+                } else {
+                  Alert.alert (
+                    'Error',
+                    data.body.error,
+                    [
+                      {
+                        text: 'Cancel',
+                        onPress: () => {},
+                        style: 'cancel',
+                      },
+                    ],
+                    {cancelable: false}
+                  );
+                }
+              })
+              .catch (e => {
+                console.log (e);
+                if (e.message == "JSON Parse error: Unrecognized token '<'") {
+                  Alert.alert (
+                    'Connection Error',
+                    'Unable to connect to the server',
+                    [
+                      {text: 'Try Again', onPress: () => this.onPress ()},
+                      {
+                        text: 'Cancel',
+                        onPress: () => {
+                          console.log ('cancelled');
+                        },
+                        style: 'cancel',
+                      },
+                    ],
+                    {cancelable: false}
+                  );
+                }
+              });
+          } else {
+          }
           break;
       }
     } else if (
@@ -483,6 +580,7 @@ class CustomActionSheet extends React.Component {
           this.props.openNote (this.state.resource);
           break;
         case 1:
+          Haptics.notificationAsync (Haptics.ImpactFeedbackStyle.Success);
           api
             .get (`vote/notes/${this.state.resource.id}?vote=helpful`)
             .then (data => data.json ())
@@ -555,6 +653,7 @@ class CustomActionSheet extends React.Component {
             });
           break;
         case 2:
+          Haptics.notificationAsync (Haptics.ImpactFeedbackStyle.Error);
           api
             .get (`vote/notes/${this.state.resource.id}?vote=unhelpful`)
             .then (data => data.json ())
@@ -627,31 +726,71 @@ class CustomActionSheet extends React.Component {
             });
           break;
         case 3:
+          if (
+            global.user.permission_level >= 3 ||
+            this.state.resource.uploaded_by == global.user.accountId
+          ) {
+            api
+              .delete (`notes/${this.state.resource.id}`)
+              .then (data => data.json ())
+              .then (async data => {
+                if (data.status == 'ok') {
+                  global.notes = global.notes.filter (note => {
+                    return note.id != data.body._id;
+                  });
+                  await Notes._saveToStorage (global.notes);
+                  let notes = [...this.props.parent.state.notes].filter (
+                    note => note.id != data.body._id
+                  );
+                  setTimeout (() => {
+                    this.props.parent.setState ({notes});
+                  }, 0);
+                } else {
+                  Alert.alert (
+                    'Error',
+                    data.body.error,
+                    [
+                      {
+                        text: 'Cancel',
+                        onPress: () => {},
+                        style: 'cancel',
+                      },
+                    ],
+                    {cancelable: false}
+                  );
+                }
+              })
+              .catch (e => {
+                console.log (e);
+                if (e.message == "JSON Parse error: Unrecognized token '<'") {
+                  Alert.alert (
+                    'Connection Error',
+                    'Unable to connect to the server',
+                    [
+                      {text: 'Try Again', onPress: () => this.onPress ()},
+                      {
+                        text: 'Cancel',
+                        onPress: () => {
+                          console.log ('cancelled');
+                        },
+                        style: 'cancel',
+                      },
+                    ],
+                    {cancelable: false}
+                  );
+                }
+              });
+          } else {
+          }
           break;
       }
     }
   };
   render () {
-    let assignmentOptions = [
-      'Open',
-      'Vote as Helpful',
-      'Vote as Unhelpful',
-      'Report',
-      'Cancel',
-    ];
-    let noteOptions = [
-      'Open',
-      'Vote as Helpful',
-      'Vote as Unhelpful',
-      'Report',
-      'Cancel',
-    ];
     return (
       <ActionSheet
         ref={this.actionSheet}
-        options={
-          this.state.type == 'assignment' ? assignmentOptions : noteOptions
-        }
+        options={this.state.options}
         cancelButtonIndex={4}
         destructiveButtonIndex={3}
         onPress={this.actionSheetAction}
@@ -695,6 +834,7 @@ class AssignmentBubble extends React.Component {
     );
   }
 }
+
 class CreateButton extends React.Component {
   constructor (props) {
     super (props);
@@ -1184,6 +1324,7 @@ class AssignmentModal extends React.Component {
             resources: res.body.resources,
             helpful: res.body.helpful_votes.length,
             unhelpful: res.body.unhelpful_votes.length,
+            uploaded_by: res.body.uploaded_by,
             userVote: res.body.helpful_votes.indexOf (global.user.id) >= 0
               ? 1
               : res.body.unhelpful_votes.indexOf (global.user.id) >= 0 ? -1 : 0,
@@ -1403,7 +1544,8 @@ class AssignmentModal extends React.Component {
                       marginTop: 30,
                       marginBottom: 10,
                       fontSize: 12,
-                      color: 'rgba(0,0,0,0.38)',
+                      color: global.user.getTertiaryTextColor (),
+                      opacity: 0.6,
                     }}
                   >
                     Images
@@ -1519,6 +1661,7 @@ class NoteModal extends React.Component {
             date: new Date (res.body.date),
             referenceCourse: global.courseInfoCourse.id,
             helpful: res.body.helpful_votes.length,
+            uploaded_by: res.body.uploaded_by,
             unhelpful: res.body.unhelpful_votes.length,
             userVote: res.body.helpful_votes.indexOf (global.user.id) >= 0
               ? 1
@@ -1720,7 +1863,8 @@ class NoteModal extends React.Component {
                       marginTop: 30,
                       marginBottom: 10,
                       fontSize: 12,
-                      color: 'rgba(0,0,0,0.38)',
+                      color: global.user.getTertiaryTextColor (),
+                      opacity: 0.6,
                     }}
                   >
                     Images
@@ -2053,6 +2197,224 @@ class NoteRow extends React.Component {
   }
 }
 
+class NoAssignmentsBubble extends React.Component {
+  constructor (props) {
+    super (props);
+  }
+  render () {
+    return (
+      <View
+        style={[
+          styles.assignmentBubble,
+          boxShadows.boxShadow3,
+          global.user.secondaryTheme (),
+        ]}
+      >
+        <View style={styles.assignmentBubbleHeader}>
+          <Text style={{color: '#174ea6', fontSize: 30}}>
+            No Assignments!
+          </Text>
+        </View>
+        <View style={styles.assignmentRowLast}>
+          <View
+            style={{
+              flexGrow: 1,
+              width: 0,
+              paddingRight: 20,
+              paddingLeft: 20,
+              flexDirection: 'row',
+            }}
+          >
+            <Touchable
+              style={{width: 0, flexGrow: 1, flexDirection: 'row', zIndex: 2}}
+            >
+              <View style={[styles.assignmentInfo, {overflow: 'hidden'}]}>
+                <View style={styles.assignmentTitle}>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      color: global.user.getSecondaryTextColor (),
+                    }}
+                    numberOfLines={1}
+                  >
+                    Tap Create to create an assignment!
+                  </Text>
+                </View>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                  }}
+                  numberOfLines={1}
+                >
+                  <Text
+                    numberOfLines={1}
+                    style={{
+                      fontSize: 14,
+                      color: global.user.getTertiaryTextColor (),
+                    }}
+                  >
+                    Increase User Score
+                  </Text>
+                  <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                    <LightBulbIcon
+                      size={14}
+                      color={global.user.getTertiaryTextColor ()}
+                    />
+                    <Text
+                      numberOfLines={1}
+                      style={{
+                        fontSize: 12,
+                        color: '#20d67b',
+                        marginLeft: 5,
+                      }}
+                    >
+                      100% Helpful
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </Touchable>
+            <View
+              style={{
+                zIndex: 1,
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                flexDirection: 'row',
+                justifyContent: 'flex-end',
+                alignItems: 'center',
+              }}
+            >
+              {/* <Touchable
+                onPress={() =>
+                  this.props.showActionSheet (this.props.note, 'note')}
+                hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}
+              >
+                <VerticalEllipsisIcon
+                  size={20}
+                  color={global.user.getTertiaryTextColor ()}
+                />
+              </Touchable> */}
+            </View>
+          </View>
+        </View>
+      </View>
+    );
+  }
+}
+
+class NoNotesBubble extends React.Component {
+  constructor (props) {
+    super (props);
+  }
+  render () {
+    return (
+      <View
+        style={[
+          styles.assignmentBubble,
+          boxShadows.boxShadow3,
+          global.user.secondaryTheme (),
+        ]}
+      >
+        <View style={styles.assignmentBubbleHeader}>
+          <Text style={{color: '#174ea6', fontSize: 30}}>
+            No Notes!
+          </Text>
+        </View>
+        <View style={styles.assignmentRowLast}>
+          <View
+            style={{
+              flexGrow: 1,
+              width: 0,
+              paddingRight: 20,
+              paddingLeft: 20,
+              flexDirection: 'row',
+            }}
+          >
+            <Touchable
+              style={{width: 0, flexGrow: 1, flexDirection: 'row', zIndex: 2}}
+            >
+              <View style={[styles.assignmentInfo, {overflow: 'hidden'}]}>
+                <View style={styles.assignmentTitle}>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      color: global.user.getSecondaryTextColor (),
+                    }}
+                    numberOfLines={1}
+                  >
+                    Tap Create to create a note!
+                  </Text>
+                </View>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                  }}
+                  numberOfLines={1}
+                >
+                  <Text
+                    numberOfLines={1}
+                    style={{
+                      fontSize: 14,
+                      color: global.user.getTertiaryTextColor (),
+                    }}
+                  >
+                    Increase User Score
+                  </Text>
+                  <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                    <LightBulbIcon
+                      size={14}
+                      color={global.user.getTertiaryTextColor ()}
+                    />
+                    <Text
+                      numberOfLines={1}
+                      style={{
+                        fontSize: 12,
+                        color: '#20d67b',
+                        marginLeft: 5,
+                      }}
+                    >
+                      100% Helpful
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </Touchable>
+            <View
+              style={{
+                zIndex: 1,
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                flexDirection: 'row',
+                justifyContent: 'flex-end',
+                alignItems: 'center',
+              }}
+            >
+              {/* <Touchable
+                onPress={() =>
+                  this.props.showActionSheet (this.props.note, 'note')}
+                hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}
+              >
+                <VerticalEllipsisIcon
+                  size={20}
+                  color={global.user.getTertiaryTextColor ()}
+                />
+              </Touchable> */}
+            </View>
+          </View>
+        </View>
+      </View>
+    );
+  }
+}
+
 export default class CourseInfoScreen extends React.Component {
   constructor (props) {
     super (props);
@@ -2222,18 +2584,22 @@ export default class CourseInfoScreen extends React.Component {
             >
               <View style={styles.optionContent}>
                 <CreateButton onPress={this.openModal} />
-                {Object.keys (assignmentsMap).map ((topic, index) => {
-                  return (
-                    <AssignmentBubble
-                      openAssignment={this.openAssignment}
-                      closeAssignment={this.closeAssignment}
-                      key={'topic_' + index}
-                      assignments={assignmentsMap[topic]}
-                      title={topic == '_' ? 'No Topic' : topicsMap[topic].topic}
-                      showActionSheet={this.showActionSheet}
-                    />
-                  );
-                })}
+                {Object.keys (assignmentsMap).length > 0
+                  ? Object.keys (assignmentsMap).map ((topic, index) => {
+                      return (
+                        <AssignmentBubble
+                          openAssignment={this.openAssignment}
+                          closeAssignment={this.closeAssignment}
+                          key={'topic_' + index}
+                          assignments={assignmentsMap[topic]}
+                          title={
+                            topic == '_' ? 'No Topic' : topicsMap[topic].topic
+                          }
+                          showActionSheet={this.showActionSheet}
+                        />
+                      );
+                    })
+                  : <NoAssignmentsBubble />}
               </View>
             </ScrollView>
             <ScrollView
@@ -2241,18 +2607,20 @@ export default class CourseInfoScreen extends React.Component {
             >
               <View style={styles.optionContent}>
                 <CreateButton onPress={this.openNoteModal} />
-                {Object.keys (notesMap).map ((date, index) => {
-                  return (
-                    <NoteBubble
-                      key={'notebubble_' + index}
-                      openNote={this.openNote}
-                      closeNote={this.closeNote}
-                      notes={notesMap[date]}
-                      date={date}
-                      showActionSheet={this.showActionSheet}
-                    />
-                  );
-                })}
+                {Object.keys (notesMap).length > 0
+                  ? Object.keys (notesMap).map ((date, index) => {
+                      return (
+                        <NoteBubble
+                          key={'notebubble_' + index}
+                          openNote={this.openNote}
+                          closeNote={this.closeNote}
+                          notes={notesMap[date]}
+                          date={date}
+                          showActionSheet={this.showActionSheet}
+                        />
+                      );
+                    })
+                  : <NoNotesBubble />}
               </View>
             </ScrollView>
             <View

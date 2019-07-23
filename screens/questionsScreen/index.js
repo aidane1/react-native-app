@@ -6,6 +6,9 @@ import {
   Animated,
   Alert,
   Text,
+  Keyboard,
+  Easing,
+  RefreshControl
 } from 'react-native';
 
 import HeaderBar from '../../components/header';
@@ -41,6 +44,8 @@ import Swipeable from 'react-native-swipeable-row';
 
 import ActionSheet from 'react-native-actionsheet';
 
+import * as Haptics from 'expo-haptics';
+
 const width = Dimensions.get ('window').width; //full width
 const height = Dimensions.get ('window').height; //full height
 
@@ -54,6 +59,7 @@ class CreateQuestion extends React.Component {
       images: [],
       tags: [],
       tag: '',
+      height: new Animated.Value (height),
     };
   }
   updateTitle = text => {
@@ -74,13 +80,16 @@ class CreateQuestion extends React.Component {
       .then (data => data.json ())
       .then (data => {
         if (data.status == 'ok') {
-          this.props.parent.loadQuestions (
-            this.props.parent.state.limit,
-            this.props.callback
-          );
+          setTimeout (() => {
+            this.props.parent.loadQuestions (
+              this.props.parent.state.limit,
+              this.props.callback
+            );
+          }, 500);
           this.setState ({
             isBackdropVisible: false,
             images: [],
+            tags: [],
             body: '',
             tag: '',
             title: '',
@@ -103,6 +112,42 @@ class CreateQuestion extends React.Component {
     this.setState (state => ({
       tags: state.tags,
     }));
+  };
+  componentDidMount () {
+    this.keyboardWillShowSub = Keyboard.addListener (
+      'keyboardWillShow',
+      this.keyboardWillShow
+    );
+    this.keyboardWillHideSub = Keyboard.addListener (
+      'keyboardWillHide',
+      this.keyboardWillHide
+    );
+  }
+  componentWillUnmount () {
+    this.keyboardWillShowSub.remove ();
+    this.keyboardWillHideSub.remove ();
+  }
+  keyboardWillShow = event => {
+    this.compactScrollView (event);
+  };
+  keyboardWillHide = event => {
+    this.openScrollView (event);
+  };
+  compactScrollView = event => {
+    Animated.timing (this.state.height, {
+      toValue: height - event.endCoordinates.height,
+      easing: Easing.bezier (0.2, 0.73, 0.33, 0.99),
+      duration: 270,
+      delay: 50,
+    }).start ();
+  };
+  openScrollView = event => {
+    Animated.timing (this.state.height, {
+      toValue: height,
+      easing: Easing.bezier (0.2, 0.73, 0.33, 0.99),
+      duration: 270,
+      delay: 0,
+    }).start ();
   };
   addCustomTag = () => {
     if (this.state.tag) {
@@ -144,273 +189,279 @@ class CreateQuestion extends React.Component {
           propagateSwipe={true}
         >
           <View style={[styles.container, global.user.primaryTheme ()]}>
-            <HeaderBar
-              iconLeft={
-                <Touchable
-                  style={{paddingRight: 10}}
-                  onPress={() => this.setState ({isBackdropVisible: false})}
-                >
-                  <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                    <Text style={{fontSize: 18, color: 'red', marginLeft: 5}}>
-                      Cancel
-                    </Text>
-                  </View>
-                </Touchable>
-              }
-              iconRight={
-                this.state.title
-                  ? <Touchable style={{paddingRight: 10}} onPress={this.post}>
-                      <View
-                        style={{flexDirection: 'row', alignItems: 'center'}}
-                      >
-                        <Text
-                          style={{
-                            fontSize: 18,
-                            color: 'orange',
-                            marginLeft: 5,
-                          }}
-                        >
-                          Post
-                        </Text>
-                      </View>
-                    </Touchable>
-                  : <View style={{paddingRight: 10}}>
-                      <View
-                        style={{flexDirection: 'row', alignItems: 'center'}}
-                      >
-                        <Text
-                          style={{
-                            fontSize: 18,
-                            color: 'rgba(200,200,200,0.8)',
-                            marginLeft: 5,
-                          }}
-                        >
-                          Post
-                        </Text>
-                      </View>
+            <Animated.View style={{height: this.state.height}}>
+              <HeaderBar
+                iconLeft={
+                  <Touchable
+                    style={{paddingRight: 10}}
+                    onPress={() => this.setState ({isBackdropVisible: false})}
+                  >
+                    <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                      <Text style={{fontSize: 18, color: 'red', marginLeft: 5}}>
+                        Cancel
+                      </Text>
                     </View>
-              }
-              width={width}
-              height={60}
-              title="New Question"
-            />
-            <ScrollView
-              style={[styles.bodyHolder, global.user.primaryTheme ()]}
-              bounces={false}
-            >
-              <View
-                style={{
-                  width,
-                  backgroundColor: global.user.getSecondaryTheme (),
-                  borderTopWidth: StyleSheet.hairlineWidth,
-                  borderBottomWidth: StyleSheet.hairlineWidth,
-                  borderColor: global.user.getBorderColor (),
-                }}
+                  </Touchable>
+                }
+                iconRight={
+                  this.state.title
+                    ? <Touchable style={{paddingRight: 10}} onPress={this.post}>
+                        <View
+                          style={{flexDirection: 'row', alignItems: 'center'}}
+                        >
+                          <Text
+                            style={{
+                              fontSize: 18,
+                              color: 'orange',
+                              marginLeft: 5,
+                            }}
+                          >
+                            Post
+                          </Text>
+                        </View>
+                      </Touchable>
+                    : <View style={{paddingRight: 10}}>
+                        <View
+                          style={{flexDirection: 'row', alignItems: 'center'}}
+                        >
+                          <Text
+                            style={{
+                              fontSize: 18,
+                              color: 'rgba(200,200,200,0.8)',
+                              marginLeft: 5,
+                            }}
+                          >
+                            Post
+                          </Text>
+                        </View>
+                      </View>
+                }
+                width={width}
+                height={60}
+                title="New Question"
+              />
+              <ScrollView
+                style={[styles.bodyHolder, global.user.primaryTheme ()]}
+                keyboardDismissMode="on-drag"
+                keyboardShouldPersistTaps="handled"
+                bounces={false}
               >
                 <View
                   style={{
                     width,
-                    height: 50,
-                    flexDirection: 'row',
-                    paddingLeft: 20,
+                    backgroundColor: global.user.getSecondaryTheme (),
+                    borderTopWidth: StyleSheet.hairlineWidth,
+                    borderBottomWidth: StyleSheet.hairlineWidth,
+                    borderColor: global.user.getBorderColor (),
                   }}
                 >
-                  <TextInput
-                    style={{
-                      flexGrow: 1,
-                      height: 50,
-                      fontSize: 22,
-                      color: global.user.getSecondaryTextColor (),
-                      borderBottomWidth: StyleSheet.hairlineWidth,
-                      borderColor: global.user.getBorderColor (),
-                    }}
-                    onChangeText={this.updateTitle}
-                    value={this.state.title}
-                    placeholderTextColor={global.user.getTertiaryTextColor ()}
-                    placeholder="Question Title"
-                  />
-                </View>
-                <View
-                  style={{
-                    width,
-                    height: 50,
-                    flexDirection: 'row',
-                    paddingLeft: 20,
-                  }}
-                >
-                  <TextInput
-                    style={{
-                      width: 170,
-                      height: 50,
-                      fontSize: 22,
-                      color: global.user.getSecondaryTextColor (),
-                      borderBottomWidth: StyleSheet.hairlineWidth,
-                      borderColor: global.user.getBorderColor (),
-                    }}
-                    onChangeText={this.updateTag}
-                    value={this.state.tag}
-                    placeholderTextColor={global.user.getTertiaryTextColor ()}
-                    placeholder="Add Tag"
-                    maxLength={12}
-                  />
                   <View
                     style={{
-                      width: 40,
+                      width,
                       height: 50,
                       flexDirection: 'row',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      borderBottomWidth: StyleSheet.hairlineWidth,
-                      borderColor: global.user.getBorderColor (),
+                      paddingLeft: 20,
                     }}
                   >
-                    <Touchable
-                      hitSlop={{top: 15, left: 15, bottom: 15, right: 15}}
-                      onPress={this.addCustomTag}
-                    >
-                      <PlusIcon
-                        size={30}
-                        color={global.user.getSecondaryTextColor ()}
-                      />
-                    </Touchable>
+                    <TextInput
+                      style={{
+                        flexGrow: 1,
+                        height: 50,
+                        fontSize: 20,
+                        color: global.user.getSecondaryTextColor (),
+                        borderBottomWidth: StyleSheet.hairlineWidth,
+                        borderColor: global.user.getBorderColor (),
+                      }}
+                      onChangeText={this.updateTitle}
+                      value={this.state.title}
+                      placeholderTextColor={global.user.getTertiaryTextColor ()}
+                      placeholder="Question Title"
+                    />
                   </View>
-                  <ScrollView
-                    horizontal={true}
-                    showsHorizontalScrollIndicator={false}
+                  <View
                     style={{
-                      borderBottomWidth: StyleSheet.hairlineWidth,
-                      borderColor: global.user.getBorderColor (),
-                    }}
-                    contentContainerStyle={{
-                      alignItems: 'center',
+                      width,
+                      height: 50,
                       flexDirection: 'row',
+                      paddingLeft: 20,
                     }}
                   >
-                    {global.userCourses.map ((course, index) => {
-                      return (
-                        <Touchable
-                          key={'course_' + course.id}
-                          onPress={() =>
-                            this.addTag (
-                              course.course,
-                              SchoolIcons.getIcon (course.category)[1]
-                            )}
-                        >
-                          <View
+                    <TextInput
+                      style={{
+                        width: 170,
+                        height: 50,
+                        fontSize: 18,
+                        color: global.user.getSecondaryTextColor (),
+                        borderBottomWidth: StyleSheet.hairlineWidth,
+                        borderColor: global.user.getBorderColor (),
+                      }}
+                      onChangeText={this.updateTag}
+                      value={this.state.tag}
+                      placeholderTextColor={global.user.getTertiaryTextColor ()}
+                      placeholder="Add Tag"
+                      maxLength={12}
+                    />
+                    <View
+                      style={{
+                        width: 40,
+                        height: 50,
+                        flexDirection: 'row',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        borderBottomWidth: StyleSheet.hairlineWidth,
+                        borderColor: global.user.getBorderColor (),
+                      }}
+                    >
+                      <Touchable
+                        hitSlop={{top: 15, left: 15, bottom: 15, right: 15}}
+                        onPress={this.addCustomTag}
+                      >
+                        <PlusIcon
+                          size={30}
+                          color={global.user.getSecondaryTextColor ()}
+                        />
+                      </Touchable>
+                    </View>
+                    <ScrollView
+                      horizontal={true}
+                      showsHorizontalScrollIndicator={false}
+                      style={{
+                        borderBottomWidth: StyleSheet.hairlineWidth,
+                        borderColor: global.user.getBorderColor (),
+                      }}
+                      contentContainerStyle={{
+                        alignItems: 'center',
+                        flexDirection: 'row',
+                      }}
+                    >
+                      {global.userCourses.map ((course, index) => {
+                        return (
+                          <Touchable
+                            key={'course_' + course.id}
+                            onPress={() =>
+                              this.addTag (
+                                course.course,
+                                SchoolIcons.getIcon (course.category)[1]
+                              )}
+                          >
+                            <View
+                              style={{
+                                paddingLeft: 8,
+                                paddingRight: 8,
+                                paddingTop: 3,
+                                paddingBottom: 3,
+                                borderRadius: 15,
+                                backgroundColor: SchoolIcons.getIcon (
+                                  course.category
+                                )[1],
+                                marginRight: 5,
+                              }}
+                            >
+                              <Text>
+                                {course.course}
+                              </Text>
+                            </View>
+                          </Touchable>
+                        );
+                      })}
+                    </ScrollView>
+                  </View>
+                  <View
+                    style={{
+                      width,
+                      height: 50,
+                      flexDirection: 'row',
+                      paddingLeft: 20,
+                    }}
+                  >
+                    <ScrollView
+                      horizontal={true}
+                      contentContainerStyle={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'flex-start',
+                      }}
+                      showsHorizontalScrollIndicator={false}
+                      style={{
+                        height: 50,
+                        borderBottomWidth: StyleSheet.hairlineWidth,
+                        borderColor: global.user.getBorderColor (),
+                      }}
+                    >
+                      {this.state.tags.length
+                        ? this.state.tags.map ((tag, index) => {
+                            return (
+                              <Touchable
+                                key={'tag_' + index}
+                                onPress={() => this.removeTag (tag[0])}
+                              >
+                                <View
+                                  style={{
+                                    paddingLeft: 8,
+                                    paddingRight: 8,
+                                    paddingTop: 3,
+                                    paddingBottom: 3,
+                                    borderRadius: 15,
+                                    backgroundColor: tag[1],
+                                    marginRight: 5,
+                                  }}
+                                >
+                                  <Text>
+                                    {tag[0]}
+                                  </Text>
+                                </View>
+                              </Touchable>
+                            );
+                          })
+                        : <Text
                             style={{
-                              paddingLeft: 8,
-                              paddingRight: 8,
-                              paddingTop: 3,
-                              paddingBottom: 3,
-                              borderRadius: 15,
-                              backgroundColor: SchoolIcons.getIcon (
-                                course.category
-                              )[1],
-                              marginRight: 5,
+                              fontSize: 18,
+                              color: global.user.getTertiaryTextColor (),
                             }}
                           >
-                            <Text>
-                              {course.course}
-                            </Text>
-                          </View>
-                        </Touchable>
-                      );
-                    })}
-                  </ScrollView>
-                </View>
-                <View
-                  style={{
-                    width,
-                    height: 50,
-                    flexDirection: 'row',
-                    paddingLeft: 20,
-                  }}
-                >
-                  <ScrollView
-                    horizontal={true}
-                    contentContainerStyle={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      justifyContent: 'flex-start',
-                    }}
-                    showsHorizontalScrollIndicator={false}
+                            No Tags
+                          </Text>}
+                    </ScrollView>
+                  </View>
+                  <View
                     style={{
-                      height: 50,
-                      borderBottomWidth: StyleSheet.hairlineWidth,
-                      borderColor: global.user.getBorderColor (),
+                      width,
+                      minHeight: 50,
+                      flexDirection: 'row',
+                      paddingLeft: 20,
+                      paddingBottom: 5,
                     }}
                   >
-                    {this.state.tags.length
-                      ? this.state.tags.map ((tag, index) => {
-                          return (
-                            <Touchable
-                              key={'tag_' + index}
-                              onPress={() => this.removeTag (tag[0])}
-                            >
-                              <View
-                                style={{
-                                  paddingLeft: 8,
-                                  paddingRight: 8,
-                                  paddingTop: 3,
-                                  paddingBottom: 3,
-                                  borderRadius: 15,
-                                  backgroundColor: tag[1],
-                                  marginRight: 5,
-                                }}
-                              >
-                                <Text>
-                                  {tag[0]}
-                                </Text>
-                              </View>
-                            </Touchable>
-                          );
-                        })
-                      : <Text
-                          style={{
-                            fontSize: 22,
-                            color: global.user.getTertiaryTextColor (),
-                          }}
-                        >
-                          No Tags
-                        </Text>}
-                  </ScrollView>
-                </View>
-                <View
-                  style={{
-                    width,
-                    minHeight: 50,
-                    flexDirection: 'row',
-                    paddingLeft: 20,
-                    paddingBottom: 5,
-                  }}
-                >
-                  <TextInput
+                    <TextInput
+                      style={{
+                        flexGrow: 1,
+                        minHeight: 170,
+                        fontSize: 18,
+                        color: global.user.getSecondaryTextColor (),
+                        paddingTop: 15,
+                        marginBottom: 15,
+                      }}
+                      multiline={true}
+                      onChangeText={this.updateBody}
+                      value={this.state.body}
+                      placeholderTextColor={global.user.getTertiaryTextColor ()}
+                      placeholder="Question Body (optional)"
+                      scrollEnabled={false}
+                    />
+                  </View>
+                  <ImagePicker
+                    onImageRecieved={this.imageFunction}
+                    displayImagesInline={true}
+                    displayCameraRollInline={true}
                     style={{
-                      flexGrow: 1,
-                      minHeight: 50,
-                      fontSize: 22,
-                      color: global.user.getSecondaryTextColor (),
-                      paddingTop: 15,
+                      marginBottom: 0,
+                      borderTopWidth: StyleSheet.hairlineWidth,
+                      borderTopColor: global.user.getBorderColor (),
                     }}
-                    multiline={true}
-                    onChangeText={this.updateBody}
-                    value={this.state.body}
-                    placeholderTextColor={global.user.getTertiaryTextColor ()}
-                    placeholder="Question Body (optional)"
                   />
                 </View>
-                <ImagePicker
-                  onImageRecieved={this.imageFunction}
-                  displayImagesInline={true}
-                  displayCameraRollInline={true}
-                  style={{
-                    marginBottom: 0,
-                    borderTopWidth: StyleSheet.hairlineWidth,
-                    borderTopColor: global.user.getBorderColor (),
-                  }}
-                />
-              </View>
-            </ScrollView>
+              </ScrollView>
+            </Animated.View>
           </View>
         </Modal>
       </View>
@@ -456,6 +507,7 @@ class Question extends React.Component {
     };
   }
   inZone = () => {
+    Haptics.impactAsync (Haptics.ImpactFeedbackStyle.Light);
     this.setState ({inActiveZone: true});
     Animated.sequence ([
       Animated.timing (this.state.scale, {
@@ -523,30 +575,39 @@ class Question extends React.Component {
               global.user.borderColor (),
             ]}
           >
-            <View style={{flexDirection: "row", justifyContent: "flex-start", flexWrap: "wrap", marginBottom: 3}}>
-            {this.props.question.tags.map ((tag, index) => {
-              return (
-                <View
-                  key={'tag_' + index}
-                  style={{
-                    paddingLeft: 8,
-                    paddingRight: 8,
-                    paddingTop: 3,
-                    paddingBottom: 3,
-                    borderRadius: 15,
-                    backgroundColor: tag[1],
-                    marginRight: 5,
-                    alignSelf: 'flex-start',
-                  }}
-                >
-                  <Text>
-                    {tag[0]}
-                  </Text>
-                </View>
-              );
-            })}
-            </View>
-  
+            <ScrollView
+              horizontal={true}
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{
+                flexDirection: 'row',
+                justifyContent: 'flex-start',
+                flexWrap: 'wrap',
+                marginBottom: 3,
+              }}
+            >
+              {this.props.question.tags.map ((tag, index) => {
+                return (
+                  <View
+                    key={'tag_' + index}
+                    style={{
+                      paddingLeft: 8,
+                      paddingRight: 8,
+                      paddingTop: 3,
+                      paddingBottom: 3,
+                      borderRadius: 15,
+                      backgroundColor: tag[1],
+                      marginRight: 5,
+                      alignSelf: 'flex-start',
+                    }}
+                  >
+                    <Text>
+                      {tag[0]}
+                    </Text>
+                  </View>
+                );
+              })}
+            </ScrollView>
+
             <Text style={[styles.postTitle, global.user.secondaryTextColor ()]}>
               {this.props.question.title}
             </Text>
@@ -682,8 +743,28 @@ class CustomActionSheet extends React.Component {
     this.actionSheet = React.createRef ();
   }
   show (question) {
-    this.state.question = question;
-    this.actionSheet.current.show ();
+    let options = [
+      'Open',
+      'Vote as Helpful',
+      'Vote as Unhelpful',
+      'Report',
+      'Cancel',
+    ];
+    if (
+      global.user.permission_level >= 3 ||
+      question.uploaded_by == global.user.accountId
+    ) {
+      options[3] = 'Delete';
+    }
+    this.setState (
+      {
+        options,
+        question,
+      },
+      () => {
+        this.actionSheet.current.show ();
+      }
+    );
   }
   actionSheetAction = index => {
     let api = new ApexAPI (global.user);
@@ -694,6 +775,7 @@ class CustomActionSheet extends React.Component {
         });
         break;
       case 1:
+        Haptics.notificationAsync (Haptics.ImpactFeedbackStyle.Success);
         api
           .get (`vote/posts/${this.state.question._id}?vote=helpful`)
           .then (data => data.json ())
@@ -757,6 +839,7 @@ class CustomActionSheet extends React.Component {
           });
         break;
       case 2:
+        Haptics.notificationAsync (Haptics.ImpactFeedbackStyle.Error);
         api
           .get (`vote/posts/${this.state.question._id}?vote=unhelpful`)
           .then (data => data.json ())
@@ -820,6 +903,56 @@ class CustomActionSheet extends React.Component {
           });
         break;
       case 3:
+        if (
+          global.user.permission_level >= 3 ||
+          this.state.question.uploaded_by == global.user.accountId
+        ) {
+          api
+            .delete (`posts/${this.state.question._id}`)
+            .then (data => data.json ())
+            .then (async data => {
+              if (data.status == 'ok') {
+                this.props.parent.loadQuestions (20, (err, questions) => {
+                  this.props.parent._isMounted &&
+                    this.props.parent.setState ({questions});
+                });
+              } else {
+                Alert.alert (
+                  'Error',
+                  data.body.error,
+                  [
+                    {
+                      text: 'Cancel',
+                      onPress: () => {},
+                      style: 'cancel',
+                    },
+                  ],
+                  {cancelable: false}
+                );
+              }
+            })
+            .catch (e => {
+              console.log (e);
+              if (e.message == "JSON Parse error: Unrecognized token '<'") {
+                Alert.alert (
+                  'Connection Error',
+                  'Unable to connect to the server',
+                  [
+                    {text: 'Try Again', onPress: () => this.onPress ()},
+                    {
+                      text: 'Cancel',
+                      onPress: () => {
+                        console.log ('cancelled');
+                      },
+                      style: 'cancel',
+                    },
+                  ],
+                  {cancelable: false}
+                );
+              }
+            });
+        } else {
+        }
         break;
     }
   };
@@ -827,13 +960,7 @@ class CustomActionSheet extends React.Component {
     return (
       <ActionSheet
         ref={this.actionSheet}
-        options={[
-          'Open',
-          'Vote as Helpful',
-          'Vote as Unhelpful',
-          'Report',
-          'Cancel',
-        ]}
+        options={this.state.options}
         cancelButtonIndex={4}
         destructiveButtonIndex={3}
         onPress={this.actionSheetAction}
@@ -893,6 +1020,18 @@ export default class QuestionsScreen extends React.Component {
   showActionSheet = question => {
     this.actionSheet.current.show (question);
   };
+  _onRefresh = () => {
+    this.setState ({refreshing: true}, () => {
+      this.loadQuestions (this.state.limit, (err, body) => {
+        if (err) {
+          this.setState ({refreshing: false, questions: []});
+        } else {
+          this.refreshingScrollView = true;
+          this.setState ({refreshing: false, questions: body});
+        }
+      });
+    });
+  };
   render () {
     return (
       <View style={[styles.container, global.user.primaryTheme ()]}>
@@ -922,6 +1061,14 @@ export default class QuestionsScreen extends React.Component {
         <View style={[styles.bodyHolder, global.user.primaryTheme ()]}>
           <FlatList
             data={this.state.questions.length != 0 ? this.state.questions : []}
+            onRefresh={this._onRefresh}
+            refreshing={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={this.state.refreshing}
+                onRefresh={this._onRefresh}
+              />
+            }
             renderItem={({item, index}) => (
               <Question
                 showActionSheet={this.showActionSheet}

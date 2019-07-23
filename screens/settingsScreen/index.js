@@ -3,6 +3,7 @@ import {
   StyleSheet,
   View,
   Dimensions,
+  Image,
   ActivityIndicator,
   TouchableWithoutFeedback,
   Text,
@@ -30,6 +31,10 @@ import {
   AfterSchoolIcon,
   AccountIcon,
 } from '../../classes/icons';
+
+import Modal from 'react-native-modal';
+
+import ImageBar from '../../components/imagePicker';
 
 import {ScrollView, TextInput} from 'react-native-gesture-handler';
 
@@ -129,6 +134,50 @@ class CourseRow extends React.Component {
   }
 }
 
+class ImagePickerPopup extends React.Component {
+  constructor (props) {
+    super (props);
+    this.state = {
+      isBackdropVisible: false,
+    };
+  }
+  render () {
+    return (
+      <View>
+        <Modal
+          style={{
+            margin: 0,
+            paddingBottom: 0,
+            flexDirection: 'column',
+            justifyContent: 'flex-end',
+          }}
+          animationIn="slideInUp"
+          animationOut="slideOutDown"
+          isVisible={this.state.isBackdropVisible}
+          backdropColor={
+            global.user.theme == 'Light' ? 'black' : 'rgba(255,255,255,0.4)'
+          }
+          onBackdropPress={() => this.setState ({isBackdropVisible: false})}
+          propagateSwipe={true}
+        >
+
+          <View>
+            <ImageBar
+              style={{marginBottom: 0, padding: 0}}
+              displayImagesInline={false}
+              onImageRecieved={this.props.onImageRecieved}
+              allowsEditing={true}
+              aspect={[1, 1]}
+              column={true}
+              path={`/users/${global.user.id}/profile_pictures`}
+            />
+          </View>
+        </Modal>
+      </View>
+    );
+  }
+}
+
 class ButtonSection extends React.Component {
   constructor (props) {
     super (props);
@@ -197,6 +246,7 @@ export default class SettingsScreen extends React.Component {
   constructor (props) {
     super (props);
     this.state = {
+      profile_picture: global.user.profile_picture,
       notifications: global.user.notifications,
 
       theme: global.user.theme,
@@ -216,6 +266,7 @@ export default class SettingsScreen extends React.Component {
       password: '',
     };
     this.scrollView = React.createRef ();
+    this.imagePicker = React.createRef ();
   }
 
   static navigationOptions = ({navigation}) => {
@@ -223,8 +274,26 @@ export default class SettingsScreen extends React.Component {
       header: null,
     };
   };
+  onImageRecieved = result => {
+    let api = new ApexAPI (global.user);
+    api
+      .put (`users/${global.user.id}`, {
+        profile_picture: result.path,
+      })
+      .then (data => data.json ())
+      .then (async data => {
+        if (data.status == 'ok') {
+          global.user.profile_picture = data.body.profile_picture;
+          await User._saveToStorage (global.user);
+          this.setState({profile_picture: data.body.profile_picture});
+        }
+      });
+  };
   updateScheduleType = val => {
     this.setState ({scheduleType: val ? 'image' : 'schedule'});
+  };
+  selectProfileImage = () => {
+    this.imagePicker.current.setState ({isBackdropVisible: true});
   };
   toggleSettings = async (setting, value) => {
     let state = {...this.state};
@@ -278,7 +347,7 @@ export default class SettingsScreen extends React.Component {
         })
         .then (data => data.json ())
         .then (data => {
-          console.log (data);
+          // console.log (data);
         });
     });
   };
@@ -291,7 +360,7 @@ export default class SettingsScreen extends React.Component {
       'keyboardWillHide',
       this.keyboardWillHide
     );
-    setTimeout(() => {
+    setTimeout (() => {
       registerForPushNotificationsAsync ();
     }, 1000);
   }
@@ -388,7 +457,11 @@ export default class SettingsScreen extends React.Component {
           ]}
         >
           <View style={{width, flexDirection: 'column', alignItems: 'center'}}>
-            <AccountIcon color="black" size={60} />
+            <Touchable onPress={this.selectProfileImage}>
+              {this.state.profile_picture !== ''
+                ? <Image source={{uri: `https://www.apexschools.co${this.state.profile_picture}`}} style={{width: 60, height: 60, borderRadius: 30, overflow: "hidden", marginTop: 5}}/>
+                : <AccountIcon color={global.user.getPrimaryTextColor ()} size={60} />}
+            </Touchable>
             <Text
               style={{
                 fontSize: 22,
@@ -594,6 +667,10 @@ export default class SettingsScreen extends React.Component {
           </ButtonSection>
           <View style={{width, marginTop: 20}} />
         </Animated.ScrollView>
+        <ImagePickerPopup
+          ref={this.imagePicker}
+          onImageRecieved={this.onImageRecieved}
+        />
       </View>
     );
   }

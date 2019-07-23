@@ -9,6 +9,7 @@ import {
   View,
   Dimensions,
   AsyncStorage,
+  RefreshControl,
 } from 'react-native';
 
 import Touchable from 'react-native-platform-touchable';
@@ -189,6 +190,9 @@ class CourseRow extends React.Component {
 export default class LinksScreenTile extends React.Component {
   constructor (props) {
     super (props);
+    this.state = {
+      refreshing: false,
+    }
   }
   _navigateToPage = async (page, id) => {
     try {
@@ -201,11 +205,35 @@ export default class LinksScreenTile extends React.Component {
       console.log (e);
     }
   };
+  _onRefresh = () => {
+    this.setState ({refreshing: true});
+    // this.props.navigation.replace("Home");
+    setTimeout (() => {
+      this.props.parent.setState (
+        {currentDate: new Date (2019, 10, 8, 12, 30)},
+        () => {
+          this.setState ({refreshing: false});
+        }
+      );
+    }, 400);
+  };
+
+  _navigateToPage = async (page, id) => {
+    global.courseInfoCourse = await Courses._retrieveCourseById (id);
+    if (global.courseInfoCourse.id != '_') {
+      this.props.parent.props.navigation.navigate (page);
+    }
+  };
   render () {
     return (
       <ScrollView
         style={[styles.scrollBack, global.user.primaryTheme ()]}
-        bounces={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={this.state.refreshing}
+            onRefresh={this._onRefresh}
+          />
+        }
       >
         <View style={[styles.titleBlock, global.user.borderColor ()]}>
           <Text

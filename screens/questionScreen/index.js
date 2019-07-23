@@ -16,14 +16,21 @@ import {ScrollView, TextInput, FlatList} from 'react-native-gesture-handler';
 
 import {
   LeftIcon,
-  PlusIcon,
+  BoldArrowDownIcon,
   ReplyIcon,
-  SchoolIcons,
-  GenericIcon,
+  BoldArrowUpIcon,
+  FlagIcon,
   EmptyIcon,
+  MessageIcon,
+  ClockIcon,
+  EllipsisIcon,
+  VerticalEllipsisIcon,
+  LightBulbIcon,
 } from '../../classes/icons';
 
 import Modal from 'react-native-modal';
+
+import moment from 'moment';
 
 import {boxShadows} from '../../constants/boxShadows';
 
@@ -41,8 +48,41 @@ import Swipeable from 'react-native-swipeable-row';
 
 import ImageViewerModal from '../../components/imageViewer';
 
+import ActionSheet from 'react-native-actionsheet';
+
+import * as Haptics from 'expo-haptics';
+
 const width = Dimensions.get ('window').width; //full width
 const height = Dimensions.get ('window').height; //full height
+
+function dateToTimestamp (date) {
+  let difference = new Date ().getTime () - date.getTime ();
+  if (difference > 86400000) {
+    return [
+      Math.round (moment.duration (moment ().diff (moment (date))).asDays ()),
+      'd',
+    ];
+  } else if (difference > 3600000) {
+    return [
+      Math.round (moment.duration (moment ().diff (moment (date))).asHours ()),
+      'h',
+    ];
+  } else if (difference > 60000) {
+    return [
+      Math.round (
+        moment.duration (moment ().diff (moment (date))).asMinutes ()
+      ),
+      'm',
+    ];
+  } else {
+    return [
+      Math.round (
+        moment.duration (moment ().diff (moment (date))).asSeconds ()
+      ),
+      's',
+    ];
+  }
+}
 
 class CreateComment extends React.Component {
   constructor (props) {
@@ -176,7 +216,7 @@ class CreateComment extends React.Component {
                     style={{
                       flexGrow: 1,
                       minHeight: 50,
-                      fontSize: 22,
+                      fontSize: 18,
                       color: global.user.getSecondaryTextColor (),
                       paddingTop: 15,
                     }}
@@ -202,6 +242,245 @@ class CreateComment extends React.Component {
           </View>
         </Modal>
       </View>
+    );
+  }
+}
+
+class CustomActionSheet extends React.Component {
+  constructor (props) {
+    super (props);
+    this.state = {
+      comment: {},
+      options: [
+        'Respond',
+        'Vote as Helpful',
+        'Vote as Unhelpful',
+        'Report',
+        'Cancel',
+      ],
+    };
+    this.actionSheet = React.createRef ();
+  }
+  show (comment) {
+    let options = [
+      'Respond',
+      'Vote as Helpful',
+      'Vote as Unhelpful',
+      'Report',
+      'Cancel',
+    ];
+    if (
+      global.user.permission_level >= 3 ||
+      comment.uploaded_by == global.user.accountId
+    ) {
+      options[3] = 'Delete';
+    }
+    this.setState (
+      {
+        options,
+        comment,
+      },
+      () => {
+        this.actionSheet.current.show ();
+      }
+    );
+  }
+  actionSheetAction = index => {
+    let api = new ApexAPI (global.user);
+    switch (index) {
+      case 0:
+        this.props.parent.openCommentReply (this.state.comment);
+        break;
+      case 1:
+        Haptics.notificationAsync (Haptics.ImpactFeedbackStyle.Success);
+        api
+          .get (`vote/comments/${this.state.comment._id}?vote=helpful`)
+          .then (data => data.json ())
+          .then (async data => {
+            if (data.status == 'ok') {
+              let comments = this.props.parent.state.comments.map (comment => {
+                if (comment._id == data.body._id) {
+                  return data.body;
+                } else {
+                  return comment;
+                }
+              });
+              setTimeout (() => {
+                this.props.parent.setState ({comments});
+              }, 0);
+            } else {
+              Alert.alert (
+                'Error',
+                res.body,
+                [
+                  {
+                    text: 'Try Again',
+                    onPress: () => this.createAssignment (),
+                  },
+                  {
+                    text: 'Cancel',
+                    onPress: () => {
+                      this.setState ({
+                        isBackdropVisible: false,
+                        images: [],
+                      });
+                    },
+                    style: 'cancel',
+                  },
+                ],
+                {cancelable: false}
+              );
+            }
+          })
+          .catch (e => {
+            console.log (e);
+            if (e.message == "JSON Parse error: Unrecognized token '<'") {
+              Alert.alert (
+                'Connection Error',
+                'Unable to connect to the server',
+                [
+                  {text: 'Try Again', onPress: () => this.onPress ()},
+                  {
+                    text: 'Cancel',
+                    onPress: () => {
+                      console.log ('cancelled');
+                    },
+                    style: 'cancel',
+                  },
+                ],
+                {cancelable: false}
+              );
+            }
+          });
+        break;
+      case 2:
+        Haptics.notificationAsync (Haptics.ImpactFeedbackStyle.Error);
+        api
+          .get (`vote/comments/${this.state.comment._id}?vote=unhelpful`)
+          .then (data => data.json ())
+          .then (async data => {
+            if (data.status == 'ok') {
+              let comments = this.props.parent.state.comments.map (comment => {
+                if (comment._id == data.body._id) {
+                  return data.body;
+                } else {
+                  return comment;
+                }
+              });
+              setTimeout (() => {
+                this.props.parent.setState ({comments});
+              }, 0);
+            } else {
+              Alert.alert (
+                'Error',
+                res.body,
+                [
+                  {
+                    text: 'Try Again',
+                    onPress: () => this.createAssignment (),
+                  },
+                  {
+                    text: 'Cancel',
+                    onPress: () => {
+                      this.setState ({
+                        isBackdropVisible: false,
+                        images: [],
+                      });
+                    },
+                    style: 'cancel',
+                  },
+                ],
+                {cancelable: false}
+              );
+            }
+          })
+          .catch (e => {
+            console.log (e);
+            if (e.message == "JSON Parse error: Unrecognized token '<'") {
+              Alert.alert (
+                'Connection Error',
+                'Unable to connect to the server',
+                [
+                  {text: 'Try Again', onPress: () => this.onPress ()},
+                  {
+                    text: 'Cancel',
+                    onPress: () => {
+                      console.log ('cancelled');
+                    },
+                    style: 'cancel',
+                  },
+                ],
+                {cancelable: false}
+              );
+            }
+          });
+        break;
+      case 3:
+        if (
+          global.user.permission_level >= 3 ||
+          this.state.comment.uploaded_by == global.user.accountId
+        ) {
+          api
+            .delete (`comments/${this.state.comment._id}`)
+            .then (data => data.json ())
+            .then (async data => {
+              if (data.status == 'ok') {
+                this.props.parent.loadComments (
+                  this.state.comment.parent,
+                  (err, comments) => {
+                    this.props.parent._isMounted &&
+                      this.props.parent.setState ({comments});
+                  }
+                );
+              } else {
+                Alert.alert (
+                  'Error',
+                  data.body.error,
+                  [
+                    {
+                      text: 'Cancel',
+                      onPress: () => {},
+                      style: 'cancel',
+                    },
+                  ],
+                  {cancelable: false}
+                );
+              }
+            })
+            .catch (e => {
+              console.log (e);
+              if (e.message == "JSON Parse error: Unrecognized token '<'") {
+                Alert.alert (
+                  'Connection Error',
+                  'Unable to connect to the server',
+                  [
+                    {text: 'Try Again', onPress: () => this.onPress ()},
+                    {
+                      text: 'Cancel',
+                      onPress: () => {
+                        console.log ('cancelled');
+                      },
+                      style: 'cancel',
+                    },
+                  ],
+                  {cancelable: false}
+                );
+              }
+            });
+        } else {
+        }
+        break;
+    }
+  };
+  render () {
+    return (
+      <ActionSheet
+        ref={this.actionSheet}
+        options={this.state.options}
+        cancelButtonIndex={4}
+        destructiveButtonIndex={3}
+        onPress={this.actionSheetAction}
+      />
     );
   }
 }
@@ -256,6 +535,13 @@ class Comment extends React.Component {
     }, 300);
   };
   render () {
+    this.props.comment.userVote = this.props.comment.helpful_votes.indexOf (
+      global.user.id
+    ) >= 0
+      ? 1
+      : this.props.comment.unhelpful_votes.indexOf (global.user.id) >= 0
+          ? -1
+          : 0;
     return (
       <View
         style={{
@@ -296,33 +582,121 @@ class Comment extends React.Component {
               {
                 width: width - this.props.comment.depth * 15,
                 minWidth: width * 0.5,
+                flexDirection: 'row',
+                justifyContent: 'flex-start',
               },
-              {flexDirection: 'column'},
             ]}
           >
-            <Text
-              style={[
-                {fontSize: 16, marginBottom: 13},
-                global.user.primaryTextColor (),
-              ]}
+            <View
+              style={{
+                flexDirection: 'column',
+                marginBottom: 10,
+                minWidth: 0.4,
+                width: (width - this.props.comment.depth * 15) * 0.9,
+              }}
             >
-              {this.props.comment.username}
-            </Text>
-            <Text style={[styles.commentBody, global.user.primaryTextColor ()]}>
-              {this.props.comment.body}
-            </Text>
-            {this.props.comment.resources.map ((resource, index, array) => {
-              return (
-                <Touchable
-                  onPress={() => {
-                    this.props.openImageViewer (array, index);
-                  }}
-                  key={'image_' + resource._id}
-                >
-                  <InlineImage resource={resource} index={index} style={{width: (width - this.props.comment.depth * 15)*0.95}} />
-                </Touchable>
-              );
-            })}
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-end',
+                }}
+              >
+                <View style={{flexDirection: 'row', alignItems: 'flex-end'}}>
+                  <Text
+                    style={[{fontSize: 14}, global.user.primaryTextColor ()]}
+                  >
+                    {this.props.comment.username}
+                  </Text>
+                  <Text
+                    style={[
+                      {
+                        opacity: 0.5,
+                        fontWeight: '500',
+                        fontSize: 10,
+                        marginLeft: 10,
+                        marginBottom: 1,
+                      },
+                      global.user.tertiaryTextColor (),
+                    ]}
+                  >
+                    {moment (this.props.comment.date).calendar ()}
+                  </Text>
+                </View>
+
+                <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                  <LightBulbIcon
+                    size={14}
+                    color={global.user.getTertiaryTextColor ()}
+                  />
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      color: this.props.comment.userVote == -1
+                        ? '#e03634'
+                        : this.props.comment.userVote == 1
+                            ? '#20d67b'
+                            : global.user.getTertiaryTextColor (),
+                      marginLeft: 5,
+                    }}
+                  >
+                    {this.props.comment.helpful_votes.length +
+                      this.props.comment.unhelpful_votes.length >
+                      0
+                      ? `${Math.round (this.props.comment.helpful_votes.length / (this.props.comment.helpful_votes.length + this.props.comment.unhelpful_votes.length) * 100)}% `
+                      : 'Unkown % '}
+                    Helpful
+                  </Text>
+                </View>
+              </View>
+
+              <Text
+                style={[styles.commentBody, global.user.primaryTextColor ()]}
+              >
+                {this.props.comment.body}
+              </Text>
+              {this.props.comment.resources.map ((resource, index, array) => {
+                return (
+                  <Touchable
+                    onPress={() => {
+                      this.props.openImageViewer (array, index);
+                    }}
+                    key={'image_' + resource._id}
+                  >
+                    <InlineImage
+                      resource={resource}
+                      index={index}
+                      style={{
+                        width: (width - this.props.comment.depth * 15) *
+                          0.9 *
+                          0.95,
+                      }}
+                    />
+                  </Touchable>
+                );
+              })}
+            </View>
+            <View
+              style={{
+                alignSelf: 'stretch',
+                flexGrow: 1,
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'flex-end',
+              }}
+            >
+              <Touchable
+                hitSlop={{top: 20, bottom: 20, left: 20, right: 20}}
+                onPress={() => this.props.showActionSheet (this.props.comment)}
+              >
+                <VerticalEllipsisIcon
+                  size={20}
+                  color={global.user.getTertiaryTextColor ()}
+                  style={{marginRight: 5}}
+                />
+              </Touchable>
+
+            </View>
           </View>
         </Swipeable>
         <View
@@ -369,20 +743,23 @@ class InlineImage extends React.Component {
     let {resource} = this.props;
     return (
       <View
-        style={[{
-          padding: 5,
-          backgroundColor: global.user.getSecondaryTheme (),
-          marginTop: 5,
-          marginBottom: 2,
-          width: width * 0.9,
-          borderRadius: 2,
-          borderWidth: StyleSheet.hairlineWidth * 5,
-          borderColor: global.user.getBorderColor (),
-          overflow: 'hidden',
-          flexDirection: 'row',
-          justifyContent: 'flex-start',
-          alignItems: 'center',
-        }, this.props.style || {}]}
+        style={[
+          {
+            padding: 5,
+            backgroundColor: global.user.getSecondaryTheme (),
+            marginTop: 5,
+            marginBottom: 2,
+            width: width * 0.9,
+            borderRadius: 2,
+            borderWidth: StyleSheet.hairlineWidth * 3,
+            borderColor: global.user.getBorderColor (),
+            overflow: 'hidden',
+            flexDirection: 'row',
+            justifyContent: 'flex-start',
+            alignItems: 'center',
+          },
+          this.props.style || {},
+        ]}
       >
         <View
           style={{
@@ -449,12 +826,16 @@ export default class QuestionScreen extends React.Component {
     };
     this.createComment = React.createRef ();
     this.imageViewerModal = React.createRef ();
+    this.actionSheet = React.createRef ();
     this._isMounted = false;
   }
   static navigationOptions = ({navigation}) => {
     return {
       header: null,
     };
+  };
+  showActionSheet = comment => {
+    this.actionSheet.current.show (comment);
   };
   loadComments = (post, callback) => {
     let api = new ApexAPI (global.user);
@@ -535,7 +916,75 @@ export default class QuestionScreen extends React.Component {
       index: index,
     });
   };
+  changeVote = vote => {
+    if (vote == 'helpful') {
+      // Haptics.notificationAsync (Haptics.ImpactFeedbackStyle.Success);
+      Haptics.impactAsync (Haptics.ImpactFeedbackStyle.Heavy);
+    } else {
+      Haptics.impactAsync (Haptics.ImpactFeedbackStyle.Medium);
+      // Haptics.notificationAsync (Haptics.ImpactFeedbackStyle.Error);
+    }
+    let api = new ApexAPI (global.user);
+    api
+      .get (`vote/posts/${this.question._id}?vote=${vote}`)
+      .then (data => data.json ())
+      .then (async data => {
+        if (data.status == 'ok') {
+          this.question = data.body;
+          setTimeout (() => {
+            this.setState ({comments: this.state.comments});
+          }, 0);
+        } else {
+          Alert.alert (
+            'Error',
+            res.body,
+            [
+              {
+                text: 'Try Again',
+                onPress: () => this.createAssignment (),
+              },
+              {
+                text: 'Cancel',
+                onPress: () => {
+                  this.setState ({
+                    isBackdropVisible: false,
+                    images: [],
+                  });
+                },
+                style: 'cancel',
+              },
+            ],
+            {cancelable: false}
+          );
+        }
+      })
+      .catch (e => {
+        console.log (e);
+        if (e.message == "JSON Parse error: Unrecognized token '<'") {
+          Alert.alert (
+            'Connection Error',
+            'Unable to connect to the server',
+            [
+              {text: 'Try Again', onPress: () => this.onPress ()},
+              {
+                text: 'Cancel',
+                onPress: () => {
+                  console.log ('cancelled');
+                },
+                style: 'cancel',
+              },
+            ],
+            {cancelable: false}
+          );
+        }
+      });
+  };
   render () {
+    this.question.userVote = this.question.helpful_votes.indexOf (
+      global.user.id
+    ) >= 0
+      ? 1
+      : this.question.unhelpful_votes.indexOf (global.user.id) >= 0 ? -1 : 0;
     let commentTree = this.commentTree (-1, this.question, this.state.comments);
     let commentList = [];
     if (commentTree.children.length) {
@@ -561,15 +1010,17 @@ export default class QuestionScreen extends React.Component {
               style={{
                 width,
                 paddingTop: 15,
-                paddingBottom: 15,
+                paddingBottom: 5,
                 borderBottomWidth: StyleSheet.hairlineWidth * 2,
                 borderColor: global.user.getBorderColor (),
+                flexDirection: 'column',
+                alignItems: 'center',
               }}
             >
               <View
                 style={{
-                  paddingLeft: 25,
-                  paddingRight: 25,
+                  paddingLeft: 15,
+                  paddingRight: 15,
                 }}
               >
                 <Text
@@ -616,26 +1067,159 @@ export default class QuestionScreen extends React.Component {
                 })}
               </View>
 
+              <View
+                style={{
+                  width: width * 0.95,
+                  paddingTop: 10,
+                  paddingBottom: 5,
+                  borderBottomWidth: StyleSheet.hairlineWidth * 2,
+                  borderColor: global.user.getBorderColor (),
+                }}
+              >
+                <Text
+                  style={{
+                    marginBottom: 7,
+                    fontSize: 12,
+                    fontWeight: '300',
+                    color: global.user.getTertiaryTextColor (),
+                  }}
+                >
+                  by {this.question.username}
+                </Text>
+                <View
+                  style={{
+                    alignSelf: 'stretch',
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <View style={{flexDirection: 'row'}}>
+                    <MessageIcon
+                      color={global.user.getTertiaryTextColor ()}
+                      style={{marginRight: 3}}
+                    />
+                    <Text
+                      style={[
+                        global.user.tertiaryTextColor (),
+                        {marginRight: 10},
+                      ]}
+                    >
+                      {this.question.comments.length}
+                    </Text>
+                    <ClockIcon
+                      color={global.user.getTertiaryTextColor ()}
+                      style={{marginRight: 3}}
+                    />
+                    <Text
+                      style={[
+                        global.user.tertiaryTextColor (),
+                        {marginRight: 10},
+                      ]}
+                    >
+                      {dateToTimestamp (new Date (this.question.date)).join (
+                        ''
+                      )}
+                    </Text>
+                  </View>
+                  <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                    <LightBulbIcon
+                      size={14}
+                      color={global.user.getTertiaryTextColor ()}
+                    />
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        color: this.question.userVote == -1
+                          ? '#e03634'
+                          : this.question.userVote == 1
+                              ? '#20d67b'
+                              : global.user.getTertiaryTextColor (),
+                        marginLeft: 5,
+                      }}
+                    >
+                      {this.question.helpful_votes.length +
+                        this.question.unhelpful_votes.length >
+                        0
+                        ? `${Math.round (this.question.helpful_votes.length / (this.question.helpful_votes.length + this.question.unhelpful_votes.length) * 100)}% `
+                        : 'Unkown % '}
+                      Helpful
+                    </Text>
+                  </View>
+                </View>
+              </View>
+              <View
+                style={{
+                  width,
+                  height: 40,
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  paddingLeft: 20,
+                  paddingRight: 20,
+                  marginTop: 10,
+                  marginBottom: 5,
+                }}
+              >
+                {this.question.userVote == -1
+                  ? <Touchable
+                      onPressIn={() => this.changeVote ('unhelpful')}
+                      style={{
+                        padding: 10,
+                        backgroundColor: '#e03634',
+                        borderRadius: 3,
+                      }}
+                      hitSlop={{top: 20, left: 20, bottom: 20, right: 20}}
+                    >
+                      <BoldArrowDownIcon size={22} color="white" />
+                    </Touchable>
+                  : <Touchable
+                      onPressIn={() => this.changeVote ('unhelpful')}
+                      style={{padding: 10}}
+                      hitSlop={{top: 20, left: 20, bottom: 20, right: 20}}
+                    >
+                      <BoldArrowDownIcon
+                        size={22}
+                        color={global.user.getSecondaryTextColor ()}
+                      />
+                    </Touchable>}
+
+                {this.question.userVote == 1
+                  ? <Touchable
+                      onPressIn={() => this.changeVote ('helpful')}
+                      style={{
+                        padding: 10,
+                        backgroundColor: '#20d67b',
+                        borderRadius: 3,
+                      }}
+                      hitSlop={{top: 20, left: 20, bottom: 20, right: 20}}
+                    >
+                      <BoldArrowUpIcon size={22} color="white" />
+                    </Touchable>
+                  : <Touchable
+                      hitSlop={{top: 20, left: 20, bottom: 20, right: 20}}
+                      onPressIn={() => this.changeVote ('helpful')}
+                      style={{padding: 10}}
+                    >
+                      <BoldArrowUpIcon
+                        size={22}
+                        color={global.user.getSecondaryTextColor ()}
+                      />
+                    </Touchable>}
+
+                <Touchable onPress={this.openCreate} style={{padding: 10}}>
+                  <ReplyIcon size={22} />
+                </Touchable>
+                <Touchable style={{padding: 10}}>
+                  <FlagIcon size={22} />
+                </Touchable>
+              </View>
             </View>
-            <Touchable
-              onPress={this.openCreate}
-              style={{
-                borderBottomWidth: StyleSheet.hairlineWidth * 2,
-                borderColor: global.user.getBorderColor (),
-                width,
-                height: 45,
-                flexDirection: 'row',
-                justifyContent: 'center',
-                alignItems: 'center',
-                backgroundColor: '#64d7fa',
-              }}
-            >
-              <ReplyIcon size={30} />
-            </Touchable>
+
             <FlatList
               data={commentList}
               renderItem={({item, index}) => (
                 <Comment
+                  showActionSheet={this.showActionSheet}
                   openImageViewer={this.openImageViewer}
                   parent={this}
                   index={index}
@@ -647,6 +1231,7 @@ export default class QuestionScreen extends React.Component {
                 backgroundColor: global.user.getPrimaryTheme (),
               }}
             />
+            <View style={{width, height: 20}} />
           </ScrollView>
         </View>
         <CreateComment
@@ -658,6 +1243,7 @@ export default class QuestionScreen extends React.Component {
           }}
         />
         <ImageViewerModal ref={this.imageViewerModal} parent={this} />
+        <CustomActionSheet ref={this.actionSheet} parent={this} />
       </View>
     );
   }
@@ -678,9 +1264,10 @@ const styles = StyleSheet.create ({
     paddingBottom: 5,
     paddingLeft: 10,
     paddingRight: 10,
-    borderTopWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   commentBody: {
     fontSize: 15,
+    marginTop: 10,
   },
 });

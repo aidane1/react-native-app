@@ -15,8 +15,17 @@ export class School {
     this.dayTitles = school.dayTitles;
     this.rawSchedule = school.rawSchedule;
     this.grades = school.grades || [9, 10, 11, 12];
-    this.name = school.name || "";
-    this.district = school.district || "";
+    this.name = school.name || '';
+    this.district = school.district || '';
+    this.day_titles = school.day_titles || [
+      {
+        day_1: 'Monday',
+        day_2: 'Tuesday',
+        day_3: 'Wednesday',
+        day_4: 'Thursday',
+        day_5: 'Friday',
+      },
+    ];
   }
   toString () {
     return {
@@ -29,6 +38,7 @@ export class School {
       grades: this.grades,
       name: this.name,
       district: this.district,
+      day_titles: this.day_titles,
     };
   }
 

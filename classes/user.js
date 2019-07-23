@@ -14,6 +14,7 @@ export class User {
     this.studentNumber = user.studentNumber;
     this.scheduleType = user.scheduleType || 'schedule';
     this.scheduleImages = user.scheduleImages || [];
+    this.permission_level = user.permission_level || 0;
     this.notifications = user.notifications || {
       dailyAnnouncements: false,
       nextClass: false,
@@ -23,11 +24,13 @@ export class User {
       upcomingEvents: true,
       activities: false,
     };
-    this.theme = user.theme || 'Light';
+    this.theme = user.theme || 'Dark';
+    this.accountId = user.accountId || '_';
     this.trueDark = user.trueDark || false;
     this.visuallyImpared = user.visuallyImpared || false;
     this.automaticMarkRetrieval = user.automaticMarkRetrieval || false;
     this.automaticCourseUpdating == user.automaticCourseUpdating || false;
+    this.profile_picture = user.profile_picture || "";
     this.beforeSchoolActivities = user.beforeSchoolActivities || {
       day_1: [],
       day_2: [],
@@ -57,12 +60,14 @@ export class User {
       courses: this.courses,
       'x-api-key': this['x-api-key'],
       'x-id-key': this['x-id-key'],
+      permission_level: this.permission_level,
       school: this.school,
       id: this.id,
       firstName: this.firstName,
       lastName: this.lastName,
       studentNumber: this.studentNumber,
       scheduleType: this.scheduleType,
+      accountId: this.accountId,
       scheduleImages: this.scheduleImages || [],
       notifications: this.notifications || {
         dailyAnnouncements: false,
@@ -75,6 +80,7 @@ export class User {
       theme: this.theme || 'Light',
       trueDark: this.trueDark || false,
       visuallyImpared: this.visuallyImpared || false,
+      profile_picture: this.profile_picture,
       automaticMarkRetrieval: this.automaticMarkRetrieval || false,
       automaticCourseUpdating: this.automaticCourseUpdating || false,
       afterSchoolActivities: this.afterSchoolActivities || {
@@ -234,6 +240,8 @@ export class User {
   };
   static _saveToStorage = async user => {
     try {
+      // console.log("saved to storage: ");
+      // console.log(JSON.stringify(user));
       await AsyncStorage.setItem ('user', JSON.stringify (user));
       return user;
     } catch (e) {
@@ -243,10 +251,28 @@ export class User {
   static _retrieveFromStorage = async () => {
     try {
       let storageUser = await AsyncStorage.getItem ('user');
-      user = JSON.parse (storageUser);
+      // console.log("Retrieved from storage: ");
+      // console.log(storageUser);
+      let user = JSON.parse (storageUser);
       return new User (user);
     } catch (e) {
       return {};
+    }
+  };
+  static _hasViewedTutorial = async () => {
+    try {
+      let loggedIn = await AsyncStorage.getItem ('hasViewed');
+      return loggedIn === 'true';
+    } catch (e) {
+      return false;
+    }
+  };
+  static _setTutorialState = async state => {
+    try {
+      await AsyncStorage.setItem ('hasViewed', state ? 'true' : 'false');
+      return state;
+    } catch (e) {
+      return false;
     }
   };
   static _isLoggedIn = async () => {

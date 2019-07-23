@@ -138,22 +138,6 @@ function averageColors (colorArray) {
   return 'rgb(' + red + ',' + green + ',' + blue + ')';
 }
 
-function sendResourseToServer (resource) {
-  return fetch (
-    'https://www.apexschools.co/api/v1/resources?base64=true&populate=resources',
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': global.user['x-api-key'],
-        'x-id-key': global.user['x-id-key'],
-        school: global.user['school'],
-      },
-      body: JSON.stringify (resource),
-    }
-  );
-}
-
 class ImageViewerModal extends React.Component {
   constructor (props) {
     super (props);
@@ -207,6 +191,14 @@ function formatTime (time) {
 function getBlock (block, courses, colorMap) {
   if (block.type == 'block') {
     let course = courses[block.block.block];
+    if (!course) {
+      course = {
+        course: "LC's",
+        teacher: 'Free',
+        category: 'other',
+        id: '_',
+      };
+    }
     return (
       <View style={[{flexGrow: 1}, boxShadows.boxShadow3]}>
         <LinearGradient
@@ -249,16 +241,48 @@ function getBlock (block, courses, colorMap) {
     );
   } else if (block.type == 'time') {
     return (
-      <View>
+      <View
+        style={[
+          {
+            flexGrow: 1,
+            flexDirection: 'column',
+            justifyContent: 'space-evenly',
+            alignItems: 'center',
+            backgroundColor: global.user.getSecondaryTheme (),
+            borderRadius: 3,
+          },
+          boxShadows.boxShadow3,
+        ]}
+      >
         <Text
           style={{
             textAlign: 'right',
-            fontSize: 18,
+            fontSize: 14,
             fontWeight: '500',
             color: global.user.getSecondaryTextColor (),
           }}
         >
-          {formatTime (block.time)}
+          {formatUnit (block.time.start_hour, block.time.start_minute)}
+        </Text>
+        <Text
+          style={{
+            textAlign: 'right',
+            fontSize: 14,
+            fontWeight: '500',
+            color: global.user.getSecondaryTextColor (),
+          }}
+        >
+          -
+        </Text>
+        <Text
+          style={{
+            textAlign: 'right',
+            fontSize: 14,
+            fontWeight: '500',
+            color: global.user.getSecondaryTextColor (),
+          }}
+        >
+          {formatUnit (block.time.end_hour, block.time.end_minute)}
         </Text>
       </View>
     );
@@ -384,6 +408,7 @@ export default class ScheduleScreenTile extends React.Component {
     });
   };
   render () {
+    // console.log(global.school.schedule);
     return (
       <View
         style={{width, height: ifIphoneX (height - 80 - 60, height - 60 - 45)}}
@@ -405,14 +430,17 @@ export default class ScheduleScreenTile extends React.Component {
                 }}
               >
                 <View
-                  style={[{
-                    width: width * 0.95,
-                    paddingTop: 40,
-                    paddingBottom: 40,
-                    backgroundColor: global.user.getSecondaryTheme (),
-                    opacity: 0.9,
-                    borderRadius: 10,
-                  }, boxShadows.boxShadow7]}
+                  style={[
+                    {
+                      width: width * 0.95,
+                      paddingTop: 40,
+                      paddingBottom: 40,
+                      backgroundColor: global.user.getSecondaryTheme (),
+                      opacity: 0.9,
+                      borderRadius: 10,
+                    },
+                    boxShadows.boxShadow7,
+                  ]}
                 >
                   {this.state.images.length != 0
                     ? this.state.images.map ((resource, index, array) => {
@@ -493,55 +521,104 @@ export default class ScheduleScreenTile extends React.Component {
                 {this.currentSemesters.length > 0
                   ? global.school.schedule.map ((schedule, index_1) => {
                       return (
-                        <ScrollView
-                          showsHorizontalScrollIndicator={false}
-                          horizontal={true}
+                        <View
+                          style={{width, flexDirection: 'row'}}
                           key={'schedule_' + index_1}
                         >
-                          <View style={styles.scheduleWeek}>
-                            {schedule.map ((day, index_2) => {
+                          <View style={[styles.scheduleDay, {width: 70}]}>
+                            {schedule[0].map ((block, index_3) => {
                               return (
                                 <View
                                   key={
-                                    'schedule_' + index_1 + '_day_' + index_2
+                                    'schedule_' +
+                                      index_1 +
+                                      '_day_' +
+                                      0 +
+                                      '_block_' +
+                                      index_3
                                   }
-                                  style={styles.scheduleDay}
-                                >
-                                  {day.map ((block, index_3) => {
-                                    return (
-                                      <View
-                                        key={
-                                          'schedule_' +
-                                            index_1 +
-                                            '_day_' +
-                                            index_2 +
-                                            '_block_' +
-                                            index_3
+                                  style={[
+                                    styles.scheduleBlock,
+                                    block.type == 'time'
+                                      ? {
+                                          width: 60,
+                                          height: 70,
                                         }
-                                        style={[
-                                          styles.scheduleBlock,
-                                          {
-                                            height: block.type == 'block'
-                                              ? block.block.block_span * 60 +
-                                                  (block.block.block_span - 1) *
-                                                    10
-                                              : 60,
-                                          },
-                                        ]}
-                                      >
-                                        {getBlock (
-                                          block,
-                                          this.courseMap,
-                                          this.colorMap
-                                        )}
-                                      </View>
-                                    );
-                                  })}
+                                      : {
+                                          width: 60,
+                                          height: 40,
+                                        },
+                                  ]}
+                                >
+                                  {getBlock (
+                                    block,
+                                    this.courseMap,
+                                    this.colorMap
+                                  )}
                                 </View>
                               );
                             })}
                           </View>
-                        </ScrollView>
+                          <ScrollView
+                            showsHorizontalScrollIndicator={false}
+                            horizontal={true}
+                            style={{width: width - 70}}
+                            contentContainerStyle={{width: 670, marginLeft: 60}}
+                          >
+                            <View style={styles.scheduleWeek}>
+                              {schedule.slice (1).map ((day, index_2) => {
+                                return (
+                                  <View
+                                    key={
+                                      'schedule_' + index_1 + '_day_' + index_2
+                                    }
+                                    style={[
+                                      styles.scheduleDay,
+                                      index_2 == 0 ? {width: 70} : {width: 130},
+                                    ]}
+                                  >
+                                    {day.map ((block, index_3) => {
+                                      return (
+                                        <View
+                                          key={
+                                            'schedule_' +
+                                              index_1 +
+                                              '_day_' +
+                                              index_2 +
+                                              '_block_' +
+                                              index_3
+                                          }
+                                          style={[
+                                            styles.scheduleBlock,
+                                            {
+                                              height: block.type == 'block'
+                                                ? block.block.block_span * 70 +
+                                                    (block.block.block_span -
+                                                      1) *
+                                                      10
+                                                : 70,
+                                            },
+                                            block.type == 'title'
+                                              ? {
+                                                  height: 40,
+                                                }
+                                              : {},
+                                          ]}
+                                        >
+                                          {getBlock (
+                                            block,
+                                            this.courseMap,
+                                            this.colorMap
+                                          )}
+                                        </View>
+                                      );
+                                    })}
+                                  </View>
+                                );
+                              })}
+                            </View>
+                          </ScrollView>
+                        </View>
                       );
                     })
                   : <Text
@@ -572,7 +649,17 @@ export default class ScheduleScreenTile extends React.Component {
                     : {},
                 ]}
               >
-                <Text style={{fontSize: 18, fontWeight: '500', color: this.state.scheduleType == 'image' ? "white" : "black"}}>Image</Text>
+                <Text
+                  style={{
+                    fontSize: 18,
+                    fontWeight: '500',
+                    color: this.state.scheduleType == 'image'
+                      ? 'white'
+                      : 'black',
+                  }}
+                >
+                  Image
+                </Text>
               </View>
             </Touchable>
             <Touchable onPress={() => this.changeScheduleType ('schedule')}>
@@ -584,7 +671,17 @@ export default class ScheduleScreenTile extends React.Component {
                     : {},
                 ]}
               >
-                <Text style={{fontSize: 18, fontWeight: '500', color: this.state.scheduleType !== 'image' ? "white" : "black"}}>Schedule</Text>
+                <Text
+                  style={{
+                    fontSize: 18,
+                    fontWeight: '500',
+                    color: this.state.scheduleType !== 'image'
+                      ? 'white'
+                      : 'black',
+                  }}
+                >
+                  Schedule
+                </Text>
               </View>
             </Touchable>
           </View>
@@ -606,6 +703,7 @@ const styles = StyleSheet.create ({
   scheduleDay: {
     flexDirection: 'column',
     width: 130,
+    alignItems: 'flex-end',
   },
   scheduleBlock: {
     width: 120,
@@ -620,7 +718,7 @@ const styles = StyleSheet.create ({
   titleBlock: {
     width: width,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    paddingTop: 20,
+    paddingTop: 10,
     paddingLeft: 10,
     paddingBottom: 0,
     paddingRight: 10,

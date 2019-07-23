@@ -13,17 +13,15 @@ import {
   RefreshControl,
 } from 'react-native';
 
-import {WebBrowser} from 'expo';
-
 import {LinearGradient} from 'expo-linear-gradient';
-
-import {Ionicons, MaterialIcons} from '@expo/vector-icons';
 
 import {boxShadows} from '../../constants/boxShadows';
 
 import Touchable from 'react-native-platform-touchable';
 
 import {Courses} from '../../classes/courses';
+
+import moment from "moment"
 
 const width = Dimensions.get ('window').width; //full width
 const height = Dimensions.get ('window').height; //full height
@@ -43,7 +41,7 @@ class GradientBlock extends React.Component {
               </Text>
             </View>
             <View style={styles.blockLeft}>
-              <Text style={styles.blockMain} numberOfLines={1}>
+              <Text style={[styles.blockMain, {maxWidth: width*0.95-100}]} numberOfLines={1}>
                 {this.props.main}
               </Text>
               <Text style={styles.blockSecondary}>
@@ -71,13 +69,14 @@ class EventBlock extends React.Component {
                 showsHorizontalScrollIndicator={false}
               >
                 <Text style={styles.eventTopRow}>
-                  {this.props.info}
+                  {this.props.title}
                 </Text>
               </ScrollView>
             </View>
             <View style={styles.eventBottomRow}>
               <Text style={styles.eventBottomRowText}>
-                {this.props.date}
+                
+                {moment(this.props.event_date).format("YYYY-MM-DD")}
               </Text>
               <Text style={styles.eventBottomRowText}>
                 {this.props.time}
@@ -243,6 +242,7 @@ export default class HomeScreenTile extends React.Component {
               />
             );
           })}
+          <View style={{width, height: 20}} />
         </View>
       </ScrollView>
     );

@@ -117,12 +117,15 @@ export default class ImageBar extends React.Component {
   launchCameraRoll = async () => {
     try {
       await this.getPermissionAsync ();
-      let result = await ImagePicker.launchImageLibraryAsync ({
+      let settings = {
         mediaTypes: ImagePicker.MediaTypeOptions.All,
         base64: true,
         exif: true,
         quality: 0.1,
-      });
+      };
+      if (this.props.aspect) settings['aspect'] = this.props.aspect;
+      if (this.props.allowsEditing) settings['allowsEditing'] = true;
+      let result = await ImagePicker.launchImageLibraryAsync (settings);
       if (result.uri) {
         result.id = new Date ().getTime ();
         this.setState (state => ({
@@ -152,12 +155,15 @@ export default class ImageBar extends React.Component {
   launchCamera = async () => {
     try {
       await this.getPermissionAsync ();
-      let result = await ImagePicker.launchCameraAsync ({
+      let settings = {
         mediaTypes: ImagePicker.MediaTypeOptions.All,
         base64: true,
         exif: true,
         quality: 0.1,
-      });
+      };
+      if (this.props.aspect) settings['aspect'] = this.props.aspect;
+      if (this.props.allowsEditing) settings['allowsEditing'] = true;
+      let result = await ImagePicker.launchCameraAsync (settings);
       if (result.uri) {
         result.id = new Date ().getTime ();
         this.setState (state => ({

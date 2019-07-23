@@ -15,6 +15,7 @@ import PureChatroomScreen from "../screens/pureChatRoomScreen/index";
 import ActivitiesScreen from "../screens/activitiesScreen/index";
 import QuestionsScreen from "../screens/questionsScreen/index";
 import QuestionScreen from "../screens/questionScreen/index";
+import OnboardingScreen from "../screens/onboardingScreen/index";
 import {
   createAppContainer,
   createStackNavigator,
@@ -39,6 +40,7 @@ const MainNavigator = createStackNavigator (
     Activities: {screen: ActivitiesScreen, lazy: true},
     Questions: {screen: QuestionsScreen, lazy: true},
     Question: {screen: QuestionScreen, lazy: true},
+    OnBoarding: {screen: OnboardingScreen, lazy: true}
   },
   {
     initialRouteName: 'Loading',

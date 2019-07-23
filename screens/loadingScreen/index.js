@@ -81,6 +81,10 @@ export default class LoadingScreen extends React.Component {
     const imageAssets = cacheImages ([
       require ('../../assets/logo_transparent.png'),
       require ('../../assets/splash.png'),
+      require ('../../assets/tutorial.png'),
+      require ('../../assets/questionTutorial.png'),
+      require ('../../assets/createTutorial.png'),
+      require ('../../assets/navigationTutorial.png'),
     ]);
     const fontAssets = cacheFonts ([
       FontAwesome.font,
@@ -228,7 +232,7 @@ export default class LoadingScreen extends React.Component {
     }
   };
   async componentDidMount () {
-    StatusBar.setHidden(true);
+    // StatusBar.setHidden (true);
     this._notificationSubscription = Notifications.addListener (
       this._handleNotification
     );
@@ -254,8 +258,8 @@ export default class LoadingScreen extends React.Component {
             assetType: 'Photos',
             groupTypes: 'All',
           });
-          photos.edges.sort((a, b) => b.node.timestamp - a.node.timestamp);
-          global.cameraRollImages = photos.edges.slice(0, 70);
+          photos.edges.sort ((a, b) => b.node.timestamp - a.node.timestamp);
+          global.cameraRollImages = photos.edges.slice (0, 70);
         }
 
         let user = await User._retrieveFromStorage ();
@@ -288,6 +292,7 @@ export default class LoadingScreen extends React.Component {
         global.completedAssignments = completedAssignments;
         global.semesterMap = semesterMap;
         global.dayMap = school['dayMap'];
+        global.events = events;
         global.school = school;
         global.dates = dates;
         global.courseInfoCourse = '_';
@@ -296,12 +301,21 @@ export default class LoadingScreen extends React.Component {
         global.semesters = allSemesters;
         global.userCourseMap = {};
         global.blocksCourseMap = {};
-        const resetAction = StackActions.reset ({
-          index: 0,
-          actions: [NavigationActions.navigate ({routeName: 'Home'})],
-        });
+        let hasViewedTutorial = await User._hasViewedTutorial();
         await this._loadAssetsAsync ();
-        this.props.navigation.dispatch (resetAction);
+        if (hasViewedTutorial) {
+          const resetAction = StackActions.reset ({
+            index: 0,
+            actions: [NavigationActions.navigate ({routeName: 'Home'})],
+          });
+          this.props.navigation.dispatch (resetAction);
+        } else {
+          const resetAction = StackActions.reset ({
+            index: 0,
+            actions: [NavigationActions.navigate ({routeName: 'OnBoarding'})],
+          });
+          this.props.navigation.dispatch (resetAction);
+        } 
       }
     } catch (e) {
       console.log (e);
