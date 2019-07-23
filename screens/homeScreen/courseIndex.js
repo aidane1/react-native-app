@@ -10,17 +10,23 @@ import {
   Dimensions,
   AsyncStorage,
   RefreshControl,
+  DatePickerAndroid,
+  DatePickerIOS,
 } from 'react-native';
 
 import Touchable from 'react-native-platform-touchable';
 
 import {Course, Courses} from '../../classes/courses';
 
-import {RightIcon} from '../../classes/icons';
+import {RightIcon, CaretRight} from '../../classes/icons';
 
 import {SchoolIcons, GenericIcon} from '../../classes/icons';
 
 import {boxShadows} from '../../constants/boxShadows';
+
+import Modal from 'react-native-modal';
+
+import moment from 'moment';
 
 const width = Dimensions.get ('window').width; //full width
 const height = Dimensions.get ('window').height; //full height
@@ -187,13 +193,58 @@ class CourseRow extends React.Component {
   }
 }
 
+class IOSDateSheet extends React.Component {
+  constructor (props) {
+    super (props);
+    this.state = {
+      isBackdropVisible: false,
+      date: new Date(),
+    };
+  }
+  setDate = (date) => {
+    this.setState ({date});
+    this.props.updateDate(date);
+  }
+  render () {
+    return (
+      <View>
+        <Modal
+          style={{
+            margin: 0,
+            paddingBottom: 0,
+            flexDirection: 'column',
+            justifyContent: 'flex-end',
+          }}
+          animationIn="slideInUp"
+          animationOut="slideOutDown"
+          isVisible={this.state.isBackdropVisible}
+          backdropColor={'black'}
+          onBackdropPress={() => this.setState ({isBackdropVisible: false})}
+          propagateSwipe={true}
+        >
+          <DatePickerIOS
+            onDateChange={this.setDate}
+            date={this.state.date}
+            style={{
+              backgroundColor: 'white',
+            }}
+            mode={'date'}
+          />
+        </Modal>
+      </View>
+    );
+  }
+}
+
 export default class LinksScreenTile extends React.Component {
   constructor (props) {
     super (props);
     this.state = {
       refreshing: false,
-    }
+    };
+    this.iosSheet = React.createRef ();
   }
+
   _navigateToPage = async (page, id) => {
     try {
       global.courseInfoCourse = await Courses._retrieveCourseById (id);
@@ -210,12 +261,35 @@ export default class LinksScreenTile extends React.Component {
     // this.props.navigation.replace("Home");
     setTimeout (() => {
       this.props.parent.setState (
-        {currentDate: new Date (2019, 10, 8, 12, 30)},
+        // {currentDate: new Date (2019, 10, 8, 12, 30)},
+        {currentDate: new Date ()},
         () => {
           this.setState ({refreshing: false});
         }
       );
     }, 400);
+  };
+
+  openDaySelectIOS = () => {
+    this.iosSheet.current.setState ({isBackdropVisible: true, date: this.props.parent.state.currentDate});
+  };
+  updateDate = date => {
+    this.props.parent.setState(state => ({
+      currentDate: new Date(date.getFullYear(), date.getMonth(), date.getDate(), state.currentDate.getHours(), state.currentDate.getMinutes())
+    }))
+  }
+  openDaySelectAndroid = () => {};
+
+  forwardOneDay = () => {
+    let {currentDate} = this.props.parent.state;
+    let date = new Date (
+      currentDate.getFullYear (),
+      currentDate.getMonth (),
+      currentDate.getDate () + 1,
+      currentDate.getHours (),
+      currentDate.getMinutes ()
+    );
+    this.props.parent.setState ({currentDate: date});
   };
 
   _navigateToPage = async (page, id) => {
@@ -235,17 +309,55 @@ export default class LinksScreenTile extends React.Component {
           />
         }
       >
-        <View style={[styles.titleBlock, global.user.borderColor ()]}>
-          <Text
-            style={[styles.h1, {color: global.user.getPrimaryTextColor ()}]}
+        <View
+          style={[
+            styles.titleBlock,
+            global.user.borderColor (),
+            {
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              paddingRight: 25,
+              alignItems: 'center',
+            },
+          ]}
+        >
+          <Touchable
+            onPress={this.openDaySelectIOS}
+            hitSlop={{top: 20, left: 20, bottom: 20, right: 20}}
           >
-            Today
-          </Text>
+            <Text
+              style={[styles.h1, {color: global.user.getPrimaryTextColor ()}]}
+            >
+
+              {(() => {
+                let {currentDate} = this.props.parent.state;
+                let date = new Date ();
+                if (
+                  currentDate.getFullYear () == date.getFullYear () &&
+                  currentDate.getMonth () == date.getMonth () &&
+                  currentDate.getDate () == date.getDate ()
+                ) {
+                  return 'Today';
+                } else {
+                  return moment (currentDate).format ('MMMM Do');
+                }
+              }) ()}
+            </Text>
+          </Touchable>
+
+          <Touchable
+            hitSlop={{top: 20, left: 20, bottom: 20, right: 20}}
+            onPress={this.forwardOneDay}
+          >
+            <CaretRight color={global.user.getPrimaryTextColor ()} size={40} />
+          </Touchable>
+
         </View>
         <DayList
           courses={this.props.courseList}
           _navigateToPage={this._navigateToPage}
         />
+        <IOSDateSheet ref={this.iosSheet} updateDate={this.updateDate}/>
       </ScrollView>
     );
   }

@@ -460,35 +460,30 @@ class WSConnection {
   };
 
   onmessage = message => {
-    if (this.isLoaded) {
-      console.log ('socket got message!');
-      console.log (message.data);
-      message = JSON.parse (message.data);
-      if (message.status === 'error') {
-      } else {
-        if (this.parent.state.appState == 'active') {
-          let chats = [];
-          if (this.messageBuffer.length > 0) {
-            chats = [
-              ...this.parent.state.chats,
-              ...this.messageBuffer,
-              message,
-            ];
-            this.messageBuffer = [];
-          } else {
-            chats = [...this.parent.state.chats, message];
-          }
-          this.parent.test ();
-          this.parent.updateState ({chats});
-          // this.parent.setState ({chats}, () => {
-
-          // });
+    console.log ('socket got message!');
+    console.log (message.data);
+    message = JSON.parse (message.data);
+    if (message.status === 'error') {
+    } else {
+      if (this.parent.state.appState == 'active') {
+        let chats = [];
+        if (this.messageBuffer.length > 0) {
+          chats = [...this.messageBuffer, message];
+          this.messageBuffer = [];
         } else {
-          this.messageBuffer.push (message.data);
+          chats = [message];
         }
+        this.parent.test ();
+        this.parent.showMessages (chats);
+        // this.parent.updateState({chats});
+        // this.parent.setState ({chats}, () => {
+
+        // });
+      } else {
+        this.messageBuffer.push (message.data);
       }
-      return false;
     }
+    return false;
   };
 
   onerror = error => {
@@ -613,6 +608,11 @@ export default class ChatRoom extends React.Component {
   };
   updateState = state => {
     this.setState (state);
+  };
+  showMessages = messages => {
+    this.setState (state => ({
+      chats: [...this.state.chats, ...messages],
+    }));
   };
   sendMessage = message => {
     if (

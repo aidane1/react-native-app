@@ -14,6 +14,14 @@ class IconBlock {
   constructor (icon) {}
 }
 
+export class CaretRight extends React.Component {
+  render () {
+    return (
+      <FontAwesome color="white" name="caret-right" size={16} {...this.props} />
+    );
+  }
+}
+
 export class LightBulbIcon extends React.Component {
   render () {
     return (
@@ -30,12 +38,7 @@ export class LightBulbIcon extends React.Component {
 export class CompassIcon extends React.Component {
   render () {
     return (
-      <FontAwesome
-        color="white"
-        name="compass"
-        size={16}
-        {...this.props}
-      />
+      <FontAwesome color="white" name="compass" size={16} {...this.props} />
     );
   }
 }
@@ -58,9 +61,7 @@ export class BoldArrowDownIcon extends React.Component {
 
 export class FlagIcon extends React.Component {
   render () {
-    return (
-      <FontAwesome color="white" name="flag" size={16} {...this.props} />
-    );
+    return <FontAwesome color="white" name="flag" size={16} {...this.props} />;
   }
 }
 

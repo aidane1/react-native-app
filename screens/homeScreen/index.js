@@ -150,7 +150,8 @@ export default class HomeScreen extends React.Component {
     //these will hold the value of the items that will be displayed. they will be programically updated before the
     //widget is rendered. It makes the rendering code cleaner
     this.state = {
-      currentDate: new Date (2019, 9, 14, 9, 10),
+      // currentDate: new Date (2019, 9, 14, 9, 10),
+      currentDate: new Date (),
     };
 
     this.speaking = false;
@@ -305,7 +306,7 @@ export default class HomeScreen extends React.Component {
           global.school = await School._saveToStorage (
             constructSchoolObject (response.body.school, response.body.blocks)
           );
-          console.log(Object.keys(response.body.school));
+          console.log (Object.keys (response.body.school));
           global.user = await User._saveToStorage (
             constructUserObject ({
               scheduleImages: response.body.user.schedule_images,
@@ -496,9 +497,11 @@ export default class HomeScreen extends React.Component {
           category: 'other',
           id: '_',
           isReal: false,
+          isEmptyDay: true,
         });
       }
       this.courses = courseList;
+      console.log (this.courses);
 
       // string
       let dayTitle = 'Off!';
@@ -511,43 +514,47 @@ export default class HomeScreen extends React.Component {
       let next = {title: 'Next', main: 'Nothing!', secondary: 'Now'};
 
       let foundCurrent = false;
-      for (var i = 0; i < courseList.length; i++) {
-        if (
-          !foundCurrent &&
-          courseList[i].time_num.end_hour * 60 +
-            courseList[i].time_num.end_minute >=
-            currentDate.getHours () * 60 + currentDate.getMinutes ()
-        ) {
-          let beforeStart = false;
+      if (courseList[0].isEmptyDay) {
+
+      } else {
+        for (var i = 0; i < courseList.length; i++) {
           if (
-            courseList[i].time_num.start_hour * 60 +
-              courseList[i].time_num.start_minute <=
-            currentDate.getHours () * 60 + currentDate.getMinutes ()
+            !foundCurrent &&
+            courseList[i].time_num.end_hour * 60 +
+              courseList[i].time_num.end_minute >=
+              currentDate.getHours () * 60 + currentDate.getMinutes ()
           ) {
-            current = {
-              title: 'Current',
-              main: courseList[i].course,
-              secondary: courseList[i].time,
-            };
-          } else {
-            beforeStart = true;
-          }
-          if (i != courseList.length - 1) {
-            if (beforeStart) {
-              next = {
-                title: 'Next',
+            let beforeStart = false;
+            if (
+              courseList[i].time_num.start_hour * 60 +
+                courseList[i].time_num.start_minute <=
+              currentDate.getHours () * 60 + currentDate.getMinutes ()
+            ) {
+              current = {
+                title: 'Current',
                 main: courseList[i].course,
                 secondary: courseList[i].time,
               };
             } else {
-              next = {
-                title: 'Next',
-                main: courseList[i + 1].course,
-                secondary: courseList[i + 1].time,
-              };
+              beforeStart = true;
             }
+            if (i != courseList.length - 1) {
+              if (beforeStart) {
+                next = {
+                  title: 'Next',
+                  main: courseList[i].course,
+                  secondary: courseList[i].time,
+                };
+              } else {
+                next = {
+                  title: 'Next',
+                  main: courseList[i + 1].course,
+                  secondary: courseList[i + 1].time,
+                };
+              }
+            }
+            foundCurrent = true;
           }
-          foundCurrent = true;
         }
       }
       this.current = current;
@@ -719,11 +726,13 @@ export default class HomeScreen extends React.Component {
         </View>
       );
     } catch (e) {
+      console.log (e);
       const resetAction = StackActions.reset ({
         index: 0,
         actions: [NavigationActions.navigate ({routeName: 'Login'})],
       });
       this.props.navigation.dispatch (resetAction);
+      return <View />;
     }
   }
 }

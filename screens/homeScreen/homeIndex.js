@@ -177,7 +177,7 @@ export default class HomeScreenTile extends React.Component {
     // this.props.navigation.replace("Home");
     setTimeout (() => {
       this.props.parent.setState (
-        {currentDate: new Date (2019, 10, 8, 12, 30)},
+        {currentDate: new Date ()},
         () => {
           this.setState ({refreshing: false});
         }

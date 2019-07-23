@@ -285,7 +285,7 @@ export default class SettingsScreen extends React.Component {
         if (data.status == 'ok') {
           global.user.profile_picture = data.body.profile_picture;
           await User._saveToStorage (global.user);
-          this.setState({profile_picture: data.body.profile_picture});
+          this.setState ({profile_picture: data.body.profile_picture});
         }
       });
   };
@@ -456,11 +456,40 @@ export default class SettingsScreen extends React.Component {
             {transform: [{translateY: this.state.transform}]},
           ]}
         >
-          <View style={{width, flexDirection: 'column', alignItems: 'center'}}>
+          <View style={{width, flexDirection: 'column', alignItems: 'center', paddingTop: 20}}>
+
             <Touchable onPress={this.selectProfileImage}>
-              {this.state.profile_picture !== ''
-                ? <Image source={{uri: `https://www.apexschools.co${this.state.profile_picture}`}} style={{width: 60, height: 60, borderRadius: 30, overflow: "hidden", marginTop: 5}}/>
-                : <AccountIcon color={global.user.getPrimaryTextColor ()} size={60} />}
+              <View
+                style={{
+                  borderRadius: 40,
+                  overflow: 'hidden',
+                  backgroundColor: "black",
+                  marginBottom: 10,
+                }}
+              >
+                {this.state.profile_picture !== ''
+                  ? <Image
+                      source={{
+                        uri: `https://www.apexschools.co${this.state.profile_picture}`,
+                      }}
+                      style={{
+                        width: 80,
+                        height: 80,
+                        marginTop: 5,
+                      }}
+                    />
+                  : <AccountIcon
+                      color={global.user.getPrimaryTextColor ()}
+                      size={80}
+                    />}
+                <View
+                  style={{position: 'absolute', bottom: 0, left: 0, right: 0}}
+                >
+                  <Text style={{backgroundColor: 'black', textAlign: 'center', color: "white"}}>
+                    Edit
+                  </Text>
+                </View>
+              </View>
             </Touchable>
             <Text
               style={{
