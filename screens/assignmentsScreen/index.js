@@ -246,7 +246,7 @@ export default class ChatroomScreen extends React.Component {
           iconRight={<EmptyIcon width={28} height={32} />}
           width={width}
           height={60}
-          title="Assignments"
+          title="My Classes"
         />
         <View style={[styles.bodyHolder, global.user.primaryTheme ()]}>
           <ScrollView>

@@ -45,6 +45,15 @@ import ApexAPI from '../../http/api';
 
 import {StackActions, NavigationActions} from 'react-navigation';
 
+import {
+  constructCourseList,
+  constructSchoolObject,
+  constructSemesterList,
+  constructTopicList,
+  constructUserObject,
+  constructEventList,
+} from '../../data-parsing/server-parser';
+
 const width = Dimensions.get ('window').width; //full width
 const height = Dimensions.get ('window').height; //full height
 
@@ -214,62 +223,6 @@ class SchoolInput extends React.Component {
   }
 }
 
-function constructCourseList (serverData) {
-  let courses = [];
-  for (var i = 0; i < serverData.length; i++) {
-    serverData[i].id = serverData[i]._id;
-    let current = new Course (serverData[i]);
-    courses.push (current);
-  }
-  return courses;
-}
-
-function constructSemesterList (serverData) {
-  let semesters = [];
-  for (var i = 0; i < serverData.length; i++) {
-    serverData[i].id = serverData[i]._id;
-    let current = new Semester (serverData[i]);
-    semesters.push (current);
-  }
-  return semesters;
-}
-
-function constructEventList (serverData) {
-  let events = serverData.map (event => new Event (event));
-  return events;
-}
-
-function constructSchoolObject (serverData, blocks) {
-  serverData.blocks = blocks;
-  return {
-    schedule: serverData.schedule,
-    rawSchedule: serverData.rawSchedule,
-    dayMap: serverData['year_day_object'],
-    blocks: serverData['blocks'],
-    spareName: serverData['spare_name'],
-    dayTitles: serverData['day_titles'],
-    id: serverData._id,
-    name: serverData.name,
-    district: serverData.district,
-    day_titles: serverData.day_titles,
-  };
-}
-
-function constructUserObject (serverData) {
-  let user = new User (serverData);
-  return user;
-}
-
-function constructTopicList (serverData) {
-  let topics = [];
-  for (var i = 0; i < serverData.length; i++) {
-    serverData[i].id = serverData[i]._id;
-    let current = new Topic (serverData[i]);
-    topics.push (current);
-  }
-  return topics;
-}
-
 class LoginButton extends React.Component {
   constructor (props) {
     super (props);
@@ -290,38 +243,57 @@ class LoginButton extends React.Component {
       .then (res => res.json ())
       .then (async response => {
         if (response.status == 'ok') {
-          await Courses._saveToStorage (
+          global.courses = await Courses._saveToStorage (
             constructCourseList (response.body.courses)
           );
-          await Semesters._saveToStorage (
+          global.semesters = await Semesters._saveToStorage (
             constructSemesterList (response.body.semesters)
           );
-          await Events._saveToStorage (
+          global.events = await Events._saveToStorage (
             constructEventList (response.body.events)
           );
-          await Topics._saveToStorage (
-            constructTopicList (response.body.topics)
-          );
-          await School._saveToStorage (
+          global.school = await School._saveToStorage (
             constructSchoolObject (response.body.school, response.body.blocks)
           );
-          await User._saveToStorage (
+          global.user = await User._saveToStorage (
             constructUserObject ({
               scheduleImages: response.body.user.schedule_images,
               permission_level: response.body.permission_level,
               scheduleType: response.body.schedule_type,
-              profile_image: response.body.user.profile_image,
+              profile_picture: response.body.user.profile_picture,
               id: response.body.user._id,
               accountId: response.body.accountId,
               firstName: response.body.user.first_name,
               lastName: response.body.user.last_name,
               studentNumber: response.body.user.student_number,
               username: response.body.username,
-              password,
+              password: global.user.password,
               'x-api-key': response.body['api_key'],
               'x-id-key': response.body['_id'],
               courses: response.body.user.courses,
-              school,
+              school: school._id,
+              notifications: {
+                dailyAnnouncements: response.body.user.notifications
+                  .daily_announcements || false,
+                nextClass: response.body.user.notifications.next_class || false,
+                newAssignments: response.body.user.notifications
+                  .new_assignments || true,
+                markedAssignments: response.body.user.notifications
+                  .marked_assignments || false,
+                imageReplies: response.body.user.notifications.image_replies ||
+                  true,
+                upcomingEvents: response.body.user.notifications
+                  .upcoming_events || true,
+                activities: response.body.user.notifications.activities ||
+                  false,
+              },
+              theme: response.body.user.theme || 'Light',
+              trueDark: response.body.user.true_dark || false,
+              visuallyImpared: response.body.user.visuallyImpared || false,
+              automaticMarkRetrieval: response.body.user
+                .automatic_mark_retrieval || false,
+              automaticCourseUpdating: response.body.user
+                .automatic_course_retrieval || true,
             })
           );
           await User._setLoginState (true);
@@ -510,7 +482,10 @@ export default class LoginScreen extends React.Component {
   render () {
     return (
       <View style={styles.container}>
-        <ScrollView style={{width, height, flexDirection: "column"}} bounces={false}>
+        <ScrollView
+          style={{width, height, flexDirection: 'column'}}
+          bounces={false}
+        >
           <LinearGradient
             style={{flexGrow: 1, flexDirection: 'column'}}
             colors={['#ffc371', '#ff5f6d']}

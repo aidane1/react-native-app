@@ -20,6 +20,8 @@ import {
   NotesIcon,
   AssignmentsIcon,
   CompassIcon,
+  MoreIcon,
+  CoursesIcon,
 } from '../../classes/icons';
 
 import HeaderBar from '../../components/header';
@@ -37,6 +39,8 @@ import Touchable from 'react-native-platform-touchable';
 import {AccountIcon, EmptyIcon, RefreshIcon} from '../../classes/icons';
 
 import {Assignment, Assignments} from '../../classes/assignments';
+
+import {ImportantDate, ImportantDates} from '../../classes/importantDates';
 
 import {Note, Notes} from '../../classes/notes';
 
@@ -64,6 +68,15 @@ import {FloatingAction} from 'react-native-floating-action';
 
 import {StackActions, NavigationActions} from 'react-navigation';
 
+import {
+  constructCourseList,
+  constructSchoolObject,
+  constructSemesterList,
+  constructTopicList,
+  constructUserObject,
+  constructEventList,
+} from '../../data-parsing/server-parser';
+
 const width = Dimensions.get ('window').width; //full width
 const height = Dimensions.get ('window').height; //full height
 
@@ -72,63 +85,6 @@ function formatUnit (hour, minute) {
 }
 function formatTime (time) {
   return `${formatUnit (time.start_hour, time.start_minute)} - ${formatUnit (time.end_hour, time.end_minute)}`;
-}
-
-function constructCourseList (serverData) {
-  let courses = [];
-  for (var i = 0; i < serverData.length; i++) {
-    serverData[i].id = serverData[i]._id;
-    let current = new Course (serverData[i]);
-    courses.push (current);
-  }
-  return courses;
-}
-
-function constructSemesterList (serverData) {
-  let semesters = [];
-  for (var i = 0; i < serverData.length; i++) {
-    serverData[i].id = serverData[i]._id;
-    let current = new Semester (serverData[i]);
-    semesters.push (current);
-  }
-  return semesters;
-}
-
-function constructEventList (serverData) {
-  let events = serverData.map (event => new Event (event));
-  return events;
-}
-
-function constructSchoolObject (serverData, blocks) {
-  serverData.blocks = blocks;
-  return {
-    schedule: serverData.schedule,
-    grades: serverData.grades,
-    rawSchedule: serverData.rawSchedule,
-    dayMap: serverData['year_day_object'],
-    blocks: serverData['blocks'],
-    spareName: serverData['spare_name'],
-    dayTitles: serverData['day_titles'],
-    id: serverData._id,
-    name: serverData.name,
-    district: serverData.district,
-    day_titles: serverData.day_titles,
-  };
-}
-
-function constructUserObject (serverData) {
-  let user = new User (serverData);
-  return user;
-}
-
-function constructTopicList (serverData) {
-  let topics = [];
-  for (var i = 0; i < serverData.length; i++) {
-    serverData[i].id = serverData[i]._id;
-    let current = new Topic (serverData[i]);
-    topics.push (current);
-  }
-  return topics;
 }
 
 export default class HomeScreen extends React.Component {
@@ -274,6 +230,20 @@ export default class HomeScreen extends React.Component {
         .catch (e => {
           console.log (e);
         });
+      api
+        .get (
+          `important-dates?populate=resources&reference_course=${global.user.courses.join (',')}`
+        )
+        .then (res => res.json ())
+        .then (async data => {
+          if (data.status == 'ok') {
+            await ImportantDates._saveToStorage (data.body);
+            global.importantDates = await ImportantDates._retrieveFromStorage ();
+          }
+        })
+        .catch (e => {
+          console.log (e);
+        });
     }
     if (global.status == 'granted') {
       CameraRoll.getPhotos ({
@@ -302,11 +272,9 @@ export default class HomeScreen extends React.Component {
           global.events = await Events._saveToStorage (
             constructEventList (response.body.events)
           );
-
           global.school = await School._saveToStorage (
             constructSchoolObject (response.body.school, response.body.blocks)
           );
-          console.log (Object.keys (response.body.school));
           global.user = await User._saveToStorage (
             constructUserObject ({
               scheduleImages: response.body.user.schedule_images,
@@ -388,6 +356,13 @@ export default class HomeScreen extends React.Component {
   render () {
     try {
       const actions = [
+        {
+          text: 'Courses',
+          // icon: require ('./images/ic_accessibility_white.png'),
+          icon: <CoursesIcon size={22} style={{marginTop: 3}} />,
+          name: 'Courses',
+          position: 0,
+        },
         {
           text: 'Questions',
           // icon: require ('./images/ic_accessibility_white.png'),
@@ -501,7 +476,6 @@ export default class HomeScreen extends React.Component {
         });
       }
       this.courses = courseList;
-      console.log (this.courses);
 
       // string
       let dayTitle = 'Off!';
@@ -515,7 +489,6 @@ export default class HomeScreen extends React.Component {
 
       let foundCurrent = false;
       if (courseList[0].isEmptyDay) {
-
       } else {
         for (var i = 0; i < courseList.length; i++) {
           if (
@@ -622,19 +595,23 @@ export default class HomeScreen extends React.Component {
           <HeaderBar
             iconLeft={
               <Touchable
-                onPress={() => this.props.navigation.navigate ('Account')}
+                onPress={() => this.props.navigation.replace ('Home')}
+                hitSlop={{top: 40, bottom: 40, left: 40, right: 40}}
               >
-                <CompassIcon
-                  size={32}
-                  style={{paddingLeft: 10, paddingRight: 10, paddingTop: 10}}
+                <RefreshIcon
+                  size={28}
+                  style={{paddingLeft: 10, paddingRight: 20, paddingTop: 10}}
                 />
               </Touchable>
             }
             iconRight={
-              <Touchable onPress={() => this.props.navigation.replace ('Home')}>
-                <RefreshIcon
-                  size={28}
-                  style={{paddingLeft: 10, paddingRight: 10, paddingTop: 10}}
+              <Touchable
+                onPress={() => this.props.navigation.navigate ('Account')}
+                hitSlop={{top: 40, bottom: 40, left: 40, right: 40}}
+              >
+                <CompassIcon
+                  size={32}
+                  style={{paddingLeft: 8, paddingRight: 10, paddingTop: 10}}
                 />
               </Touchable>
             }
@@ -709,7 +686,7 @@ export default class HomeScreen extends React.Component {
                       />
                     </View>
                     <View style={styles.bodySlide}>
-                      <ScheduleScreenTile />
+                      <ScheduleScreenTile parent={this} />
                     </View>
                   </ScrollView>
                 </View>
@@ -719,6 +696,7 @@ export default class HomeScreen extends React.Component {
           <FloatingAction
             actions={actions}
             distanceToEdge={ifIphoneX (70, 50)}
+            floatingIcon={<MoreIcon size={30} color="white" />}
             onPressItem={name => {
               this.props.navigation.navigate (name);
             }}

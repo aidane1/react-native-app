@@ -18,9 +18,13 @@ import Touchable from 'react-native-platform-touchable';
 
 import {Course, Courses} from '../../classes/courses';
 
-import {RightIcon, CaretRight} from '../../classes/icons';
-
-import {SchoolIcons, GenericIcon} from '../../classes/icons';
+import {
+  SchoolIcons,
+  GenericIcon,
+  RightIcon,
+  CaretRight,
+  CalendarIcon,
+} from '../../classes/icons';
 
 import {boxShadows} from '../../constants/boxShadows';
 
@@ -54,6 +58,7 @@ class DayList extends React.Component {
     for (var i = 0; i < list.length; i++) {
       rowLists.push (
         <CourseRow
+          navigation={this.props.navigation}
           _navigateToPage={this.props._navigateToPage}
           last={i == list.length - 1}
           key={'courseRow_' + i.toString ()}
@@ -70,6 +75,9 @@ class DayList extends React.Component {
 }
 
 class CourseRow extends React.Component {
+  navigateToPage = page => {
+    this.props.navigation.navigate(page);
+  };
   render () {
     let icon = SchoolIcons.getIcon (this.props.category);
     if (this.props.last) {
@@ -78,7 +86,7 @@ class CourseRow extends React.Component {
           onPress={() =>
             this.props.id != '_'
               ? this.props._navigateToPage ('CourseInfo', this.props.id)
-              : () => {}}
+              : this.navigateToPage ('Courses')}
         >
           <View style={[styles.courseRow, global.user.secondaryTheme ()]}>
             <CourseIcon color={icon[1]}>
@@ -139,7 +147,7 @@ class CourseRow extends React.Component {
           onPress={() =>
             this.props.id != '_'
               ? this.props._navigateToPage ('CourseInfo', this.props.id)
-              : () => {}}
+              : this.navigateToPage ('Courses')}
         >
           <View style={[styles.courseRow, global.user.secondaryTheme ()]}>
             <CourseIcon color={icon[1]}>
@@ -198,13 +206,13 @@ class IOSDateSheet extends React.Component {
     super (props);
     this.state = {
       isBackdropVisible: false,
-      date: new Date(),
+      date: new Date (),
     };
   }
-  setDate = (date) => {
+  setDate = date => {
     this.setState ({date});
-    this.props.updateDate(date);
-  }
+    this.props.updateDate (date);
+  };
   render () {
     return (
       <View>
@@ -271,13 +279,22 @@ export default class LinksScreenTile extends React.Component {
   };
 
   openDaySelectIOS = () => {
-    this.iosSheet.current.setState ({isBackdropVisible: true, date: this.props.parent.state.currentDate});
+    this.iosSheet.current.setState ({
+      isBackdropVisible: true,
+      date: this.props.parent.state.currentDate,
+    });
   };
   updateDate = date => {
-    this.props.parent.setState(state => ({
-      currentDate: new Date(date.getFullYear(), date.getMonth(), date.getDate(), state.currentDate.getHours(), state.currentDate.getMinutes())
-    }))
-  }
+    this.props.parent.setState (state => ({
+      currentDate: new Date (
+        date.getFullYear (),
+        date.getMonth (),
+        date.getDate (),
+        state.currentDate.getHours (),
+        state.currentDate.getMinutes ()
+      ),
+    }));
+  };
   openDaySelectAndroid = () => {};
 
   forwardOneDay = () => {
@@ -325,24 +342,31 @@ export default class LinksScreenTile extends React.Component {
             onPress={this.openDaySelectIOS}
             hitSlop={{top: 20, left: 20, bottom: 20, right: 20}}
           >
-            <Text
-              style={[styles.h1, {color: global.user.getPrimaryTextColor ()}]}
-            >
+            <View style={{flexDirection: 'row', alignItems: 'center'}}>
+              <CalendarIcon
+                size={28}
+                color={global.user.getPrimaryTextColor ()}
+                style={{marginRight: 15}}
+              />
+              <Text
+                style={[styles.h1, {color: global.user.getPrimaryTextColor ()}]}
+              >
 
-              {(() => {
-                let {currentDate} = this.props.parent.state;
-                let date = new Date ();
-                if (
-                  currentDate.getFullYear () == date.getFullYear () &&
-                  currentDate.getMonth () == date.getMonth () &&
-                  currentDate.getDate () == date.getDate ()
-                ) {
-                  return 'Today';
-                } else {
-                  return moment (currentDate).format ('MMMM Do');
-                }
-              }) ()}
-            </Text>
+                {(() => {
+                  let {currentDate} = this.props.parent.state;
+                  let date = new Date ();
+                  if (
+                    currentDate.getFullYear () == date.getFullYear () &&
+                    currentDate.getMonth () == date.getMonth () &&
+                    currentDate.getDate () == date.getDate ()
+                  ) {
+                    return 'Today';
+                  } else {
+                    return moment (currentDate).format ('MMMM Do');
+                  }
+                }) ()}
+              </Text>
+            </View>
           </Touchable>
 
           <Touchable
@@ -355,9 +379,10 @@ export default class LinksScreenTile extends React.Component {
         </View>
         <DayList
           courses={this.props.courseList}
+          navigation={this.props.navigation}
           _navigateToPage={this._navigateToPage}
         />
-        <IOSDateSheet ref={this.iosSheet} updateDate={this.updateDate}/>
+        <IOSDateSheet ref={this.iosSheet} updateDate={this.updateDate} />
       </ScrollView>
     );
   }

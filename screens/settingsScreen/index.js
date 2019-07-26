@@ -456,14 +456,21 @@ export default class SettingsScreen extends React.Component {
             {transform: [{translateY: this.state.transform}]},
           ]}
         >
-          <View style={{width, flexDirection: 'column', alignItems: 'center', paddingTop: 20}}>
+          <View
+            style={{
+              width,
+              flexDirection: 'column',
+              alignItems: 'center',
+              paddingTop: 20,
+            }}
+          >
 
             <Touchable onPress={this.selectProfileImage}>
               <View
                 style={{
                   borderRadius: 40,
                   overflow: 'hidden',
-                  backgroundColor: "black",
+                  backgroundColor: 'black',
                   marginBottom: 10,
                 }}
               >
@@ -485,7 +492,13 @@ export default class SettingsScreen extends React.Component {
                 <View
                   style={{position: 'absolute', bottom: 0, left: 0, right: 0}}
                 >
-                  <Text style={{backgroundColor: 'black', textAlign: 'center', color: "white"}}>
+                  <Text
+                    style={{
+                      backgroundColor: 'black',
+                      textAlign: 'center',
+                      color: 'white',
+                    }}
+                  >
                     Edit
                   </Text>
                 </View>
@@ -533,34 +546,12 @@ export default class SettingsScreen extends React.Component {
               last={false}
             />
             <CourseRow
-              text={'Activities'}
-              control={
-                <Switch
-                  value={this.state.notifications.activities}
-                  onValueChange={val =>
-                    this.toggleNotifications ('activities', val)}
-                />
-              }
-              last={false}
-            />
-            <CourseRow
               text={'New Assignments'}
               control={
                 <Switch
                   value={this.state.notifications.newAssignments}
                   onValueChange={val =>
                     this.toggleNotifications ('newAssignments', val)}
-                />
-              }
-              last={false}
-            />
-            <CourseRow
-              text={'Marked Assignments'}
-              control={
-                <Switch
-                  value={this.state.notifications.markedAssignments}
-                  onValueChange={val =>
-                    this.toggleNotifications ('markedAssignments', val)}
                 />
               }
               last={false}
@@ -671,6 +662,17 @@ export default class SettingsScreen extends React.Component {
                   />
                 </ButtonSection>
               : <View />}
+            <CourseRow
+              text={'Grade only Announcements'}
+              control={
+                <Switch
+                  value={this.state.automaticMarkRetrieval}
+                  // onValueChange={val =>
+                  //   this.toggleSettings ('automaticMarkRetrieval', val)}
+                />
+              }
+              last={false}
+            />
             <CourseRow
               text={'Automatic Mark Retrieval'}
               control={

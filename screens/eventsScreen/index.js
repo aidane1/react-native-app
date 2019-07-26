@@ -47,7 +47,7 @@ class EventBlock extends React.Component {
             <View style={styles.eventBottomRow}>
               <Text style={styles.eventBottomRowText}>
 
-                {moment (this.props.event_date).format ('YYYY-MM-DD')}
+                {moment (this.props.event_date).format ('dddd, MMMM Do, YYYY')}
               </Text>
               <Text style={styles.eventBottomRowText}>
                 {this.props.time}

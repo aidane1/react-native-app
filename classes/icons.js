@@ -14,6 +14,36 @@ class IconBlock {
   constructor (icon) {}
 }
 
+export class QuestionMarkIcon extends React.Component {
+  render () {
+    return (
+      <FontAwesome color="white" name="question" size={16} {...this.props} />
+    );
+  }
+}
+
+export class MoreIcon extends React.Component {
+  render () {
+    return (
+      <Feather color="white" name="more-horizontal" size={16} {...this.props} />
+    );
+  }
+}
+
+export class NotificationIcon extends React.Component {
+  render () {
+    return (
+      <Entypo color="white" name="notification" size={16} {...this.props} />
+    );
+  }
+}
+
+export class MegaPhoneIcon extends React.Component {
+  render () {
+    return <Entypo color="white" name="megaphone" size={16} {...this.props} />;
+  }
+}
+
 export class CaretRight extends React.Component {
   render () {
     return (

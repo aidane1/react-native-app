@@ -25,6 +25,8 @@ import {Semester, Semesters} from '../../classes/semesters';
 
 import {Assignment, Assignments} from '../../classes/assignments';
 
+import {ImportantDate, ImportantDates} from '../../classes/importantDates';
+
 import {Note, Notes} from '../../classes/notes';
 
 import {School} from '../../classes/school';
@@ -56,6 +58,7 @@ import {
 const width = Dimensions.get ('window').width; //full width
 const height = Dimensions.get ('window').height; //full height
 
+
 function cacheImages (images) {
   return images.map (image => {
     if (typeof image === 'string') {
@@ -68,6 +71,74 @@ function cacheImages (images) {
 
 function cacheFonts (fonts) {
   return fonts.map (font => Font.loadAsync (font));
+}
+
+global.socketBindings = {};
+
+global.bindWebSocket = (callback, room) => {
+  if (global.socketBindings[room]) {
+    global.socketBindings[room].push (callback);
+  } else {
+    global.socketBindings[room] = [callback];
+  }
+};
+
+global.emitMessage = (room, text) => {
+  global.socketBindings[room] &&
+    global.socketBindings[room].forEach (socket => {
+      socket (text);
+    });
+};
+
+class WSConnection {
+  constructor (buffer = []) {
+    this.ws = new WebSocket (
+      `https://www.apexschools.co/web-sockets/app?x-api-key=${global.user['x-api-key']}&x-id-key=${global.user['x-id-key']}`
+    );
+    this.ws.onopen = this.onopen;
+    this.ws.onmessage = this.onmessage;
+    this.ws.onerror = this.onerror;
+    this.ws.onclose = this.onclose;
+    this.isLoaded = false;
+    this.buffer = buffer;
+  }
+  onopen = () => {
+    console.log ('socket is open!');
+    this.isLoaded = true;
+    this.buffer.forEach (message => {
+      this.sendMessage (message);
+    });
+    this.buffer = [];
+  };
+
+  onmessage = message => {
+    message = JSON.parse (message.data);
+    if (message.status === 'error') {
+    } else {
+      if (message.key) {
+        global.emitMessage (message.key, message);
+      }
+    }
+    return false;
+  };
+
+  onerror = error => {
+    console.log ('error');
+  };
+  onclose = () => {
+    console.log ('closed');
+    this.isLoaded = false;
+    setTimeout (() => {
+      global.websocket.update ();
+    }, 1000);
+  };
+  sendMessage = message => {
+    if (this.isLoaded) {
+      this.ws.send (JSON.stringify (message));
+    } else {
+      this.buffer.push (message);
+    }
+  };
 }
 
 export default class LoadingScreen extends React.Component {
@@ -95,6 +166,11 @@ export default class LoadingScreen extends React.Component {
       MaterialIcons.font,
       Feather.font,
     ]);
+    await Font.loadAsync ({
+      'montserrat-400': require ('../../assets/Montserrat/Montserrat-Regular.ttf'),
+      'montserrat-300': require ('../../assets/Montserrat/Montserrat-Light.ttf'),
+      'montserrat-500': require ('../../assets/Montserrat/Montserrat-Bold.ttf'),
+    });
     await Promise.all ([...imageAssets, ...fontAssets]);
     return true;
   }
@@ -266,6 +342,7 @@ export default class LoadingScreen extends React.Component {
         let currentSemesters = await Semesters._currentSemesters ();
         let userCourses = await Courses._retrieveCoursesById (user.courses);
         let allAssignments = await Assignments._retrieveFromStorage ();
+        let allImportantDates = await ImportantDates._retrieveFromStorage ();
         let completedAssignments = await Assignments._retrieveCompletedFromStorage ();
         let allNotes = await Notes._retrieveFromStorage ();
         let allCourses = await Courses._retrieveFromStorage ();
@@ -289,6 +366,7 @@ export default class LoadingScreen extends React.Component {
           page: 0,
           key: 'beforeSchoolActivities',
         };
+        global.importantDates = allImportantDates || [];
         global.completedAssignments = completedAssignments;
         global.semesterMap = semesterMap;
         global.dayMap = school['dayMap'];
@@ -301,7 +379,17 @@ export default class LoadingScreen extends React.Component {
         global.semesters = allSemesters;
         global.userCourseMap = {};
         global.blocksCourseMap = {};
-        let hasViewedTutorial = await User._hasViewedTutorial();
+
+        global.websocket = {
+          client: new WSConnection (),
+          update: () => {
+            let buffer = global.websocket.client.buffer;
+            delete global.websocket['client'];
+            global.websocket.client = new WSConnection (buffer);
+          },
+        };
+
+        let hasViewedTutorial = await User._hasViewedTutorial ();
         await this._loadAssetsAsync ();
         if (hasViewedTutorial) {
           const resetAction = StackActions.reset ({
@@ -315,7 +403,7 @@ export default class LoadingScreen extends React.Component {
             actions: [NavigationActions.navigate ({routeName: 'OnBoarding'})],
           });
           this.props.navigation.dispatch (resetAction);
-        } 
+        }
       }
     } catch (e) {
       console.log (e);

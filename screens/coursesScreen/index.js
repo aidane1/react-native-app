@@ -81,16 +81,25 @@ class CourseSelectable extends React.Component {
         <View
           style={[
             styles.courseSelectable,
-            this.props.even ? 
-            (global.user.theme == "Light" ? {backgroundColor: "white"} : {backgroundColor: "black"}) : (global.user.theme == "Light" ? {backgroundColor: "#fafafa"} : {backgroundColor: "#1a1a1a"}),
+            this.props.even
+              ? global.user.theme == 'Light'
+                  ? {backgroundColor: 'white'}
+                  : {backgroundColor: 'black'}
+              : global.user.theme == 'Light'
+                  ? {backgroundColor: '#fafafa'}
+                  : {backgroundColor: '#1a1a1a'},
           ]}
         >
           <View style={styles.verticalStack}>
-            <Text style={[styles.course, global.user.secondaryTextColor()]}>{this.props.course}</Text>
-            <Text style={[styles.teacher, global.user.secondaryTextColor()]}>{this.props.teacher}</Text>
+            <Text style={[styles.course, global.user.secondaryTextColor ()]}>
+              {this.props.course}
+            </Text>
+            <Text style={[styles.teacher, global.user.secondaryTextColor ()]}>
+              {this.props.teacher}
+            </Text>
           </View>
           <View style={styles.rightItem}>
-            <Text style={[styles.block, global.user.secondaryTextColor()]}>
+            <Text style={[styles.block, global.user.secondaryTextColor ()]}>
               Block {block.length > 0 ? block[0].block : ''}
             </Text>
           </View>
@@ -136,12 +145,20 @@ class CollapsableSection extends React.Component {
             <CourseIcon color={icon[1]}>
               <GenericIcon icon={icon[0]} color="black" size={20} />
             </CourseIcon>
-            <Text style={[styles.sectionHeaderText, global.user.primaryTextColor()]}>
+            <Text
+              style={[
+                styles.sectionHeaderText,
+                global.user.primaryTextColor (),
+              ]}
+            >
               {this.props.section.title}
             </Text>
             {this.state.collapsed
-              ? <DownIcon color={global.user.getPrimaryTextColor()} size={18} />
-              : <UpIcon color={global.user.getPrimaryTextColor()} size={18} />}
+              ? <DownIcon
+                  color={global.user.getPrimaryTextColor ()}
+                  size={18}
+                />
+              : <UpIcon color={global.user.getPrimaryTextColor ()} size={18} />}
           </View>
         </Touchable>
         <Collapsible collapsed={this.state.collapsed}>
@@ -445,6 +462,25 @@ class SemesterTabBar extends React.Component {
   }
 }
 
+class CourseSemesterScrollView extends React.Component {
+  constructor (props) {
+    super (props);
+    this.scrollView = React.createRef ();
+  }
+  componentDidMount () {
+    setTimeout (() => {
+      this.scrollView.current.scrollToEnd ({animated: true});
+    }, 250);
+  }
+  render () {
+    return (
+      <ScrollView ref={this.scrollView}>
+        <CourseSemesterList {...this.props} />
+      </ScrollView>
+    );
+  }
+}
+
 export default class CoursesScreen extends React.Component {
   addBlock = block => {
     try {
@@ -531,20 +567,18 @@ export default class CoursesScreen extends React.Component {
       }
       this.slides.push (
         <View key={key} style={[styles.bodySlide, global.user.primaryTheme ()]}>
-          <ScrollView>
-            <CourseSemesterList
-              parent={this}
-              courses={courseSemesterMap[key]}
-              existing={this.semesterMap[key]}
-            />
-          </ScrollView>
+          <CourseSemesterScrollView
+            parent={this}
+            courses={courseSemesterMap[key]}
+            existing={this.semesterMap[key]}
+          />
         </View>
       );
     }
     this.scrollView = React.createRef ();
   }
-  componentDidMount() {
-    this.props.navigation.getParam("callback", () => {})();
+  componentDidMount () {
+    this.props.navigation.getParam ('callback', () => {}) ();
   }
   static navigationOptions = ({navigation}) => {
     return {

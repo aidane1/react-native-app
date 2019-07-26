@@ -321,31 +321,6 @@ export default class ScheduleScreenTile extends React.Component {
       images,
     });
     this.imageViewerModal = React.createRef ();
-    let currentDate = new Date (2019, 10, 8);
-    let currentSemesters = global.semesters
-      .filter (semester => {
-        return (
-          semester.startDate.getTime () <= currentDate.getTime () &&
-          semester.endDate.getTime () >= currentDate.getTime ()
-        );
-      })
-      .map (semester => {
-        return semester.id;
-      });
-    this.currentSemesters = currentSemesters;
-    let courseMap = {};
-    for (var i = 0; i < currentSemesters.length; i++) {
-      for (var key in global.semesterMap[currentSemesters[i]]) {
-        if (
-          courseMap[key] == undefined ||
-          global.semesterMap[currentSemesters[i]][key].isReal
-        ) {
-          courseMap[key] = global.semesterMap[currentSemesters[i]][key];
-        }
-      }
-    }
-    this.courseMap = courseMap;
-    this.colorMap = makeColorMap (global.school.blocks);
   }
   changeScheduleType = async type => {
     global.user.scheduleType = type;
@@ -409,6 +384,31 @@ export default class ScheduleScreenTile extends React.Component {
   };
   render () {
     // console.log(global.school.schedule);
+    let currentDate = this.props.parent.state.currentDate || new Date ();
+    let currentSemesters = global.semesters
+      .filter (semester => {
+        return (
+          semester.startDate.getTime () <= currentDate.getTime () &&
+          semester.endDate.getTime () >= currentDate.getTime ()
+        );
+      })
+      .map (semester => {
+        return semester.id;
+      });
+    this.currentSemesters = currentSemesters;
+    let courseMap = {};
+    for (var i = 0; i < currentSemesters.length; i++) {
+      for (var key in global.semesterMap[currentSemesters[i]]) {
+        if (
+          courseMap[key] == undefined ||
+          global.semesterMap[currentSemesters[i]][key].isReal
+        ) {
+          courseMap[key] = global.semesterMap[currentSemesters[i]][key];
+        }
+      }
+    }
+    this.courseMap = courseMap;
+    this.colorMap = makeColorMap (global.school.blocks);
     return (
       <View
         style={{width, height: ifIphoneX (height - 80 - 60, height - 60 - 45)}}
@@ -627,7 +627,8 @@ export default class ScheduleScreenTile extends React.Component {
                         fontSize: 18,
                         fontWeight: '500',
                         marginTop: 20,
-                        color: 'rgba(0,0,0,0.6)',
+                        color: global.user.getTertiaryTextColor(),
+                        opacity: 0.7,
                       }}
                     >
                       No semesters currently active!

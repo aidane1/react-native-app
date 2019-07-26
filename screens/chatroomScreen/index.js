@@ -329,8 +329,8 @@ export default class ChatroomScreen extends React.Component {
     try {
       global.courseInfoCourse = await Courses._retrieveCourseById (id);
       if (global.courseInfoCourse.id != '_') {
-        global.websocketPath = `courses/${global.courseInfoCourse.id}`;
-        global.textPath = `course-texts?reference_course=${global.courseInfoCourse.id}&order_by=date&order_direction=-1&populate=resources`;
+        global.textPath = `texts?find_fields=key&key=${global.courseInfoCourse.id}&order_by=date&order_direction=-1&populate=resources`;
+        global.chatroomKey = `${global.courseInfoCourse.id}`;
         global.resourcePath = `/chatrooms/courses/${id}`;
         global.chatroomName = `${global.courseInfoCourse.course}`;
         this.props.navigation.navigate ('PureChatroom');
@@ -346,8 +346,8 @@ export default class ChatroomScreen extends React.Component {
   };
   _navigateToGrade = async (page, grade) => {
     try {
-      global.websocketPath = `schools/${global.school.id}/grade/${grade}`;
-      global.textPath = `grade-texts?find_fields=school,grade&school=${global.school.id}&grade=${grade}&order_by=date&order_direction=-1&populate=resources`;
+      global.chatroomKey = `${global.school.id}-${grade}`;
+      global.textPath = `texts?find_fields=key&key=${global.school.id}-${grade}&order_by=date&order_direction=-1&populate=resources`;
       global.chatroomName = `Grade ${grade}`;
       global.resourcePath = `/chatrooms/grades/${grade}`;
       this.props.navigation.navigate ('PureChatroom');
@@ -357,8 +357,8 @@ export default class ChatroomScreen extends React.Component {
   };
   _navigateToSchool = async (page, grade) => {
     try {
-      global.websocketPath = `schools/${global.school.id}`;
-      global.textPath = `school-texts?find_fields=school&school=${global.school.id}&order_by=date&order_direction=-1&populate=resources`;
+      global.chatroomKey = `${global.school.id}`
+      global.textPath = `texts?find_fields=key&key=${global.school.id}&order_by=date&order_direction=-1&populate=resources`;
       global.chatroomName = `${grade}`;
       global.resourcePath = `/chatrooms/school/`;
       this.props.navigation.navigate ('PureChatroom');
@@ -451,7 +451,7 @@ export default class ChatroomScreen extends React.Component {
             <GradeDayList
               _navigateToPage={this._navigateToSchool}
               grades={[{grade: global.school.name}]}
-              prefix="School"
+              prefix=""
             />
             <View style={{width, marginTop: 20}} />
           </ScrollView>

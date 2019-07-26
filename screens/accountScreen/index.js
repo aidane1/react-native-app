@@ -26,7 +26,10 @@ import {
   AfterSchoolIcon,
   AccountIcon,
   ChatIcon,
-  QuestionIcon
+  QuestionIcon,
+  MegaPhoneIcon,
+  NotificationIcon,
+  QuestionMarkIcon
 } from '../../classes/icons';
 
 import {
@@ -150,8 +153,20 @@ class ButtonSection extends React.Component {
   }
   render () {
     return (
-      <View style={[styles.buttonSection, global.user.borderColor ()]}>
-        {this.props.children}
+      <View>
+        <Text
+          style={{
+            marginTop: 20,
+            marginLeft: 5,
+            color: global.user.getTertiaryTextColor (),
+            fontSize: 12,
+          }}
+        >
+          {this.props.header}
+        </Text>
+        <View style={[styles.buttonSection, global.user.borderColor ()]}>
+          {this.props.children}
+        </View>
       </View>
     );
   }
@@ -210,8 +225,22 @@ export default class AccountScreen extends React.Component {
                 }}
               >
                 {global.user.profile_picture !== ''
-                ? <Image source={{uri: `https://www.apexschools.co${global.user.profile_picture}`}} style={{width: 45, height: 45, borderRadius: 22.5, overflow: "hidden", marginTop: 5}}/>
-                : <AccountIcon color={global.user.getPrimaryTextColor ()} size={45} />}
+                  ? <Image
+                      source={{
+                        uri: `https://www.apexschools.co${global.user.profile_picture}`,
+                      }}
+                      style={{
+                        width: 45,
+                        height: 45,
+                        borderRadius: 22.5,
+                        overflow: 'hidden',
+                        marginTop: 5,
+                      }}
+                    />
+                  : <AccountIcon
+                      color={global.user.getPrimaryTextColor ()}
+                      size={45}
+                    />}
                 <View
                   style={{
                     flexDirection: 'column',
@@ -250,7 +279,17 @@ export default class AccountScreen extends React.Component {
                 </View>
               </View>
             </Touchable>
-            <ButtonSection>
+            <ButtonSection header={'HELP'}>
+              <CourseRow
+                color={'#aaa'}
+                icon={<QuestionMarkIcon style={{marginRight: 2, marginBottom: 2}} size={20} color={'black'} />}
+                text={'Tutorial'}
+                last={true}
+                onPress={() => this._navigateToPage ('Tutorial')}
+              />
+
+            </ButtonSection>
+            <ButtonSection header={'STATIC INFORMATION'}>
               <CourseRow
                 color={'#ef8b8b'}
                 icon={<CourseIcon size={20} color={'black'} />}
@@ -273,33 +312,9 @@ export default class AccountScreen extends React.Component {
                   );
                 }}
               />
+
               <CourseRow
                 color={'#e8a266'}
-                icon={<QuestionIcon size={20} color={'black'} />}
-                text={'Questions'}
-                last={false}
-                loading={false}
-                onPress={() => this._navigateToPage ('Questions')}
-              />
-              <CourseRow
-                color={'#e8b266'}
-                icon={<EventsIcon size={20} color={'black'} />}
-                text={'Events'}
-                last={false}
-                loading={false}
-                onPress={() => this._navigateToPage ('Events')}
-              />
-              <CourseRow
-                color={'#e8ca66'}
-                icon={<LogoutIcon size={20} color={'black'} />}
-                text={'Login'}
-                last={true}
-                onPress={() => this._navigateToPage ('Login')}
-              />
-            </ButtonSection>
-            <ButtonSection>
-              <CourseRow
-                color={'#ebe07c'}
                 icon={<CalendarIcon size={20} color={'black'} />}
                 text={'Calendar'}
                 last={false}
@@ -321,28 +336,56 @@ export default class AccountScreen extends React.Component {
                 }}
               />
               <CourseRow
+                color={'#e8b266'}
+                icon={<EventsIcon size={20} color={'black'} />}
+                text={'Events'}
+                last={true}
+                loading={false}
+                onPress={() => this._navigateToPage ('Events')}
+              />
+            </ButtonSection>
+            <ButtonSection header={'COMMUNAL'}>
+              <CourseRow
+                color={'#ebe07c'}
+                icon={<ChatIcon size={20} color={'black'} />}
+                text={'Chatrooms'}
+                last={false}
+                onPress={() => this._navigateToPage ('Chatrooms')}
+              />
+
+              <CourseRow
                 color={'#afffad'}
+                icon={<QuestionIcon size={20} color={'black'} />}
+                text={'School Forum'}
+                last={false}
+                loading={false}
+                onPress={() => this._navigateToPage ('Questions')}
+              />
+
+              <CourseRow
+                color={'#42f5bc'}
                 icon={<AssignmentsIcon size={20} color={'black'} />}
-                text={'Assignments'}
+                text={'My Classes'}
                 onPress={() => this._navigateToPage ('Assignments')}
                 last={false}
               />
-              <CourseRow
-                color={'#42f5bc'}
-                icon={<NotesIcon size={20} color={'black'} />}
-                text={'Notes'}
-                last={false}
-                onPress={() => this._navigateToPage ('Notes')}
-              />
-              <CourseRow
-                color={'#42cef5'}
-                icon={<ChatIcon size={20} color={'black'} />}
-                text={'Chatrooms'}
-                last={true}
-                onPress={() => this._navigateToPage ('Chatrooms')}
-              />
+
             </ButtonSection>
-            <ButtonSection>
+            <ButtonSection header={'SCHOOL CONNECTION'}>
+              <CourseRow
+                color={'#7fdbf0'}
+                icon={<MegaPhoneIcon size={20} color={'black'} />}
+                text={'Announcements'}
+                onPress={() => this._navigateToPage ('Announcements')}
+                last={false}
+              />
+              <CourseRow
+                color={'#adedf7'}
+                icon={<NotificationIcon size={20} color={'black'} />}
+                text={'Notifications'}
+                onPress={() => this._navigateToPage ('Notifications')}
+                last={false}
+              />
               <CourseRow
                 color={'#b1d7f9'}
                 icon={<SchoolAssignmentsIcon size={20} color={'black'} />}
@@ -351,7 +394,7 @@ export default class AccountScreen extends React.Component {
                 last={true}
               />
             </ButtonSection>
-            <ButtonSection>
+            <ButtonSection header={'PRIVATE'}>
               <CourseRow
                 color={'#b2b1f9'}
                 icon={<BeforeSchoolIcon size={20} color={'black'} />}
@@ -393,6 +436,15 @@ export default class AccountScreen extends React.Component {
                   this._navigateToPage ('Activities');
                 }}
                 last={true}
+              />
+            </ButtonSection>
+            <ButtonSection header={'LOGOUT'}>
+              <CourseRow
+                color={'#e8ca66'}
+                icon={<LogoutIcon size={20} color={'black'} />}
+                text={'Logout'}
+                last={true}
+                onPress={() => this._navigateToPage ('Login')}
               />
             </ButtonSection>
             <View style={{width, marginTop: 20}} />
@@ -445,10 +497,10 @@ const styles = StyleSheet.create ({
     fontWeight: '300',
   },
   buttonSection: {
-    marginTop: 20,
     borderColor: 'rgb(210,210,210)',
     borderTopWidth: StyleSheet.hairlineWidth,
     borderBottomWidth: StyleSheet.hairlineWidth,
+    marginTop: 5,
   },
   clickIcon: {
     flexDirection: 'row',

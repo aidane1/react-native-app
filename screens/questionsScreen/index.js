@@ -1056,7 +1056,7 @@ export default class QuestionsScreen extends React.Component {
           }
           width={width}
           height={60}
-          title="Questions"
+          title="Forum"
         />
         <View style={[styles.bodyHolder, global.user.primaryTheme ()]}>
           <FlatList

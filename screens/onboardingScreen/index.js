@@ -8,19 +8,71 @@ import {
   Text,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  View,
+  Alert,
   Dimensions,
   CameraRoll,
   AsyncStorage,
   Button,
 } from 'react-native';
+import {
+  CompassIcon,
+  NotificationIcon,
+  AssignmentsIcon,
+  EventsIcon,
+  QuestionIcon,
+} from '../../classes/icons';
 
 import {User} from '../../classes/user';
 
 import {StackActions, NavigationActions} from 'react-navigation';
 
+import * as Permissions from 'expo-permissions';
+
 const width = Dimensions.get ('window').width; //full width
 const height = Dimensions.get ('window').height; //full height
+
+async function registerForPushNotificationsAsync () {
+  const {status: existingStatus} = await Permissions.getAsync (
+    Permissions.NOTIFICATIONS
+  );
+  let finalStatus = existingStatus;
+  if (existingStatus !== 'granted') {
+    setTimeout (() => {
+      Alert.alert (
+        'Push Notifications',
+        'This app uses push notifications to keep students up to date on everything happening in the school. Allow push notifications?',
+        [
+          {
+            text: 'Ok',
+            onPress: async () => {
+              const {status} = await Permissions.askAsync (
+                Permissions.NOTIFICATIONS
+              );
+              finalStatus = status;
+              if (finalStatus !== 'granted') {
+                return;
+              }
+              let token = await Notifications.getExpoPushTokenAsync ();
+              let api = new ApexAPI (global.user);
+              return api
+                .put (`users/${global.user.id}`, {
+                  push_token: token,
+                })
+                .then (data => data.json ())
+                .then (data => console.log (data));
+            },
+          },
+          {
+            text: 'Cancel',
+            onPress: () => {},
+            style: 'cancel',
+          },
+        ],
+        {cancelable: false}
+      );
+    }, 500);
+  }
+}
 
 export default class OnboardingScreen extends React.Component {
   constructor (props) {
@@ -37,57 +89,128 @@ export default class OnboardingScreen extends React.Component {
     await User._setTutorialState (true);
     this.props.navigation.replace ('Home');
   };
+  askPermissions = async () => {
+    await registerForPushNotificationsAsync ();
+  };
   render () {
     return (
       <Onboarding
         //   style={{width, height}}
         onSkip={this.onSkipped}
+        skipToPage={3}
         onDone={this.onFinished}
+        pageIndexCallback={index => {
+          index == 3 && this.askPermissions ();
+        }}
         showDone={true}
         pages={[
           {
-            backgroundColor: '#222222',
-            image: (
-              <Image
-                source={require ('../../assets/tutorial.png')}
-                style={{width: width * 0.8, height: width * 1.42}}
-              />
+            backgroundColor: '#83d8fc',
+            image: <AssignmentsIcon size={300} color="white" />,
+            title: (
+              <Text
+                style={{
+                  fontSize: 30,
+                  fontFamily: 'montserrat-500',
+                  color: '#050654',
+                }}
+              >
+                Stay Connected
+              </Text>
             ),
-            title: '',
-            subtitle: '',
+            subtitle: (
+              <Text
+                style={{
+                  fontSize: 22,
+                  fontFamily: 'montserrat-400',
+                  color: 'white',
+                  marginTop: 15,
+                }}
+              >
+                Never miss an assignment again
+              </Text>
+            ),
           },
           {
-            backgroundColor: '#444444',
-            image: (
-              <Image
-                source={require ('../../assets/navigationTutorial.png')}
-                style={{width: width * 0.8, height: width * 1.42}}
-              />
+            backgroundColor: '#f0cb75',
+            image: <CompassIcon size={300} color="white" />,
+            title: (
+              <Text
+                style={{
+                  fontSize: 30,
+                  fontFamily: 'montserrat-500',
+                  color: '#050654',
+                }}
+              >
+                Stay On Track
+              </Text>
             ),
-            title: '',
-            subtitle: '',
-          },
-          {
-            backgroundColor: '#666666',
-            image: (
-              <Image
-                source={require ('../../assets/questionTutorial.png')}
-                style={{width: width * 0.8, height: width * 1.42}}
-              />
+            subtitle: (
+              <Text
+                style={{
+                  fontSize: 22,
+                  fontFamily: 'montserrat-400',
+                  color: 'white',
+                  marginTop: 15,
+                }}
+              >
+                Know where to be, at all times
+              </Text>
             ),
-            title: '',
-            subtitle: '',
           },
           {
             backgroundColor: '#888888',
-            image: (
-              <Image
-                source={require ('../../assets/createTutorial.png')}
-                style={{width: width * 0.8, height: width * 1.42}}
-              />
+            image: <QuestionIcon size={300} color="white" />,
+            title: (
+              <Text
+                style={{
+                  fontSize: 30,
+                  fontFamily: 'montserrat-500',
+                  color: '#050654',
+                }}
+              >
+                Get The Help You Need
+              </Text>
             ),
-            title: '',
-            subtitle: '',
+            subtitle: (
+              <Text
+                style={{
+                  fontSize: 22,
+                  fontFamily: 'montserrat-400',
+                  color: 'white',
+                  marginTop: 15,
+                }}
+              >
+                Ask your classmates or teachers
+              </Text>
+            ),
+          },
+          {
+            backgroundColor: '#97e38f',
+            image: <EventsIcon size={300} color="white" />,
+            title: (
+              <Text
+                style={{
+                  fontSize: 30,
+                  fontFamily: 'montserrat-500',
+                  color: '#050654',
+                }}
+              >
+                Keep Up To Date
+              </Text>
+            ),
+            subtitle: (
+              <Text
+                style={{
+                  fontSize: 22,
+                  fontFamily: 'montserrat-400',
+                  color: 'white',
+                  marginTop: 15,
+                }}
+              >
+                Never miss an event
+              </Text>
+            ),
           },
         ]}
       />

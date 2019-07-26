@@ -10,7 +10,7 @@ import {
   Modal as ReactModal,
   Keyboard,
   Easing,
-  TextInput,
+  Picker,
   Alert,
 } from 'react-native';
 
@@ -38,6 +38,12 @@ import {boxShadows} from '../../constants/boxShadows';
 
 import {Assignment, Assignments} from '../../classes/assignments';
 
+import {ImportantDate, ImportantDates} from '../../classes/importantDates';
+
+import {ImportantDateModal, DisplayImportantDateModal} from './importantDates';
+
+import {ConfirmButton} from './confirmButton';
+
 import {Note, Notes} from '../../classes/notes';
 
 import {Topic, Topics} from '../../classes/topics';
@@ -60,7 +66,9 @@ import ImageViewer from 'react-native-image-zoom-viewer';
 
 import ImageBar from '../../components/imagePicker';
 
-import ChatRoom from './chatroom';
+import {ModalInput} from './modalInput';
+
+// import ChatRoom from './chatroom';
 
 import {ifIphoneX} from 'react-native-iphone-x-helper';
 
@@ -240,9 +248,11 @@ class AssignmentRow extends React.Component {
                   style={{
                     fontSize: 14,
                     color: global.user.getTertiaryTextColor (),
+                    fontWeight: "500",
+                    color: "#e03634"
                   }}
                 >
-                  {this.props.assignment.dueDate}
+                  Due: {this.props.assignment.dueDate}
                 </Text>
                 <View style={{flexDirection: 'row', alignItems: 'center'}}>
                   <LightBulbIcon
@@ -321,6 +331,7 @@ class CustomActionSheet extends React.Component {
       'Open',
       'Vote as Helpful',
       'Vote as Unhelpful',
+      'Mark as Duplicate',
       'Report',
       'Cancel',
     ];
@@ -328,6 +339,15 @@ class CustomActionSheet extends React.Component {
       'Open',
       'Vote as Helpful',
       'Vote as Unhelpful',
+      'Mark as Duplicate',
+      'Report',
+      'Cancel',
+    ];
+    let dateOptions = [
+      'Open',
+      'Vote as Helpful',
+      'Vote as Unhelpful',
+      'Mark as Duplicate',
       'Report',
       'Cancel',
     ];
@@ -335,14 +355,15 @@ class CustomActionSheet extends React.Component {
       global.user.permission_level >= 3 ||
       resource.uploaded_by == global.user.accountId
     ) {
-      assignmentOptions[3] = 'Delete';
-      noteOptions[3] = 'Delete';
+      assignmentOptions[4] = 'Delete';
+      noteOptions[4] = 'Delete';
+      dateOptions[4] = 'Delete';
     }
     this.setState (
       {
         options: this.state.type == 'assignment'
           ? assignmentOptions
-          : noteOptions,
+          : this.state.type == 'note' ? noteOptions : dateOptions,
         resource,
         type,
       },
@@ -508,7 +529,7 @@ class CustomActionSheet extends React.Component {
               }
             });
           break;
-        case 3:
+        case 4:
           if (
             global.user.permission_level >= 3 ||
             this.state.resource.uploaded_by == global.user.accountId
@@ -725,7 +746,7 @@ class CustomActionSheet extends React.Component {
               }
             });
           break;
-        case 3:
+        case 4:
           if (
             global.user.permission_level >= 3 ||
             this.state.resource.uploaded_by == global.user.accountId
@@ -784,6 +805,221 @@ class CustomActionSheet extends React.Component {
           }
           break;
       }
+    } else if (
+      this.state.type == 'date' &&
+      this.state.resource &&
+      this.state.resource._id
+    ) {
+      let api = new ApexAPI (global.user);
+      switch (index) {
+        case 0:
+          this.props.openImportantDate (this.state.resource);
+          break;
+        case 1:
+          Haptics.notificationAsync (Haptics.ImpactFeedbackStyle.Success);
+          api
+            .get (
+              `vote/important-dates/${this.state.resource._id}?vote=helpful`
+            )
+            .then (data => data.json ())
+            .then (async data => {
+              if (data.status == 'ok') {
+                global.importantDates = global.importantDates.map (note => {
+                  if (note._id == data.body._id) {
+                    return new ImportantDate (data.body);
+                  } else {
+                    return note;
+                  }
+                });
+                await ImportantDates._saveToStorage (global.notes);
+                let dates = [...this.props.parent.state.dates];
+                dates = dates.map (date => {
+                  if (date._id == data.body._id) {
+                    return new ImportantDate (data.body);
+                  } else {
+                    return date;
+                  }
+                });
+                setTimeout (() => {
+                  this.props.parent.setState ({dates});
+                }, 0);
+              } else {
+                Alert.alert (
+                  'Error',
+                  res.body,
+                  [
+                    {
+                      text: 'Try Again',
+                      onPress: () => this.createAssignment (),
+                    },
+                    {
+                      text: 'Cancel',
+                      onPress: () => {
+                        this.setState ({
+                          isBackdropVisible: false,
+                          images: [],
+                        });
+                      },
+                      style: 'cancel',
+                    },
+                  ],
+                  {cancelable: false}
+                );
+              }
+            })
+            .catch (e => {
+              console.log (e);
+              if (e.message == "JSON Parse error: Unrecognized token '<'") {
+                Alert.alert (
+                  'Connection Error',
+                  'Unable to connect to the server',
+                  [
+                    {text: 'Try Again', onPress: () => this.onPress ()},
+                    {
+                      text: 'Cancel',
+                      onPress: () => {
+                        console.log ('cancelled');
+                      },
+                      style: 'cancel',
+                    },
+                  ],
+                  {cancelable: false}
+                );
+              }
+            });
+          break;
+        case 2:
+          Haptics.notificationAsync (Haptics.ImpactFeedbackStyle.Error);
+          api
+            .get (
+              `vote/important-dates/${this.state.resource._id}?vote=unhelpful`
+            )
+            .then (data => data.json ())
+            .then (async data => {
+              console.log (data);
+              if (data.status == 'ok') {
+                global.importantDates = global.importantDates.map (date => {
+                  if (date._id == data.body._id) {
+                    return new ImportantDate (data.body);
+                  } else {
+                    return date;
+                  }
+                });
+                console.log (global.importantDates);
+                await ImportantDates._saveToStorage (global.notes);
+                let dates = [...this.props.parent.state.dates];
+                dates = dates.map (date => {
+                  if (date._id == data.body._id) {
+                    return new ImportantDate (data.body);
+                  } else {
+                    return date;
+                  }
+                });
+                setTimeout (() => {
+                  this.props.parent.setState ({dates});
+                }, 0);
+              } else {
+                Alert.alert (
+                  'Error',
+                  data.body,
+                  [
+                    {
+                      text: 'Cancel',
+                      onPress: () => {
+                        this.setState ({
+                          isBackdropVisible: false,
+                          images: [],
+                        });
+                      },
+                      style: 'cancel',
+                    },
+                  ],
+                  {cancelable: false}
+                );
+              }
+            })
+            .catch (e => {
+              console.log (e);
+              if (e.message == "JSON Parse error: Unrecognized token '<'") {
+                Alert.alert (
+                  'Connection Error',
+                  'Unable to connect to the server',
+                  [
+                    {text: 'Try Again', onPress: () => this.onPress ()},
+                    {
+                      text: 'Cancel',
+                      onPress: () => {
+                        console.log ('cancelled');
+                      },
+                      style: 'cancel',
+                    },
+                  ],
+                  {cancelable: false}
+                );
+              }
+            });
+          break;
+        case 4:
+          if (
+            global.user.permission_level >= 3 ||
+            this.state.resource.uploaded_by == global.user.accountId
+          ) {
+            api
+              .delete (`important-dates/${this.state.resource._id}`)
+              .then (data => data.json ())
+              .then (async data => {
+                if (data.status == 'ok') {
+                  global.importantDates = global.importantDates.filter (
+                    date => {
+                      return date._id != data.body._id;
+                    }
+                  );
+                  await ImportantDates._saveToStorage (global.importantDates);
+                  let dates = [...this.props.parent.state.dates].filter (
+                    note => note._id != data.body._id
+                  );
+                  setTimeout (() => {
+                    this.props.parent.setState ({dates});
+                  }, 0);
+                } else {
+                  Alert.alert (
+                    'Error',
+                    data.body.error,
+                    [
+                      {
+                        text: 'Cancel',
+                        onPress: () => {},
+                        style: 'cancel',
+                      },
+                    ],
+                    {cancelable: false}
+                  );
+                }
+              })
+              .catch (e => {
+                console.log (e);
+                if (e.message == "JSON Parse error: Unrecognized token '<'") {
+                  Alert.alert (
+                    'Connection Error',
+                    'Unable to connect to the server',
+                    [
+                      {text: 'Try Again', onPress: () => this.onPress ()},
+                      {
+                        text: 'Cancel',
+                        onPress: () => {
+                          console.log ('cancelled');
+                        },
+                        style: 'cancel',
+                      },
+                    ],
+                    {cancelable: false}
+                  );
+                }
+              });
+          } else {
+          }
+          break;
+      }
     }
   };
   render () {
@@ -791,8 +1027,8 @@ class CustomActionSheet extends React.Component {
       <ActionSheet
         ref={this.actionSheet}
         options={this.state.options}
-        cancelButtonIndex={4}
-        destructiveButtonIndex={3}
+        cancelButtonIndex={5}
+        destructiveButtonIndex={4}
         onPress={this.actionSheetAction}
       />
     );
@@ -877,58 +1113,6 @@ class CreateButton extends React.Component {
           <Text style={{color: 'white', fontSize: 16}}>Create</Text>
         </Animated.View>
       </Touchable>
-    );
-  }
-}
-
-class ConfirmButton extends React.Component {
-  constructor (props) {
-    super (props);
-    this.state = {
-      disabled: true,
-    };
-  }
-  render () {
-    return this.state.disabled
-      ? <Text style={styles.confirmButton}>Create</Text>
-      : <Touchable onPress={this.props.onPress}>
-          <Text style={styles.confirmButtonAllowed}>Create</Text>
-        </Touchable>;
-  }
-}
-
-class ModalInput extends React.Component {
-  constructor (props) {
-    super (props);
-    this.state = {
-      value: '',
-    };
-    this.TextField = React.createRef ();
-  }
-  componentDidMount () {
-    if (this.props.focused) {
-      this.TextField.current.focus ();
-    }
-  }
-  updateText = value => {
-    let info = {};
-    info[this.props.stateKey] = value;
-    this.props.handleInput (info);
-    this.setState ({value});
-  };
-  render () {
-    return (
-      <TextField
-        ref={this.TextField}
-        label={this.props.label}
-        multiline={
-          this.props.multiline !== undefined ? this.props.multiline : true
-        }
-        value={this.state.value}
-        textColor={this.props.textColor}
-        baseColor={this.props.baseColor}
-        onChangeText={value => this.updateText (value)}
-      />
     );
   }
 }
@@ -1548,7 +1732,7 @@ class AssignmentModal extends React.Component {
                       opacity: 0.6,
                     }}
                   >
-                    Images
+                    Assignment Details
                   </Text>
                   <ImageBar
                     displayImagesInline={true}
@@ -2415,6 +2599,278 @@ class NoNotesBubble extends React.Component {
   }
 }
 
+class NoImportantDatesBubble extends React.Component {
+  constructor (props) {
+    super (props);
+  }
+  render () {
+    return (
+      <View
+        style={[
+          styles.assignmentBubble,
+          boxShadows.boxShadow3,
+          global.user.secondaryTheme (),
+        ]}
+      >
+        <View style={styles.assignmentBubbleHeader}>
+          <Text style={{color: '#174ea6', fontSize: 30}}>
+            No Important Dates!
+          </Text>
+        </View>
+        <View style={styles.assignmentRowLast}>
+          <View
+            style={{
+              flexGrow: 1,
+              width: 0,
+              paddingRight: 20,
+              paddingLeft: 20,
+              flexDirection: 'row',
+            }}
+          >
+            <Touchable
+              style={{width: 0, flexGrow: 1, flexDirection: 'row', zIndex: 2}}
+            >
+              <View style={[styles.assignmentInfo, {overflow: 'hidden'}]}>
+                <View style={styles.assignmentTitle}>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      color: global.user.getSecondaryTextColor (),
+                    }}
+                    numberOfLines={1}
+                  >
+                    Tap Create to create add a date!
+                  </Text>
+                </View>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                  }}
+                  numberOfLines={1}
+                >
+                  <Text
+                    numberOfLines={1}
+                    style={{
+                      fontSize: 14,
+                      color: global.user.getTertiaryTextColor (),
+                    }}
+                  >
+                    Increase User Score
+                  </Text>
+                  <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                    <LightBulbIcon
+                      size={14}
+                      color={global.user.getTertiaryTextColor ()}
+                    />
+                    <Text
+                      numberOfLines={1}
+                      style={{
+                        fontSize: 12,
+                        color: '#20d67b',
+                        marginLeft: 5,
+                      }}
+                    >
+                      100% Helpful
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </Touchable>
+            <View
+              style={{
+                zIndex: 1,
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                flexDirection: 'row',
+                justifyContent: 'flex-end',
+                alignItems: 'center',
+              }}
+            />
+          </View>
+        </View>
+      </View>
+    );
+  }
+}
+
+class ImportantDateBubble extends React.Component {
+  constructor (props) {
+    super (props);
+  }
+  render () {
+    return (
+      <View
+        style={[
+          styles.assignmentBubble,
+          boxShadows.boxShadow3,
+          global.user.secondaryTheme (),
+        ]}
+      >
+        <View style={styles.assignmentBubbleHeader}>
+          <Text style={{color: '#174ea6', fontSize: 30}}>
+            {this.props.month}
+          </Text>
+        </View>
+        {this.props.dates.map ((date, index, array) => {
+          return (
+            <ImportantDateRow
+              openNote={this.props.openNote}
+              closeNote={this.props.closeNote}
+              key={'date_' + date._id}
+              last={index == array.length - 1}
+              date={date}
+              showActionSheet={this.props.showActionSheet}
+            />
+          );
+        })}
+      </View>
+    );
+  }
+}
+
+class ImportantDateRow extends React.Component {
+  constructor (props) {
+    super (props);
+  }
+  render () {
+    this.props.date.userVote = this.props.date.helpful_votes.indexOf (
+      global.user.id
+    ) >= 0
+      ? 1
+      : this.props.date.unhelpful_votes.indexOf (global.user.id) >= 0 ? -1 : 0;
+    return (
+      <View
+        style={
+          this.props.last ? styles.assignmentRowLast : styles.assignmentRow
+        }
+      >
+        <View
+          style={{
+            flexGrow: 1,
+            width: 0,
+            paddingRight: 20,
+            paddingLeft: 20,
+            flexDirection: 'row',
+          }}
+        >
+          <Touchable
+            onPress={() => {
+              this.props.openNote (this.props.date);
+            }}
+            style={{width: 0, flexGrow: 1, flexDirection: 'row', zIndex: 2}}
+          >
+            <View style={[styles.assignmentInfo, {overflow: 'hidden'}]}>
+              <View style={styles.assignmentTitle}>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    color: global.user.getSecondaryTextColor (),
+                  }}
+                  numberOfLines={1}
+                >
+                  {this.props.date.title} ({this.props.date.type})
+                </Text>
+              </View>
+              <View
+                style={{flexDirection: 'row', justifyContent: 'space-between'}}
+                numberOfLines={1}
+              >
+                <Text
+                  numberOfLines={1}
+                  style={{
+                    fontSize: 14,
+                    color: global.user.getTertiaryTextColor (),
+                  }}
+                >
+                  {moment (this.props.date.date_of_event).format (
+                    'MMMM Do, YYYY'
+                  )}
+                </Text>
+                <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                  <LightBulbIcon
+                    size={14}
+                    color={global.user.getTertiaryTextColor ()}
+                  />
+                  <Text
+                    numberOfLines={1}
+                    style={{
+                      fontSize: 12,
+                      color: this.props.date.userVote == -1
+                        ? '#e03634'
+                        : this.props.date.userVote == 1
+                            ? '#20d67b'
+                            : global.user.getTertiaryTextColor (),
+                      marginLeft: 5,
+                    }}
+                  >
+                    {this.props.date.helpful_votes.length == 0 &&
+                      this.props.date.unhelpful_votes.length == 0
+                      ? 'Unkown % '
+                      : `${Math.round (this.props.date.helpful_votes.length / (this.props.date.helpful_votes.length + this.props.date.unhelpful_votes.length) * 100)}% `}
+                    Helpful
+                  </Text>
+                </View>
+
+              </View>
+            </View>
+          </Touchable>
+          <View
+            style={{
+              zIndex: 1,
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              flexDirection: 'row',
+              justifyContent: 'flex-end',
+              alignItems: 'center',
+            }}
+          >
+            <Touchable
+              onPress={() =>
+                this.props.showActionSheet (this.props.date, 'date')}
+              hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}
+            >
+              <VerticalEllipsisIcon
+                size={20}
+                color={global.user.getTertiaryTextColor ()}
+              />
+            </Touchable>
+          </View>
+        </View>
+      </View>
+    );
+  }
+}
+
+class ModalSheet extends React.Component {
+  constructor (props) {
+    super (props);
+    this.state = {
+      visible: false,
+      component: <View />,
+    };
+  }
+  render () {
+    return (
+      <View>
+        <ReactModal
+          // onRequestClose={this.setState ({visible: false})}
+          visible={this.state.visible}
+          animationType={'slide'}
+        >
+          {this.state.component}
+        </ReactModal>
+      </View>
+    );
+  }
+}
+
 export default class CourseInfoScreen extends React.Component {
   constructor (props) {
     super (props);
@@ -2426,16 +2882,25 @@ export default class CourseInfoScreen extends React.Component {
         this.course.id
       ),
       notes: Notes._retrieveNotesByCourse (global.notes, this.course.id),
+      dates: ImportantDates._retrieveDatesByCourse (
+        global.importantDates,
+        this.course.id
+      ),
       pageIndex: 0,
     };
     this.modal = React.createRef ();
     this.displayModal = React.createRef ();
     this.imageViewerModal = React.createRef ();
     this.scrollMain = React.createRef ();
-    this.chatroom = React.createRef ();
+
     this.displayNoteModal = React.createRef ();
     this.noteModal = React.createRef ();
     this.actionSheet = React.createRef ();
+
+    this.importantDateModal = React.createRef ();
+    this.displayImportantDateModal = React.createRef ();
+
+    this.modalSheet = React.createRef ();
   }
   static navigationOptions = ({navigation}) => {
     return {
@@ -2471,6 +2936,18 @@ export default class CourseInfoScreen extends React.Component {
     this.noteModal.current.setState ({isBackdropVisible: false});
   };
 
+  openDateModal = () => {
+    this.importantDateModal.current.setState ({isBackdropVisible: true});
+  };
+
+  closeDateModal = () => {
+    this.importantDateModal.current.setState ({isBackdropVisible: false});
+  };
+
+  openModalSheet = component => {
+    this.modalSheet.current.setState ({visible: true, component});
+  };
+
   openAssignment = assignment => {
     this.displayModal.current.setState ({
       images: assignment.responseResources,
@@ -2502,6 +2979,20 @@ export default class CourseInfoScreen extends React.Component {
     });
   };
 
+  openDate = date => {
+    this.displayImportantDateModal.current.setState ({
+      shouldOpenImageModal: false,
+      date,
+      isBackdropVisible: true,
+    });
+  };
+  closeDate = () => {
+    this.displayImportantDateModal.current.setState ({
+      shouldOpenImageModal: false,
+      isBackdropVisible: false,
+    });
+  };
+
   showActionSheet = (resource, type = 'assignment') => {
     this.actionSheet.current.show (resource, type);
   };
@@ -2511,31 +3002,6 @@ export default class CourseInfoScreen extends React.Component {
   changePage = page => {
     this.scrollMain.current.scrollTo ({x: page * width, y: 0, animated: true});
     this.setState ({pageIndex: page});
-    if (page == 2) {
-      this.chatroom.current.isShowing = true;
-      if (this.chatroom.current.error) {
-        Alert.alert (
-          'Error',
-          this.chatroom.current.errorMessage,
-          [
-            {
-              text: 'Try Again',
-              onPress: () => this.chatroom.current.tryAgain (),
-            },
-            {
-              text: 'Cancel',
-              onPress: () => {
-                console.log ('cancelled');
-              },
-              style: 'cancel',
-            },
-          ],
-          {cancelable: false}
-        );
-      }
-    } else {
-      this.chatroom.current.isShowing = false;
-    }
   };
   render () {
     let topicsList = Topics._MakeCourseTopicList (
@@ -2551,6 +3017,41 @@ export default class CourseInfoScreen extends React.Component {
       return a.date.getTime () > b.date.getTime () ? -1 : 1;
     });
     notesMap = Notes._formDateMap (notesList);
+
+    let monthBlocks = {};
+    let monthOrder = [];
+    let monthNames = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+    let {dates} = this.state;
+    dates = dates.sort ((a, b) => {
+      return a.date_of_event.getTime () > b.date_of_event.getTime () ? -1 : 1;
+    });
+    if (dates.length) {
+      let currentMonth = dates[0].date_of_event.getMonth ();
+      monthBlocks[currentMonth] = [];
+      monthOrder.push (currentMonth);
+      dates.forEach (date => {
+        if (date.date_of_event.getMonth () == currentMonth) {
+          monthBlocks[currentMonth].push (date);
+        } else {
+          currentMonth = date.date_of_event.getMonth ();
+          monthOrder.push (currentMonth);
+          monthBlocks[currentMonth] = [date];
+        }
+      });
+    }
     return (
       <View style={[styles.container, global.user.primaryTheme ()]}>
         <HeaderBar
@@ -2623,33 +3124,29 @@ export default class CourseInfoScreen extends React.Component {
                   : <NoNotesBubble />}
               </View>
             </ScrollView>
-            <View
-              style={{
-                width,
-                ...ifIphoneX (
-                  {height: height - 80 - 60},
-                  {height: height - 60 - 45}
-                ),
-              }}
+
+            <ScrollView
+              style={[styles.infoHolder, global.user.primaryTheme ()]}
             >
-              <ScrollView
-                scrollEnabled={false}
-                style={{
-                  width,
-                  ...ifIphoneX (
-                    {height: height - 80 - 60},
-                    {height: height - 60 - 45}
-                  ),
-                }}
-                keyboardShouldPersistTaps="always"
-                keyboardDismissMode="on-drag"
-              >
-                <ChatRoom
-                  imageViewer={this.imageViewerModal}
-                  ref={this.chatroom}
-                />
-              </ScrollView>
-            </View>
+              <View style={styles.optionContent}>
+                <CreateButton onPress={this.openDateModal} />
+                {monthOrder.length > 0
+                  ? monthOrder.map ((month, index) => {
+                      return (
+                        <ImportantDateBubble
+                          key={'datebubble_' + index}
+                          openNote={this.openDate}
+                          closeNote={this.closeDate}
+                          dates={monthBlocks[month]}
+                          month={monthNames[month]}
+                          showActionSheet={this.showActionSheet}
+                        />
+                      );
+                    })
+                  : <NoImportantDatesBubble />}
+              </View>
+            </ScrollView>
+
           </ScrollView>
         </View>
         <View style={[boxShadows.boxShadow7, {zIndex: 5}]}>
@@ -2699,7 +3196,7 @@ export default class CourseInfoScreen extends React.Component {
                       : {},
                   ]}
                 >
-                  <Text style={{color: 'white', fontSize: 14}}>Chat</Text>
+                  <Text style={{color: 'white', fontSize: 14}}>Key Dates</Text>
                 </View>
               </TouchableWithoutFeedback>
             </View>
@@ -2707,6 +3204,12 @@ export default class CourseInfoScreen extends React.Component {
         </View>
         <AssignmentModal ref={this.modal} parent={this} course={this.course} />
         <NoteModal ref={this.noteModal} parent={this} course={this.course} />
+        <ImportantDateModal
+          ref={this.importantDateModal}
+          parent={this}
+          course={this.course}
+          openModalSheet={this.openModalSheet}
+        />
         <DisplayAssignmentModal
           imageViewer={this.imageViewerModal}
           ref={this.displayModal}
@@ -2717,13 +3220,20 @@ export default class CourseInfoScreen extends React.Component {
           ref={this.displayNoteModal}
           parent={this}
         />
+        <DisplayImportantDateModal
+          imageViewer={this.imageViewerModal}
+          ref={this.displayImportantDateModal}
+          parent={this}
+        />
         <ImageViewerModal ref={this.imageViewerModal} parent={this} />
         <CustomActionSheet
           ref={this.actionSheet}
           parent={this}
           openAssignment={this.openAssignment}
           openNote={this.openNote}
+          openImportantDate={this.openDate}
         />
+        <ModalSheet ref={this.modalSheet} />
       </View>
     );
   }

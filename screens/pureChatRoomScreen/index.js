@@ -483,66 +483,68 @@ class ImageViewerModal extends React.Component {
   }
 }
 
-class WSConnection {
-  constructor (parent) {
-    this.parent = parent;
-    this.ws = new WebSocket (
-      `https://www.apexschools.co/web-sockets/app/${global.websocketPath}?x-api-key=${global.user['x-api-key']}&x-id-key=${global.user['x-id-key']}`
-    );
-    this.ws.onopen = this.onopen;
-    this.ws.onmessage = this.onmessage;
-    this.ws.onerror = this.onerror;
-    this.ws.onclose = this.onclose;
-    this.isLoaded = false;
-  }
-  onopen = () => {
-    console.log ('socket is open!');
-    this.isLoaded = true;
-    this.parent.canSendMessages = true;
-  };
+// class WSConnection {
+//   constructor (parent) {
+//     this.parent = parent;
+//     this.ws = new WebSocket (
+//       `https://www.apexschools.co/web-sockets/app/${global.websocketPath}?x-api-key=${global.user['x-api-key']}&x-id-key=${global.user['x-id-key']}`
+//     );
+//     this.ws.onopen = this.onopen;
+//     this.ws.onmessage = this.onmessage;
+//     this.ws.onerror = this.onerror;
+//     this.ws.onclose = this.onclose;
+//     this.isLoaded = false;
+//   }
+//   onopen = () => {
+//     console.log ('socket is open!');
+//     this.isLoaded = true;
+//     this.parent.canSendMessages = true;
+//   };
 
-  onmessage = message => {
-    console.log ('socket got message!');
-    console.log (message.data);
-    message = JSON.parse (message.data);
-    if (message.status === 'error') {
-    } else {
-        let chats = [];
-        chats = [message];
-        this.parent.test ();
-        this.parent.showMessages (chats);
-        // this.parent.updateState({chats});
-        // this.parent.setState ({chats}, () => {
+//   onmessage = message => {
+//     console.log ('socket got message!');
+//     console.log (message.data);
+//     message = JSON.parse (message.data);
+//     if (message.status === 'error') {
+//     } else {
+//         let chats = [];
+//         chats = [message];
+//         this.parent.test ();
+//         this.parent.showMessages (chats);
+//         // this.parent.updateState({chats});
+//         // this.parent.setState ({chats}, () => {
 
-        // });
-    }
-    return false;
-  };
+//         // });
+//     }
+//     return false;
+//   };
 
-  onerror = error => {
-    console.log ('error');
-  };
-  onclose = () => {
-    console.log ('closed');
-    this.isLoaded = false;
-    setTimeout (() => {
-      this.parent.updateWebSocket (this.messageBuffer);
-      this.parent.websocket = new WSConnection (
-        this.parent,
-        this.messageBuffer
-      );
-    }, 1000);
-  };
-  sendMessage = message => {
-    this.ws.send (message);
-  };
-}
+//   onerror = error => {
+//     console.log ('error');
+//   };
+//   onclose = () => {
+//     console.log ('closed');
+//     this.isLoaded = false;
+//     setTimeout (() => {
+//       this.parent.updateWebSocket (this.messageBuffer);
+//       this.parent.websocket = new WSConnection (
+//         this.parent,
+//         this.messageBuffer
+//       );
+//     }, 1000);
+//   };
+//   sendMessage = message => {
+//     this.ws.send (message);
+//   };
+// }
 
 export default class ChatRoom extends React.Component {
   constructor (props) {
     super (props);
+    global.bindWebSocket (this.showMessage, global.chatroomKey);
+
     this.scrollView = React.createRef ();
-    this.websocket = new WSConnection (this);
+
     this.canSendMessages = false;
     this.scrollToBottom = true;
     this.imageBar = React.createRef ();
@@ -565,42 +567,32 @@ export default class ChatRoom extends React.Component {
     this.previousChatLength = 0;
     this.refreshingScrollView = false;
     this.messageBuffer = [];
+
+    this._isMounted = false;
   }
   static navigationOptions = ({navigation}) => {
     return {
       header: null,
     };
   };
-  test = () => {
-    console.log ('parent is active');
-  };
-  updateWebSocket = messageBuffer => {
-    this.websocket = new WSConnection (this, messageBuffer);
-  };
+
   updateState = state => {
     this.setState (state);
   };
-  showMessages = messages => {
-    console.log (messages);
-    if (this.state.appState == 'active') {
-      if (this.messageBuffer.length > 0) {
-        messages = [...this.messageBuffer, ...messages];
-        this.messageBuffer = [];
-      }
+
+  showMessage = message => {
+    if (this._isMounted) {
       this.setState (state => ({
-        chats: [...state.chats, ...messages],
+        chats: [...state.chats, message],
       }));
-    } else {
-      this.messageBuffer = [...this.messageBuffer, ...messages];
     }
   };
+
   sendMessage = message => {
-    if (
-      this.canSendMessages &&
-      (message.message || message.resources.length > 0)
-    ) {
+    if (message.message || message.resources.length > 0) {
       message.resources = this.state.images.map (image => image._id);
-      this.websocket.sendMessage (JSON.stringify (message));
+      message.room = global.chatroomKey;
+      global.websocket.client.sendMessage (message);
       this.setState ({images: []});
     } else {
       if (message.message) {
@@ -638,6 +630,7 @@ export default class ChatRoom extends React.Component {
       }
     }
   };
+
   loadChats = (limit = 50, callback) => {
     let api = new ApexAPI (global.user);
     api
@@ -665,7 +658,7 @@ export default class ChatRoom extends React.Component {
       });
   };
   componentDidMount () {
-    console.log ('mounting');
+    this._isMounted = true;
     AppState.addEventListener ('change', this._handleAppStateChange);
     this.loadChats (this.state.limit, (err, body) => {
       if (err) {
@@ -676,12 +669,12 @@ export default class ChatRoom extends React.Component {
     });
   }
   componentWillUnmount () {
-    console.log ('unmounting, daddy!');
+    this._isMounted = false;
     AppState.removeEventListener ('change', this._handleAppStateChange);
     this.props.navigation.goBack ();
   }
   _handleAppStateChange = nextAppState => {
-    console.log(nextAppState);
+    console.log (nextAppState);
     if (
       this.state.appState.match (/inactive|background/) &&
       nextAppState === 'active'
