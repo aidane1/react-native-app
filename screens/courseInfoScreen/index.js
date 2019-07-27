@@ -248,8 +248,8 @@ class AssignmentRow extends React.Component {
                   style={{
                     fontSize: 14,
                     color: global.user.getTertiaryTextColor (),
-                    fontWeight: "500",
-                    color: "#e03634"
+                    fontWeight: '500',
+                    color: '#e03634',
                   }}
                 >
                   Due: {this.props.assignment.dueDate}
@@ -1321,6 +1321,17 @@ class DisplayAssignmentModal extends React.Component {
                   </Text>
                 </View>
                 <View style={styles.modalBodySection}>
+                  <Text style={styles.modalBodySectionHeader}>Uploaded By</Text>
+                  <Text
+                    style={[
+                      styles.modalBodySectionContent,
+                      global.user.secondaryTextColor (),
+                    ]}
+                  >
+                    {this.state.assignment.username || 'Anonymous'}
+                  </Text>
+                </View>
+                <View style={styles.modalBodySection}>
                   <Text style={styles.modalBodySectionHeader}>
                     Date Created
                   </Text>
@@ -1509,6 +1520,7 @@ class AssignmentModal extends React.Component {
             helpful: res.body.helpful_votes.length,
             unhelpful: res.body.unhelpful_votes.length,
             uploaded_by: res.body.uploaded_by,
+            username: res.body.username,
             userVote: res.body.helpful_votes.indexOf (global.user.id) >= 0
               ? 1
               : res.body.unhelpful_votes.indexOf (global.user.id) >= 0 ? -1 : 0,
@@ -1846,6 +1858,7 @@ class NoteModal extends React.Component {
             referenceCourse: global.courseInfoCourse.id,
             helpful: res.body.helpful_votes.length,
             uploaded_by: res.body.uploaded_by,
+            username: res.body.username,
             unhelpful: res.body.unhelpful_votes.length,
             userVote: res.body.helpful_votes.indexOf (global.user.id) >= 0
               ? 1
@@ -2173,6 +2186,17 @@ class DisplayNoteModal extends React.Component {
                     {this.state.note.topic == '_'
                       ? 'No Topic'
                       : topicsMap[this.state.note.topic].topic}
+                  </Text>
+                </View>
+                <View style={styles.modalBodySection}>
+                  <Text style={styles.modalBodySectionHeader}>Uploaded By</Text>
+                  <Text
+                    style={[
+                      styles.modalBodySectionContent,
+                      global.user.secondaryTextColor (),
+                    ]}
+                  >
+                    {this.state.note.username || 'Anonymous'}
                   </Text>
                 </View>
                 <View style={styles.modalBodySection}>

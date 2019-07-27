@@ -26,6 +26,8 @@ import {
   WaveIndicator,
 } from 'react-native-indicators';
 
+import mongoose from "mongoose";
+
 import {boxShadows} from '../constants/boxShadows';
 
 import ProgressBar from 'react-native-progress/Bar';
@@ -191,6 +193,8 @@ export default class ImageBar extends React.Component {
     }
   };
   sendResourseToServer (resource) {
+    let id = mongoose.Types.ObjectId();
+    resource._id = id;
     return fetch (
       'https://www.apexschools.co/api/v1/resources?base64=true&populate=resources',
       {

@@ -133,7 +133,9 @@ export class DisplayImportantDateModal extends React.Component {
             style={[styles.displayAssignment, global.user.secondaryTheme ()]}
           >
             <View style={styles.assignmentModalHeader}>
-              <Text style={{color: '#174ea6', fontSize: 16}}>Important Date</Text>
+              <Text style={{color: '#174ea6', fontSize: 16}}>
+                Important Date
+              </Text>
               <Touchable
                 onPress={this.props.parent.closeDate}
                 hitSlop={{top: 20, left: 20, bottom: 20, right: 20}}
@@ -159,6 +161,7 @@ export class DisplayImportantDateModal extends React.Component {
                     {this.state.date.title}
                   </Text>
                 </View>
+
                 <View style={styles.modalBodySection}>
                   <Text style={styles.modalBodySectionHeader}>Type</Text>
                   <Text
@@ -181,6 +184,17 @@ export class DisplayImportantDateModal extends React.Component {
                     {moment (this.state.date.date_of_event).format (
                       'MMMM Do, YYYY'
                     )}
+                  </Text>
+                </View>
+                <View style={styles.modalBodySection}>
+                  <Text style={styles.modalBodySectionHeader}>Uploaded By</Text>
+                  <Text
+                    style={[
+                      styles.modalBodySectionContent,
+                      global.user.secondaryTextColor (),
+                    ]}
+                  >
+                    {this.state.date.username || 'Anonymous'}
                   </Text>
                 </View>
                 <View style={styles.modalBodySection}>

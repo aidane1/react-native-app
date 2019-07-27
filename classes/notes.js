@@ -12,6 +12,7 @@ export class Note {
     this.unhelpful = courseObject.unhelpful || 0;
     this.userVote = courseObject.userVote || 0; // -1, 0, 1
     this.uploaded_by = courseObject.uploaded_by;
+    this.username = courseObject.username;
   }
   toJson () {
     return {
@@ -25,6 +26,7 @@ export class Note {
       unhelpful: this.unhelpful,
       userVote: this.userVote,
       uploaded_by: this.uploaded_by,
+      username: this.username,
     };
   }
 }

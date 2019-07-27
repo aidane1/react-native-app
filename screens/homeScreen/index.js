@@ -182,6 +182,7 @@ export default class HomeScreen extends React.Component {
                   helpful: assignment.helpful_votes.length,
                   unhelpful: assignment.unhelpful_votes.length,
                   uploaded_by: assignment.uploaded_by,
+                  username: assignment.username,
                   userVote: assignment.helpful_votes.indexOf (global.user.id) >=
                     0
                     ? 1
@@ -216,6 +217,7 @@ export default class HomeScreen extends React.Component {
                   helpful: note.helpful_votes.length,
                   unhelpful: note.unhelpful_votes.length,
                   uploaded_by: note.uploaded_by,
+                  username: note.username,
                   userVote: note.helpful_votes.indexOf (global.user.id) >= 0
                     ? 1
                     : note.unhelpful_votes.indexOf (global.user.id) >= 0
@@ -478,7 +480,7 @@ export default class HomeScreen extends React.Component {
       this.courses = courseList;
 
       // string
-      let dayTitle = 'Off!';
+      let dayTitle = 'No School!';
       if (today && today.week !== undefined && today.day && today.school_in) {
         dayTitle = global.school.day_titles[today.week][today.day];
       }

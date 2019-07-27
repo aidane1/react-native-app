@@ -82,39 +82,94 @@ class TutorialSection extends React.Component {
                   <View
                     style={{paddingLeft: 10, paddingTop: 5, paddingBottom: 20}}
                   >
-                    {section.body.map ((item, index) => {
-                      return (
-                        <View
-                          style={{
-                            marginTop: 20,
-                            flexDirection: 'row',
-                            alignItems: 'flex-start',
-                          }}
-                        >
-                          <View
-                            style={{
-                              width: 10,
-                              height: 10,
-                              borderRadius: 5,
-                              backgroundColor: global.user.getPrimaryTextColor (),
-                              marginTop: 5,
-                              marginRight: 10,
-                            }}
-                          />
-                          <View style={{marginRight: 30, flexGrow: 1}}>
-                            <Text
+                    {section.body[0] && section.body[0].title == undefined
+                      ? section.body.map ((item, index) => {
+                          return (
+                            <View
                               style={{
-                                fontSize: 16,
-                                fontFamily: 'montserrat-300',
-                                color: global.user.getSecondaryTextColor (),
+                                marginTop: 20,
+                                flexDirection: 'row',
+                                alignItems: 'flex-start',
                               }}
                             >
-                              {item}
-                            </Text>
-                          </View>
-                        </View>
-                      );
-                    })}
+                              <View
+                                style={{
+                                  width: 10,
+                                  height: 10,
+                                  borderRadius: 5,
+                                  backgroundColor: global.user.getPrimaryTextColor (),
+                                  marginTop: 5,
+                                  marginRight: 10,
+                                }}
+                              />
+                              <View style={{marginRight: 30, flexGrow: 1}}>
+                                <Text
+                                  style={{
+                                    fontSize: 16,
+                                    fontFamily: 'montserrat-300',
+                                    color: global.user.getSecondaryTextColor (),
+                                  }}
+                                >
+                                  {item}
+                                </Text>
+                              </View>
+                            </View>
+                          );
+                        })
+                      : section.body.map ((item, index) => {
+                          return (
+                            <View style={{paddingLeft: 10, paddingTop: 20}}>
+                              <View>
+                                <Text
+                                  style={{
+                                    fontSize: '24',
+                                    fontFamily: 'montserrat-400',
+                                    color: global.user.getSecondaryTextColor (),
+                                  }}
+                                >
+                                  {item.title}
+                                </Text>
+                                <View style={{paddingLeft: 20}}>
+                                  {item.body.map ((item, index) => {
+                                    return (
+                                      <View
+                                        style={{
+                                          marginTop: 20,
+                                          flexDirection: 'row',
+                                          alignItems: 'flex-start',
+                                        }}
+                                      >
+                                        <View
+                                          style={{
+                                            width: 10,
+                                            height: 10,
+                                            borderRadius: 5,
+                                            backgroundColor: global.user.getPrimaryTextColor (),
+                                            marginTop: 5,
+                                            marginRight: 10,
+                                          }}
+                                        />
+                                        <View
+                                          style={{marginRight: 30, flexGrow: 1}}
+                                        >
+                                          <Text
+                                            style={{
+                                              fontSize: 16,
+                                              fontFamily: 'montserrat-300',
+                                              color: global.user.getSecondaryTextColor (),
+                                            }}
+                                          >
+                                            {item}
+                                          </Text>
+                                        </View>
+                                      </View>
+                                    );
+                                  })}
+                                </View>
+                              </View>
+                            </View>
+                          );
+                        })}
                   </View>
                 </View>
               );
@@ -157,23 +212,60 @@ export default class TutorialScreen extends React.Component {
               sections={[
                 {
                   title: 'Home',
-                  body: ['Yeet'],
+                  // body: ['Yeet'],
+                  body: [
+                    {
+                      title: 'Current Class',
+                      body: [
+                        'Indicates what class is being currently attended. Tap to navigate to that course.',
+                      ],
+                    },
+                    {
+                      title: 'Next Class',
+                      body: [
+                        'Indicated the next class to be attended. Tap to navigate to that course.',
+                      ],
+                    },
+                    {
+                      title: 'Events',
+                      body: [
+                        'Displays any event upcoming within the next 2 days. Tap to navigate to that calendar day.',
+                      ],
+                    },
+                    {
+                      title: 'Recent Assignments',
+                      body: [
+                        'Displays the most recently created assignment from each class that semester. Tap to navigate to that assignment',
+                      ],
+                    },
+                  ],
                 },
                 {
                   title: 'Courses',
-                  body: ['Yeet'],
+                  body: [
+                    {
+                      title: 'Course List',
+                      body: [
+                        'Displays all courses to be attended, in order, on a particular day',
+                        'Tap on the forward arrow to jump one day in to the future',
+                        "Tap on the date or 'Today' to manually specify a date",
+                      ],
+                    },
+                  ],
                 },
                 {
                   title: 'Schedule',
-                  body: ['Yeet'],
-                },
-                {
-                  title: 'Secondary Info',
                   body: [
-                    'Fuck',
-                    'Shit',
-                    'Bitch',
-                    'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque convallis vulputate tellus eget vestibulum. Duis lobortis augue et dolor luctus, a ornare turpis malesuada. Vivamus at neque aliquam, eleifend leo facilisis, commodo nisi. Proin porta libero quis risus eleifend faucibus.',
+                    {
+                      title: 'Schedule List',
+                      body: ['A full view of your entire schedule'],
+                    },
+                    {
+                      title: 'Image/Schedule Picker',
+                      body: [
+                        'Specify whether you would prefer a computer generated schedule, or an image of your schedule',
+                      ],
+                    },
                   ],
                 },
               ]}
@@ -182,24 +274,78 @@ export default class TutorialScreen extends React.Component {
               header="Settings"
               sections={[
                 {
-                  title: 'Home',
-                  body: ['Yeet'],
-                },
-                {
-                  title: 'Courses',
-                  body: ['Yeet'],
-                },
-                {
-                  title: 'Schedule',
-                  body: ['Yeet'],
-                },
-                {
-                  title: 'Secondary Info',
+                  title: 'Push Notifications',
                   body: [
-                    'Fuck',
-                    'Shit',
-                    'Bitch',
-                    'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque convallis vulputate tellus eget vestibulum. Duis lobortis augue et dolor luctus, a ornare turpis malesuada. Vivamus at neque aliquam, eleifend leo facilisis, commodo nisi. Proin porta libero quis risus eleifend faucibus.',
+                    {
+                      title: 'Daily Announcements',
+                      body: [
+                        'The daily announcements sent out by the school each day',
+                        'Click to opt out of recieving notifications for this',
+                      ],
+                    },
+                    {
+                      title: 'Next Class',
+                      body: [
+                        'An alert to be sent 10 minutes before class change, to alert you of your next class',
+                        'Click to opt out of recieving notifications for this',
+                      ],
+                    },
+                    {
+                      title: 'New Assignments',
+                      body: [
+                        'An alert to be sent out whenever a new assignment is created in a class you attend',
+                        'Click to opt out of recieving notifications for this',
+                      ],
+                    },
+                    {
+                      title: 'Image Replies',
+                      body: [
+                        'An alert to be sent out whenever someone responds to an assignment you created with an image',
+                        'Click to opt out of recieving notifications for this',
+                      ],
+                    },
+                    {
+                      title: 'Upcoming Events',
+                      body: [
+                        'An alert sent out the night before any event',
+                        'Click to opt out of recieving notifications for this',
+                      ],
+                    },
+                  ],
+                },
+                {
+                  title: 'Theme',
+                  body: [
+                    'The main appearance of the app. Pure black mode uses pure black as the primary theme.',
+                  ],
+                },
+                {
+                  title: 'Miscellaneous',
+                  body: [
+                    {
+                      title: 'Visually Impared',
+                      body: [
+                        'Enable to turn on visually impared mode, which reads the home page out in response to touch',
+                      ],
+                    },
+                    {
+                      title: 'Grade Only Announcements',
+                      body: [
+                        'Specify whether to recieve all announcements, or just ones that have been selected for your grade',
+                      ],
+                    },
+                    {
+                      title: 'Automatic Mark Retrieval',
+                      body: [
+                        'Enable to automatically retrieve school marks from server',
+                      ],
+                    },
+                    {
+                      title: 'Automatic Course Updating',
+                      body: [
+                        'Enable to automatically update your enrolled courses',
+                      ],
+                    },
                   ],
                 },
               ]}
@@ -208,24 +354,23 @@ export default class TutorialScreen extends React.Component {
               header="Static Information"
               sections={[
                 {
-                  title: 'Home',
-                  body: ['Yeet'],
-                },
-                {
                   title: 'Courses',
-                  body: ['Yeet'],
-                },
-                {
-                  title: 'Schedule',
-                  body: ['Yeet'],
-                },
-                {
-                  title: 'Secondary Info',
                   body: [
-                    'Fuck',
-                    'Shit',
-                    'Bitch',
-                    'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque convallis vulputate tellus eget vestibulum. Duis lobortis augue et dolor luctus, a ornare turpis malesuada. Vivamus at neque aliquam, eleifend leo facilisis, commodo nisi. Proin porta libero quis risus eleifend faucibus.',
+                    "Manually select what courses you're attending",
+                    'Change semesters using the bottom tab bar',
+                  ],
+                },
+                {
+                  title: 'Calendar',
+                  body: [
+                    'View the entire school year sequentially in a calendar format',
+                    'Click on any day of the year to see what courses you have on that day and what events there are',
+                  ],
+                },
+                {
+                  title: 'Events',
+                  body: [
+                    "View the entire year's events in order grouped by month",
                   ],
                 },
               ]}
@@ -234,12 +379,75 @@ export default class TutorialScreen extends React.Component {
               header="Class Connection"
               sections={[
                 {
+                  title: 'Voting',
+                  body: [
+                    {
+                      title: 'Helpfulness',
+                      body: [
+                        'The helpfulness score of an assignment, note, important date, question, or comment is a measure of what percent of students found it helpful in some way.',
+                        'A red helpfulness indicates that you have voted the resource as unhelpful',
+                        'A green helpfulness indicates that you have voted the resource as helpful',
+                      ],
+                    },
+                    {
+                      title: 'Casting your Vote',
+                      body: [
+                        'To cast your vote on any resource, click the 3 horizontal or vertical dots on the right side of it',
+                      ],
+                    },
+                    {
+                      title: 'Reporting',
+                      body: [
+                        'If you believe a resource to be offensive, you can report it from the 3 dot menu. 3 reports will delete a resource',
+                      ],
+                    },
+                  ],
+                },
+                {
                   title: 'School Forum',
-                  body: ['Yeet'],
+                  body: [
+                    {
+                      title: 'Opening',
+                      body: [
+                        'To open a question, swipe from right to left on the post',
+                      ],
+                    },
+                    {
+                      title: 'Creating',
+                      body: [
+                        'To create a question, tap on the word new in the top right corner',
+                      ],
+                    },
+                    {
+                      title: 'Tags',
+                      body: [
+                        'Tags are used to specify a subject field for a post. A list of all your classes are presented as default tag options, but custom tags are possible too.',
+                      ],
+                    },
+                  ],
                 },
                 {
                   title: 'Assignments',
-                  body: ['Yeet'],
+                  body: [
+                    {
+                      title: 'Opening',
+                      body: [
+                        'To open an assignment for a more in depth list of information, you can either click on it or open it from the 3 dot menu',
+                      ],
+                    },
+                    {
+                      title: 'Creating',
+                      body: [
+                        'To create a new assignment, click the create button in the top left corner. All assignments are publically viewable by everyone',
+                      ],
+                    },
+                    {
+                      title: 'Marking as Completed',
+                      body: [
+                        'You can keep track of what assignments you have completed by clicking on the open circle next to the assignment',
+                      ],
+                    },
+                  ],
                 },
                 {
                   title: 'Notes',

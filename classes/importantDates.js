@@ -13,6 +13,7 @@ export class ImportantDate {
     this.unhelpful_votes = courseObject.unhelpful_votes || 0;
     this.userVote = courseObject.userVote || 0; // -1, 0, 1
     this.uploaded_by = courseObject.uploaded_by;
+    this.username = courseObject.username;
   }
   toJson () {
     return {
@@ -27,6 +28,7 @@ export class ImportantDate {
       userVote: this.userVote,
       uploaded_by: this.uploaded_by,
       type: this.type,
+      username: this.username,
     };
   }
 }
