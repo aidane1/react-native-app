@@ -329,8 +329,8 @@ export default class ChatroomScreen extends React.Component {
     try {
       global.courseInfoCourse = await Courses._retrieveCourseById (id);
       if (global.courseInfoCourse.id != '_') {
-        global.textPath = `texts?find_fields=key&key=${global.courseInfoCourse.id}&order_by=date&order_direction=-1&populate=resources`;
-        global.chatroomKey = `${global.courseInfoCourse.id}`;
+        global.textPath = `texts?find_fields=key&key=course_${global.courseInfoCourse.id}&order_by=date&order_direction=-1&populate=resources`;
+        global.chatroomKey = `course_${global.courseInfoCourse.id}`;
         global.resourcePath = `/chatrooms/courses/${id}`;
         global.chatroomName = `${global.courseInfoCourse.course}`;
         this.props.navigation.navigate ('PureChatroom');
@@ -346,8 +346,8 @@ export default class ChatroomScreen extends React.Component {
   };
   _navigateToGrade = async (page, grade) => {
     try {
-      global.chatroomKey = `${global.school.id}-${grade}`;
-      global.textPath = `texts?find_fields=key&key=${global.school.id}-${grade}&order_by=date&order_direction=-1&populate=resources`;
+      global.chatroomKey = `grade_${global.school.id}-${grade}`;
+      global.textPath = `texts?find_fields=key&key=grade_${global.school.id}-${grade}&order_by=date&order_direction=-1&populate=resources`;
       global.chatroomName = `Grade ${grade}`;
       global.resourcePath = `/chatrooms/grades/${grade}`;
       this.props.navigation.navigate ('PureChatroom');
@@ -357,8 +357,8 @@ export default class ChatroomScreen extends React.Component {
   };
   _navigateToSchool = async (page, grade) => {
     try {
-      global.chatroomKey = `${global.school.id}`
-      global.textPath = `texts?find_fields=key&key=${global.school.id}&order_by=date&order_direction=-1&populate=resources`;
+      global.chatroomKey = `school_${global.school.id}`
+      global.textPath = `texts?find_fields=key&key=school_${global.school.id}&order_by=date&order_direction=-1&populate=resources`;
       global.chatroomName = `${grade}`;
       global.resourcePath = `/chatrooms/school/`;
       this.props.navigation.navigate ('PureChatroom');

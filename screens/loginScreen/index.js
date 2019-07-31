@@ -266,8 +266,10 @@ class LoginButton extends React.Component {
               firstName: response.body.user.first_name,
               lastName: response.body.user.last_name,
               studentNumber: response.body.user.student_number,
+              block_colors: response.body.user.block_colors,
+              block_names: response.body.user.block_names,
               username: response.body.username,
-              password: global.user.password,
+              password,
               'x-api-key': response.body['api_key'],
               'x-id-key': response.body['_id'],
               courses: response.body.user.courses,
@@ -277,13 +279,19 @@ class LoginButton extends React.Component {
                   .daily_announcements || false,
                 nextClass: response.body.user.notifications.next_class || false,
                 newAssignments: response.body.user.notifications
-                  .new_assignments || true,
+                  .new_assignments !== undefined
+                  ? response.body.user.notifications.new_assignments
+                  : true,
                 markedAssignments: response.body.user.notifications
                   .marked_assignments || false,
-                imageReplies: response.body.user.notifications.image_replies ||
-                  true,
+                imageReplies: response.body.user.notifications.image_replies !==
+                  undefined
+                  ? response.body.user.notifications.image_replies
+                  : true,
                 upcomingEvents: response.body.user.notifications
-                  .upcoming_events || true,
+                  .upcoming_events !== undefined
+                  ? response.body.user.notifications.upcoming_events
+                  : true,
                 activities: response.body.user.notifications.activities ||
                   false,
               },

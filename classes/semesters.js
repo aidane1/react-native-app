@@ -22,6 +22,7 @@ export class Semesters {
   static _saveToStorage = async semesters => {
     try {
       await AsyncStorage.setItem ('semesters', JSON.stringify (semesters));
+      semesters = await Semesters._retrieveFromStorage();
       return semesters;
     } catch (e) {
       return semesters;

@@ -169,7 +169,7 @@ export default class AnnouncementsScreen extends React.Component {
           this.setState ({refreshing: false, questions: []});
         } else {
           this.refreshingScrollView = true;
-          this.setState ({refreshing: false, questions: body});
+          this.setState ({refreshing: false, announcements: body});
         }
       });
     });

@@ -18,6 +18,8 @@ import Touchable from 'react-native-platform-touchable';
 
 import {Course, Courses} from '../../classes/courses';
 
+import ScheduleScreenTile from './scheduleIndex';
+
 import {
   SchoolIcons,
   GenericIcon,
@@ -76,7 +78,7 @@ class DayList extends React.Component {
 
 class CourseRow extends React.Component {
   navigateToPage = page => {
-    this.props.navigation.navigate(page);
+    this.props.navigation.navigate (page);
   };
   render () {
     let icon = SchoolIcons.getIcon (this.props.category);
@@ -106,7 +108,7 @@ class CourseRow extends React.Component {
                       global.user.secondaryTextColor (),
                     ]}
                   >
-                    {this.props.course}
+                    {global.user.block_names[this.props.block] || this.props.course}
                   </Text>
                 </View>
                 <View>
@@ -162,7 +164,7 @@ class CourseRow extends React.Component {
                       global.user.secondaryTextColor (),
                     ]}
                   >
-                    {this.props.course}
+                    {global.user.block_names[this.props.block] || this.props.course}
                   </Text>
                 </View>
                 <View>
@@ -382,6 +384,7 @@ export default class LinksScreenTile extends React.Component {
           navigation={this.props.navigation}
           _navigateToPage={this._navigateToPage}
         />
+        <ScheduleScreenTile parent={this.props.parent} />
         <IOSDateSheet ref={this.iosSheet} updateDate={this.updateDate} />
       </ScrollView>
     );

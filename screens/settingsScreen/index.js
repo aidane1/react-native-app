@@ -76,7 +76,7 @@ async function registerForPushNotificationsAsync () {
       push_token: token,
     })
     .then (data => data.json ())
-    .then (data => console.log (data));
+    .then (data => {});
 }
 
 class CourseRow extends React.Component {
@@ -251,6 +251,8 @@ export default class SettingsScreen extends React.Component {
 
       theme: global.user.theme,
 
+      grade: global.districtInfo.grade || 9,
+
       trueDark: global.user.trueDark,
 
       transform: new Animated.Value (0),
@@ -259,11 +261,12 @@ export default class SettingsScreen extends React.Component {
       scheduleType: global.user.scheduleType,
       automaticMarkRetrieval: global.user.automaticMarkRetrieval,
       automaticCourseUpdating: global.user.automaticCourseUpdating,
+      grade_only_announcements: global.user.grade_only_announcements,
 
       scrollEnabled: true,
 
-      username: '',
-      password: '',
+      districtUsername: global.districtInfo.districtUsername || '',
+      districtPassword: global.districtInfo.districtPassword || '',
     };
     this.scrollView = React.createRef ();
     this.imagePicker = React.createRef ();
@@ -296,8 +299,10 @@ export default class SettingsScreen extends React.Component {
     this.imagePicker.current.setState ({isBackdropVisible: true});
   };
   toggleSettings = async (setting, value) => {
+    console.log (setting);
     let state = {...this.state};
     state[setting] = value;
+    // console.log (state);
     global.user[setting] = value;
     await User._saveToStorage (global.user);
     let api = new ApexAPI (global.user);
@@ -371,7 +376,7 @@ export default class SettingsScreen extends React.Component {
   keyboardWillShow = event => {
     this.setState ({scrollEnabled: false});
     Animated.timing (this.state.transform, {
-      toValue: -350,
+      toValue: -150,
       easing: Easing.bezier (0.2, 0.73, 0.33, 0.99),
       duration: 330,
       delay: 0,
@@ -386,9 +391,23 @@ export default class SettingsScreen extends React.Component {
       delay: 0,
     }).start ();
   };
-  updateText = (field, value) => {
+  updateText = async (field, value) => {
+    if (field == 'grade') {
+      if (value) {
+        value = parseInt (value);
+        global.user[field] = value;
+        global.user = await User._saveToStorage (global.user);
+        let api = new ApexAPI (global.user);
+        api.put ('user', {
+          grade: value,
+        });
+      }
+    }
     let state = {...this.state};
     state[field] = value;
+    global.districtInfo[field] = value;
+    global.districtInfo = await User._saveDistrictInfo (global.districtInfo);
+    console.log (global.districtInfo);
     this.setState (state);
   };
   updateTheme = async theme => {
@@ -597,6 +616,78 @@ export default class SettingsScreen extends React.Component {
               last={true}
             />
           </ButtonSection>
+          <ButtonSection header={`${global.school.district} ACCOUNT INFO`}>
+            <CourseRow
+              text={'Username'}
+              value={this.state.username}
+              control={
+                <TextInput
+                  multiline={false}
+                  value={this.state.districtUsername}
+                  placeholderTextColor={global.user.getTertiaryTextColor ()}
+                  onChangeText={text =>
+                    this.updateText ('districtUsername', text)}
+                  style={{
+                    fontSize: 20,
+                    color: global.user.getSecondaryTextColor (),
+                    opacity: 0.9,
+                    alignSelf: 'stretch',
+                    textAlign: 'right',
+                    flexGrow: 1,
+                  }}
+                  placeholder="Username"
+                />
+              }
+              last={false}
+            />
+            <CourseRow
+              text={'Password'}
+              value={this.state.password}
+              control={
+                <TextInput
+                  secureTextEntry={true}
+                  multiline={false}
+                  placeholderTextColor={global.user.getTertiaryTextColor ()}
+                  value={this.state.districtPassword}
+                  onChangeText={text =>
+                    this.updateText ('districtPassword', text)}
+                  style={{
+                    fontSize: 20,
+                    color: global.user.getSecondaryTextColor (),
+                    opacity: 0.9,
+                    alignSelf: 'stretch',
+                    textAlign: 'right',
+                    flexGrow: 1,
+                  }}
+                  placeholder="Password"
+                />
+              }
+              last={false}
+            />
+            <CourseRow
+              text={'Grade'}
+              value={this.state.grade}
+              control={
+                <TextInput
+                  multiline={false}
+                  placeholderTextColor={global.user.getTertiaryTextColor ()}
+                  keyboardType={'number-pad'}
+                  value={this.state.grade.toString ()}
+                  onChangeText={text => this.updateText ('grade', text)}
+                  style={{
+                    fontSize: 20,
+                    color: global.user.getSecondaryTextColor (),
+                    opacity: 0.9,
+                    alignSelf: 'stretch',
+                    textAlign: 'right',
+                    flexGrow: 1,
+                  }}
+                  placeholder="Grade"
+                />
+              }
+              last={true}
+            />
+          </ButtonSection>
           <ButtonSection header={'MISCELLANEOUS'}>
             <CourseRow
               text={'Visually Impared'}
@@ -610,65 +701,12 @@ export default class SettingsScreen extends React.Component {
               last={false}
             />
             <CourseRow
-              text={'Image as Schedule'}
-              control={
-                <Switch
-                  value={this.state.scheduleType == 'image'}
-                  onValueChange={val => this.updateScheduleType (val)}
-                />
-              }
-              last={false}
-            />
-            {this.state.marks || this.state.courses
-              ? <ButtonSection header={'SCHOOL ACCOUNT INFO'}>
-                  <CourseRow
-                    text={'Username'}
-                    value={this.state.username}
-                    control={
-                      <TextInput
-                        multiline={false}
-                        onChange={text => this.updateText ('username', text)}
-                        style={{
-                          fontSize: 20,
-                          color: 'rgba(0,0,0,0.7)',
-                          alignSelf: 'stretch',
-                          textAlign: 'right',
-                          flexGrow: 1,
-                        }}
-                        placeholder="Username"
-                      />
-                    }
-                    last={false}
-                  />
-                  <CourseRow
-                    text={'Password'}
-                    value={this.state.password}
-                    control={
-                      <TextInput
-                        secureTextEntry={true}
-                        multiline={false}
-                        onChange={text => this.updateText ('password', text)}
-                        style={{
-                          fontSize: 20,
-                          color: 'rgba(0,0,0,0.7)',
-                          alignSelf: 'stretch',
-                          textAlign: 'right',
-                          flexGrow: 1,
-                        }}
-                        placeholder="Password"
-                      />
-                    }
-                    last={true}
-                  />
-                </ButtonSection>
-              : <View />}
-            <CourseRow
               text={'Grade only Announcements'}
               control={
                 <Switch
-                  value={this.state.automaticMarkRetrieval}
-                  // onValueChange={val =>
-                  //   this.toggleSettings ('automaticMarkRetrieval', val)}
+                  value={this.state.grade_only_announcements}
+                  onValueChange={val =>
+                    this.toggleSettings ('grade_only_announcements', val)}
                 />
               }
               last={false}

@@ -45,7 +45,7 @@ export class School {
   static _saveToStorage = async school => {
     try {
       await AsyncStorage.setItem ('school', JSON.stringify (school));
-      let test = await School._retrieveFromStorage ();
+      school = await School._retrieveFromStorage ();
       return school;
     } catch (e) {
       return school;

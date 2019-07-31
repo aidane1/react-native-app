@@ -18,7 +18,7 @@ import {
   ChatIcon,
   QuestionIcon,
   NotesIcon,
-  AssignmentsIcon,
+  QuestionMarkIcon,
   CompassIcon,
   MoreIcon,
   CoursesIcon,
@@ -30,7 +30,7 @@ import HomeScreenTile from './homeIndex';
 
 import LinkScreenTile from './courseIndex';
 
-import ScheduleScreenTile from './scheduleIndex';
+import ActivityScreenTile from './acitvityIndex';
 
 import TabBar from '../../components/tabBar';
 
@@ -139,6 +139,19 @@ export default class HomeScreen extends React.Component {
       school: global.user['school'],
       'x-id-key': global.user['x-id-key'],
     });
+    let chatrooms = global.user.courses.map (course => `course_${course}`);
+    console.log(global.districtInfo);
+    if (global.districtInfo.grade) {
+      chatrooms.push (`grade_${global.school.id}-${global.districtInfo.grade}`);
+    }
+    api
+      .put (`users/${global.user.id}`, {
+        chatrooms,
+      })
+      .then (data => data.json ())
+      .then (data => {
+        // console.log(data);
+      });
     if (global.user.courses.length) {
       api
         .get (`topics?reference_course=${global.user.courses.join (',')}`)
@@ -248,11 +261,19 @@ export default class HomeScreen extends React.Component {
         });
     }
     if (global.status == 'granted') {
-      CameraRoll.getPhotos ({
-        first: 500,
-        assetType: 'Photos',
-        groupTypes: 'All',
-      }).then (photos => {
+      CameraRoll.getPhotos (
+        Platform.select ({
+          ios: {
+            first: 500,
+            assetType: 'Photos',
+            groupTypes: 'All',
+          },
+          android: {
+            first: 500,
+            assetType: 'Photos',
+          },
+        })
+      ).then (photos => {
         photos.edges.sort ((a, b) => b.node.timestamp - a.node.timestamp);
         global.cameraRollImages = photos.edges.slice (0, 70);
       });
@@ -277,8 +298,10 @@ export default class HomeScreen extends React.Component {
           global.school = await School._saveToStorage (
             constructSchoolObject (response.body.school, response.body.blocks)
           );
+          global.dayMap = global.school['dayMap'];
           global.user = await User._saveToStorage (
             constructUserObject ({
+              grade: response.body.user.grade || global.user.grade || 9,
               scheduleImages: response.body.user.schedule_images,
               permission_level: response.body.permission_level,
               scheduleType: response.body.schedule_type,
@@ -288,6 +311,8 @@ export default class HomeScreen extends React.Component {
               firstName: response.body.user.first_name,
               lastName: response.body.user.last_name,
               studentNumber: response.body.user.student_number,
+              block_colors: response.body.user.block_colors,
+              block_names: response.body.user.block_names,
               username: response.body.username,
               password: global.user.password,
               'x-api-key': response.body['api_key'],
@@ -299,13 +324,19 @@ export default class HomeScreen extends React.Component {
                   .daily_announcements || false,
                 nextClass: response.body.user.notifications.next_class || false,
                 newAssignments: response.body.user.notifications
-                  .new_assignments || true,
+                  .new_assignments !== undefined
+                  ? response.body.user.notifications.new_assignments
+                  : true,
                 markedAssignments: response.body.user.notifications
                   .marked_assignments || false,
-                imageReplies: response.body.user.notifications.image_replies ||
-                  true,
+                imageReplies: response.body.user.notifications.image_replies !==
+                  undefined
+                  ? response.body.user.notifications.image_replies
+                  : true,
                 upcomingEvents: response.body.user.notifications
-                  .upcoming_events || true,
+                  .upcoming_events !== undefined
+                  ? response.body.user.notifications.upcoming_events
+                  : true,
                 activities: response.body.user.notifications.activities ||
                   false,
               },
@@ -315,7 +346,7 @@ export default class HomeScreen extends React.Component {
               automaticMarkRetrieval: response.body.user
                 .automatic_mark_retrieval || false,
               automaticCourseUpdating: response.body.user
-                .automatic_course_retrieval || true,
+                .automatic_course_retrieval || false,
             })
           );
         }
@@ -366,7 +397,7 @@ export default class HomeScreen extends React.Component {
           position: 0,
         },
         {
-          text: 'Questions',
+          text: 'School Forum',
           // icon: require ('./images/ic_accessibility_white.png'),
           icon: <QuestionIcon size={22} />,
           name: 'Questions',
@@ -380,18 +411,18 @@ export default class HomeScreen extends React.Component {
           position: 1,
         },
         {
-          text: 'Notes',
+          text: 'My Classes',
           // icon: require ('./images/ic_room_white.png'),
           icon: <NotesIcon size={22} />,
-          name: 'Notes',
+          name: 'Assignments',
           position: 3,
         },
         {
-          text: 'Assignments',
-          // icon: require ('./images/ic_videocam_white.png'),
-          icon: <AssignmentsIcon size={22} />,
-          name: 'Assignments',
-          position: 4,
+          text: 'Help',
+          // icon: require ('./images/ic_room_white.png'),
+          icon: <QuestionMarkIcon size={22} />,
+          name: 'Tutorial',
+          position: 3,
         },
       ];
       let {currentDate} = this.state;
@@ -430,7 +461,12 @@ export default class HomeScreen extends React.Component {
 
       // [{course, teacher, time, id, isReal}]
       let courseList = [];
-      if (todaySchedule !== undefined && todaySchedule.length > 0) {
+      if (
+        today &&
+        today.school_in &&
+        todaySchedule !== undefined &&
+        todaySchedule.length > 0
+      ) {
         let blockCount = 0;
         for (var i = 0; i < todaySchedule.length; i++) {
           let currentStartBlock = todayTimes[blockCount];
@@ -445,6 +481,7 @@ export default class HomeScreen extends React.Component {
           if (courseMap[todaySchedule[i].block]) {
             courseList.push ({
               time_num: currentTime,
+              block: todaySchedule[i].block,
               course: courseMap[todaySchedule[i].block].course,
               category: courseMap[todaySchedule[i].block].category,
               teacher: courseMap[todaySchedule[i].block].teacher,
@@ -455,6 +492,7 @@ export default class HomeScreen extends React.Component {
           } else {
             courseList.push ({
               time_num: currentTime,
+              block: todaySchedule[i].block,
               course: "LC's",
               category: 'other',
               teacher: 'Free',
@@ -468,6 +506,7 @@ export default class HomeScreen extends React.Component {
         }
       } else {
         courseList.push ({
+          block: '_',
           course: 'Nothing!',
           teacher: 'Free',
           time: 'All Day',
@@ -538,6 +577,7 @@ export default class HomeScreen extends React.Component {
 
       // {date: {scheduleWeek, scheduleDay, events, dayDisplayed}}
       // this.calendar = this.dayMap;
+      this.courseMap = courseMap;
       let assignments = Object.keys (courseMap)
         .filter (block => {
           let courseAssignments = Assignments._retrieveAssignmentsByCourse (
@@ -548,7 +588,6 @@ export default class HomeScreen extends React.Component {
             courseMap[block].id,
             global.topics
           );
-          let topicsMap = Topics._makeTopicMap (topicsList);
           if (courseAssignments.length > 0) {
             return true;
           } else {
@@ -688,7 +727,12 @@ export default class HomeScreen extends React.Component {
                       />
                     </View>
                     <View style={styles.bodySlide}>
-                      <ScheduleScreenTile parent={this} />
+                      <ActivityScreenTile
+                        parent={this}
+                        courseMap={this.courseMap}
+                        navigation={this.props.navigation}
+                        courseList={courseList}
+                      />
                     </View>
                   </ScrollView>
                 </View>

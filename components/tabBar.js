@@ -19,7 +19,7 @@ import {
   HomeIcon,
   CoursesIcon,
   ScheduleIcon,
-  CalendarIcon,
+  ActivityIcon,
 } from '../classes/icons';
 
 import {boxShadows} from '../constants/boxShadows';
@@ -50,8 +50,8 @@ class TabButton extends React.Component {
             ]}
           >
             <View style={styles.tabBarIcon}>
-              {[<ScheduleIcon />, <HomeIcon />, <CoursesIcon />][
-                ['Schedule', 'Home', 'Courses'].indexOf (this.props.title)
+              {[<ActivityIcon />, <HomeIcon />, <CoursesIcon />][
+                ['Activity', 'Home', 'Courses'].indexOf (this.props.title)
               ] || <HomeIcon />}
             </View>
             <Text style={styles.tabButtonText}>
@@ -65,8 +65,8 @@ class TabButton extends React.Component {
         <TouchableWithoutFeedback onPress={this.handleClick}>
           <View style={[styles.tabButton]}>
             <View style={styles.tabBarIcon}>
-              {[<ScheduleIcon />, <HomeIcon />, <CoursesIcon />][
-                ['Schedule', 'Home', 'Courses'].indexOf (this.props.title)
+              {[<ActivityIcon />, <HomeIcon />, <CoursesIcon />][
+                ['Activity', 'Home', 'Courses'].indexOf (this.props.title)
               ] || <HomeIcon />}
             </View>
             <Text style={styles.tabButtonText}>
@@ -131,7 +131,7 @@ export default class TabBar extends React.Component {
         >
           <TabBarButtons
             selectedIndex={this.state.selectedIndex}
-            tabs={['Home', 'Courses', 'Schedule', 'Calendar']}
+            tabs={['Home', 'Courses', 'Activity']}
             tapFunction={this.props.tapFunction}
             self={this}
           />

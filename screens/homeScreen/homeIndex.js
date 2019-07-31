@@ -21,7 +21,7 @@ import Touchable from 'react-native-platform-touchable';
 
 import {Courses} from '../../classes/courses';
 
-import moment from "moment"
+import moment from 'moment';
 
 const width = Dimensions.get ('window').width; //full width
 const height = Dimensions.get ('window').height; //full height
@@ -41,7 +41,10 @@ class GradientBlock extends React.Component {
               </Text>
             </View>
             <View style={styles.blockLeft}>
-              <Text style={[styles.blockMain, {maxWidth: width*0.95-100}]} numberOfLines={1}>
+              <Text
+                style={[styles.blockMain, {maxWidth: width * 0.95 - 100}]}
+                numberOfLines={1}
+              >
                 {this.props.main}
               </Text>
               <Text style={styles.blockSecondary}>
@@ -75,8 +78,8 @@ class EventBlock extends React.Component {
             </View>
             <View style={styles.eventBottomRow}>
               <Text style={styles.eventBottomRowText}>
-                
-                {moment(this.props.event_date).format("YYYY-MM-DD")}
+
+                {moment (this.props.event_date).format ('YYYY-MM-DD')}
               </Text>
               <Text style={styles.eventBottomRowText}>
                 {this.props.time}
@@ -96,7 +99,7 @@ class AssignmentBlock extends React.Component {
     return this.props.id == '_'
       ? <View style={[styles.gradientBlock, boxShadows.boxShadow4]}>
           <LinearGradient
-            colors={['#79e098', '#43ba67']}
+            colors={['#289e10', '#147500']}
             style={[styles.gradientBlockChild]}
           >
             <View style={[styles.blockBody, {flexDirection: 'column'}]}>
@@ -130,7 +133,7 @@ class AssignmentBlock extends React.Component {
             )}
         >
           <LinearGradient
-            colors={['#79e098', '#43ba67']}
+            colors={['#289e10', '#147500']}
             style={[styles.gradientBlockChild]}
           >
             <View style={[styles.blockBody, {flexDirection: 'column'}]}>
@@ -176,12 +179,9 @@ export default class HomeScreenTile extends React.Component {
     this.setState ({refreshing: true});
     // this.props.navigation.replace("Home");
     setTimeout (() => {
-      this.props.parent.setState (
-        {currentDate: new Date ()},
-        () => {
-          this.setState ({refreshing: false});
-        }
-      );
+      this.props.parent.setState ({currentDate: new Date ()}, () => {
+        this.setState ({refreshing: false});
+      });
     }, 400);
   };
 

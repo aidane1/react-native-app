@@ -26,7 +26,7 @@ import {
   WaveIndicator,
 } from 'react-native-indicators';
 
-import mongoose from "mongoose";
+import bson from 'bson';
 
 import {boxShadows} from '../constants/boxShadows';
 
@@ -138,8 +138,9 @@ export default class ImageBar extends React.Component {
         this.sendResourseToServer (result)
           .then (res => res.json ())
           .then (json => {
+            console.log(json);
             if (json.status == 'ok') {
-              this.props.onImageRecieved (json.body);
+              // this.props.onImageRecieved (json.body);
               this.setState (state => ({
                 unloadedImages: state.unloadedImages.filter (
                   image => image.id != result.id
@@ -176,8 +177,9 @@ export default class ImageBar extends React.Component {
         this.sendResourseToServer (result)
           .then (res => res.json ())
           .then (json => {
+            console.log(json);
             if (json.status == 'ok') {
-              this.props.onImageRecieved (json.body);
+              // this.props.onImageRecieved (json.body);
               this.setState (state => ({
                 unloadedImages: state.unloadedImages.filter (
                   image => image.id != result.id
@@ -193,10 +195,10 @@ export default class ImageBar extends React.Component {
     }
   };
   sendResourseToServer (resource) {
-    let id = mongoose.Types.ObjectId();
-    resource._id = id;
+    let id = new bson.ObjectId ();
+    this.props.onImageRecieved({_id : id});
     return fetch (
-      'https://www.apexschools.co/api/v1/resources?base64=true&populate=resources',
+      `https://www.apexschools.co/api/v1/resources?base64=true&populate=resources&_id=${id}`,
       {
         method: 'POST',
         headers: {
@@ -210,12 +212,14 @@ export default class ImageBar extends React.Component {
     );
   }
   openCameraRollFile = async file => {
+    let id = new bson.ObjectId ();
+    this.props.onImageRecieved({_id : id});
     let response = await fetch (file);
     let blob = await response.blob ();
     const req = new XMLHttpRequest ();
     req.open (
       'POST',
-      `https://www.apexschools.co/api/v1/resources?blob=true&file_name=${blob._data.name}&path=${this.props.path}`,
+      `https://www.apexschools.co/api/v1/resources?blob=true&file_name=${blob._data.name}&path=${this.props.path}&_id=${id}`,
       true
     );
     req.setRequestHeader ('x-api-key', global.user['x-api-key']);
@@ -234,11 +238,11 @@ export default class ImageBar extends React.Component {
                 uploading: state.uploading - 1,
               }),
               () => {
-                self.props.onImageRecieved (response.body);
+                // self.props.onImageRecieved (response.body);
               }
             );
           } else {
-            self.props.onImageRecieved (response.body);
+            // self.props.onImageRecieved (response.body);
           }
         }
       }

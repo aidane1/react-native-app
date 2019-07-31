@@ -53,6 +53,7 @@ export class Courses {
   static _saveToStorage = async courses => {
     try {
       await AsyncStorage.setItem ('courses', JSON.stringify (courses));
+      courses = await Courses._retrieveFromStorage();
       return courses;
     } catch (e) {
       return courses;
@@ -84,6 +85,17 @@ export class Courses {
       return new Course ();
     }
   };
+  static _retrieveById = (courses, id) => {
+    try {
+      for (var i = 0; i < courses.length; i++) {
+        if (courses[i].id == id) return courses[i];
+      }
+      return new Course ();
+    } catch (e) {
+      console.log (e);
+      return new Course ();
+    }
+  }
   static _retrieveCoursesById = async ids => {
     try {
       let courses = [];

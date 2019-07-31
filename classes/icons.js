@@ -14,6 +14,25 @@ class IconBlock {
   constructor (icon) {}
 }
 
+export class ActivityIcon extends React.Component {
+  render () {
+    return <Feather color="white" name="activity" size={16} {...this.props} />;
+  }
+}
+
+export class CourseConfigIcon extends React.Component {
+  render () {
+    return (
+      <MaterialCommunityIcons
+        color="white"
+        name="rename-box"
+        size={16}
+        {...this.props}
+      />
+    );
+  }
+}
+
 export class QuestionMarkIcon extends React.Component {
   render () {
     return (

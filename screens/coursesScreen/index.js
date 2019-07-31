@@ -511,9 +511,11 @@ export default class CoursesScreen extends React.Component {
       }
       let api = new ApexAPI (global.user);
       global.user.courses = finalCourses;
+      global.user.block_names = {};
       api
         .put (`users/${global.user.id}`, {
           courses: global.user.courses,
+          block_names: {},
         })
         .then (data => data.json ())
         .then (data => {

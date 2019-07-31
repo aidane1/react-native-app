@@ -3,7 +3,7 @@ import {
   StyleSheet,
   View,
   Dimensions,
-  ActivityIndicator,
+  Platform,
   Image,
   CameraRoll,
   StatusBar,
@@ -57,7 +57,6 @@ import {
 
 const width = Dimensions.get ('window').width; //full width
 const height = Dimensions.get ('window').height; //full height
-
 
 function cacheImages (images) {
   return images.map (image => {
@@ -175,136 +174,231 @@ export default class LoadingScreen extends React.Component {
     return true;
   }
   _handleNotification = async notification => {
-    if (notification.data.action == 'assignment-upload') {
-      let course = await Courses._retrieveCourseById (
-        notification.data.assignment.reference_course
-      );
-      global.courseInfoCourse = course;
-      global.courseInfoPage = 'assignments';
-      if (course.id !== '_') {
-        let api = new ApexAPI (global.user);
-        api
-          .get (`topics?reference_course=${course.id}`)
-          .then (res => res.json ())
-          .then (async data => {
-            if (data.status == 'ok') {
-              await Topics._saveToStorage (
-                data.body.map (topic => {
-                  return {
-                    topic: topic.topic,
-                    course: topic.reference_course,
-                    id: topic._id,
-                  };
-                })
-              );
-              global.topics = await Topics._retrieveFromStorage ();
-            }
-          })
-          .catch (e => {
-            console.log (e);
+    try {
+      if (notification.origin == 'selected') {
+        if (notification.data.action == 'assignment-upload') {
+          let course = await Courses._retrieveCourseById (
+            notification.data.assignment.reference_course
+          );
+          global.courseInfoCourse = course;
+          global.courseInfoPage = 'assignments';
+          if (course.id !== '_') {
+            let api = new ApexAPI (global.user);
+            api
+              .get (`topics?reference_course=${course.id}`)
+              .then (res => res.json ())
+              .then (async data => {
+                if (data.status == 'ok') {
+                  await Topics._saveToStorage (
+                    data.body.map (topic => {
+                      return {
+                        topic: topic.topic,
+                        course: topic.reference_course,
+                        id: topic._id,
+                      };
+                    })
+                  );
+                  global.topics = await Topics._retrieveFromStorage ();
+                }
+              })
+              .catch (e => {
+                console.log (e);
+              });
+            api
+              .get (
+                `assignments?populate=resources,response_resources&reference_course=${course.id}`
+              )
+              .then (res => res.json ())
+              .then (async data => {
+                if (data.status == 'ok') {
+                  await Assignments._saveToStorage (
+                    data.body.map (assignment => {
+                      return {
+                        topic: assignment.topic || '_',
+                        id: assignment._id,
+                        assignmentTitle: assignment.assignment_title,
+                        assignmentNotes: assignment.assignment_notes,
+                        dueDate: assignment.due_date,
+                        date: assignment.date,
+                        referenceCourse: assignment.reference_course,
+                        resources: assignment.resources || [],
+                        responseResources: assignment.response_resources || [],
+                        helpful: assignment.helpful_votes.length,
+                        unhelpful: assignment.unhelpful_votes.length,
+                        uploaded_by: assignment.uploaded_by,
+                        username: assignment.username,
+                        userVote: assignment.helpful_votes.indexOf (
+                          global.user.id
+                        ) >= 0
+                          ? 1
+                          : assignment.unhelpful_votes.indexOf (
+                              global.user.id
+                            ) >= 0
+                              ? -1
+                              : 0,
+                      };
+                    })
+                  );
+                  global.assignments = await Assignments._retrieveFromStorage ();
+                  const resetAction = StackActions.reset ({
+                    index: 1,
+                    actions: [
+                      NavigationActions.navigate ({routeName: 'Home'}),
+                      NavigationActions.navigate ({routeName: 'CourseInfo'}),
+                    ],
+                  });
+                  this.props.navigation.dispatch (resetAction);
+                }
+              })
+              .catch (e => {
+                console.log (e);
+              });
+          }
+        } else if (notification.data.action == 'image-reply') {
+          let course = await Courses._retrieveCourseById (
+            notification.data.assignment.reference_course
+          );
+          global.courseInfoCourse = course;
+          global.courseInfoPage = 'assignments';
+          if (course.id !== '_') {
+            let api = new ApexAPI (global.user);
+            api
+              .get (`topics?reference_course=${course.id}`)
+              .then (res => res.json ())
+              .then (async data => {
+                if (data.status == 'ok') {
+                  await Topics._saveToStorage (
+                    data.body.map (topic => {
+                      return {
+                        topic: topic.topic,
+                        course: topic.reference_course,
+                        id: topic._id,
+                      };
+                    })
+                  );
+                  global.topics = await Topics._retrieveFromStorage ();
+                }
+              })
+              .catch (e => {
+                console.log (e);
+              });
+            api
+              .get (
+                `assignments?populate=resources,response_resources&reference_course=${course.id}`
+              )
+              .then (res => res.json ())
+              .then (async data => {
+                if (data.status == 'ok') {
+                  await Assignments._saveToStorage (
+                    data.body.map (assignment => {
+                      return {
+                        topic: assignment.topic || '_',
+                        id: assignment._id,
+                        assignmentTitle: assignment.assignment_title,
+                        assignmentNotes: assignment.assignment_notes,
+                        dueDate: assignment.due_date,
+                        date: assignment.date,
+                        referenceCourse: assignment.reference_course,
+                        resources: assignment.resources || [],
+                        responseResources: assignment.response_resources || [],
+                        helpful: assignment.helpful_votes.length,
+                        unhelpful: assignment.unhelpful_votes.length,
+                        uploaded_by: assignment.uploaded_by,
+                        username: assignment.username,
+                        userVote: assignment.helpful_votes.indexOf (
+                          global.user.id
+                        ) >= 0
+                          ? 1
+                          : assignment.unhelpful_votes.indexOf (
+                              global.user.id
+                            ) >= 0
+                              ? -1
+                              : 0,
+                      };
+                    })
+                  );
+                  global.assignments = await Assignments._retrieveFromStorage ();
+                  const resetAction = StackActions.reset ({
+                    index: 1,
+                    actions: [
+                      NavigationActions.navigate ({routeName: 'Home'}),
+                      NavigationActions.navigate ({routeName: 'CourseInfo'}),
+                    ],
+                  });
+                  this.props.navigation.dispatch (resetAction);
+                }
+              })
+              .catch (e => {
+                console.log (e);
+              });
+          }
+        } else if (notification.data.action == 'message') {
+        } else if (notification.data.action == 'announcement') {
+          // console.log(notification.data.announcement);
+          const resetAction = StackActions.reset ({
+            index: 1,
+            actions: [
+              NavigationActions.navigate ({routeName: 'Home'}),
+              NavigationActions.navigate ({
+                routeName: 'Announcement',
+                params: {announcement: notification.data.announcement},
+              }),
+            ],
           });
-        api
-          .get (
-            `assignments?populate=resources,response_resources&reference_course=${course.id}`
-          )
-          .then (res => res.json ())
-          .then (async data => {
-            if (data.status == 'ok') {
-              await Assignments._saveToStorage (
-                data.body.map (assignment => {
-                  return {
-                    topic: assignment.topic || '_',
-                    id: assignment._id,
-                    assignmentTitle: assignment.assignment_title,
-                    assignmentNotes: assignment.assignment_notes,
-                    dueDate: assignment.due_date,
-                    date: assignment.date,
-                    referenceCourse: assignment.reference_course,
-                    resources: assignment.resources || [],
-                    responseResources: assignment.response_resources || [],
-                  };
-                })
-              );
-              global.assignments = await Assignments._retrieveFromStorage ();
+          this.props.navigation.dispatch (resetAction);
+        } else if (notification.data.action == 'chatroom-text') {
+          console.log (notification.data.text);
+          let key = notification.data.text.key;
+          global.chatroomKey = `${key}`;
+          global.textPath = `texts?find_fields=key&key=${key}&order_by=date&order_direction=-1&populate=resources`;
+          key = key.split ('_');
+          if (key[0] == 'course') {
+            let course = await Courses._retrieveCourseById (key[1]);
+            if (course.id != '_') {
+              global.chatroomName = `${course.course}`;
+              global.resourcePath = `/chatrooms/courses/${course.id}`;
               const resetAction = StackActions.reset ({
                 index: 1,
                 actions: [
                   NavigationActions.navigate ({routeName: 'Home'}),
-                  NavigationActions.navigate ({routeName: 'CourseInfo'}),
+                  NavigationActions.navigate ({routeName: 'PureChatroom'}),
                 ],
               });
               this.props.navigation.dispatch (resetAction);
             }
-          })
-          .catch (e => {
-            console.log (e);
-          });
-      }
-    } else if (notification.data.action == 'image-reply') {
-      let course = await Courses._retrieveCourseById (
-        notification.data.assignment.reference_course
-      );
-      global.courseInfoCourse = course;
-      global.courseInfoPage = 'assignments';
-      if (course.id !== '_') {
-        let api = new ApexAPI (global.user);
-        api
-          .get (`topics?reference_course=${course.id}`)
-          .then (res => res.json ())
-          .then (async data => {
-            if (data.status == 'ok') {
-              await Topics._saveToStorage (
-                data.body.map (topic => {
-                  return {
-                    topic: topic.topic,
-                    course: topic.reference_course,
-                    id: topic._id,
-                  };
-                })
-              );
-              global.topics = await Topics._retrieveFromStorage ();
+          } else if (key[0] == 'grade') {
+            let grade = key[1].split ('-')[1];
+            if (isNaN (parseInt (grade)) || !global.districtInfo) {
+            } else {
+              if (grade.toString () == global.districtInfo.grade.toString ()) {
+                global.chatroomName = `Grade ${grade}`;
+                global.resourcePath = ` /chatrooms/grades/${grade}`;
+                const resetAction = StackActions.reset ({
+                  index: 1,
+                  actions: [
+                    NavigationActions.navigate ({routeName: 'Home'}),
+                    NavigationActions.navigate ({routeName: 'PureChatroom'}),
+                  ],
+                });
+                this.props.navigation.dispatch (resetAction);
+              }
             }
-          })
-          .catch (e => {
-            console.log (e);
-          });
-        api
-          .get (
-            `assignments?populate=resources,response_resources&reference_course=${course.id}`
-          )
-          .then (res => res.json ())
-          .then (async data => {
-            if (data.status == 'ok') {
-              await Assignments._saveToStorage (
-                data.body.map (assignment => {
-                  return {
-                    topic: assignment.topic || '_',
-                    id: assignment._id,
-                    assignmentTitle: assignment.assignment_title,
-                    assignmentNotes: assignment.assignment_notes,
-                    dueDate: assignment.due_date,
-                    date: assignment.date,
-                    referenceCourse: assignment.reference_course,
-                    resources: assignment.resources || [],
-                    responseResources: assignment.response_resources || [],
-                  };
-                })
-              );
-              global.assignments = await Assignments._retrieveFromStorage ();
-              const resetAction = StackActions.reset ({
-                index: 1,
-                actions: [
-                  NavigationActions.navigate ({routeName: 'Home'}),
-                  NavigationActions.navigate ({routeName: 'CourseInfo'}),
-                ],
-              });
-              this.props.navigation.dispatch (resetAction);
-            }
-          })
-          .catch (e => {
-            console.log (e);
-          });
+          } else if (key[0] == 'school') {
+            global.chatroomName = `${global.school.name}`;
+            global.resourcePath = `/chatrooms/schools/${global.school.id}`;
+            const resetAction = StackActions.reset ({
+              index: 1,
+              actions: [
+                NavigationActions.navigate ({routeName: 'Home'}),
+                NavigationActions.navigate ({routeName: 'PureChatroom'}),
+              ],
+            });
+            this.props.navigation.dispatch (resetAction);
+          }
+        }
       }
+    } catch (e) {
+      console.log (e);
     }
   };
   async componentDidMount () {
@@ -329,16 +423,25 @@ export default class LoadingScreen extends React.Component {
         };
 
         if (status == 'granted') {
-          let photos = await CameraRoll.getPhotos ({
-            first: 500,
-            assetType: 'Photos',
-            groupTypes: 'All',
-          });
+          let photos = await CameraRoll.getPhotos (
+            Platform.select ({
+              ios: {
+                first: 500,
+                assetType: 'Photos',
+                groupTypes: 'All',
+              },
+              android: {
+                first: 500,
+                assetType: 'Photos',
+              },
+            })
+          );
           photos.edges.sort ((a, b) => b.node.timestamp - a.node.timestamp);
           global.cameraRollImages = photos.edges.slice (0, 70);
         }
 
         let user = await User._retrieveFromStorage ();
+        let districtInfo = await User._getDistrictInfo ();
         let currentSemesters = await Semesters._currentSemesters ();
         let userCourses = await Courses._retrieveCoursesById (user.courses);
         let allAssignments = await Assignments._retrieveFromStorage ();
@@ -375,6 +478,7 @@ export default class LoadingScreen extends React.Component {
         global.dates = dates;
         global.courseInfoCourse = '_';
         global.courses = allCourses;
+        global.districtInfo = districtInfo;
         global.topics = allTopics;
         global.semesters = allSemesters;
         global.userCourseMap = {};

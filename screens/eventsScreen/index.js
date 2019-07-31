@@ -40,7 +40,7 @@ class EventBlock extends React.Component {
                 showsHorizontalScrollIndicator={false}
               >
                 <Text style={styles.eventTopRow}>
-                  {this.props.title}
+                  {this.props.title} {!this.props.school_in ? "(No School)" : ""}
                 </Text>
               </ScrollView>
             </View>

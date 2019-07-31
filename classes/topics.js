@@ -19,6 +19,7 @@ export class Topics {
   static _saveToStorage = async topics => {
     try {
       await AsyncStorage.setItem ('topics', JSON.stringify (topics));
+      topics = await Topics._retrieveFromStorage();
       return topics;
     } catch (e) {
       console.log (e);

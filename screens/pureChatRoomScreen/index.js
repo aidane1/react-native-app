@@ -9,7 +9,7 @@ import {
   Animated,
   Modal as ReactModal,
   Keyboard,
-  Easing,
+  Linking,
   TextInput,
   AppState,
   Alert,
@@ -48,6 +48,8 @@ import moment from 'moment';
 import HeaderBar from '../../components/header';
 
 import {ScrollView, FlatList} from 'react-native-gesture-handler';
+
+import ParsedText from 'react-native-parsed-text';
 
 import Touchable from 'react-native-platform-touchable';
 
@@ -121,6 +123,16 @@ class ChatBox extends React.Component {
       index: index,
     });
   };
+  handleURLPress = (url, matchIndex) => {
+    Linking.canOpenURL (url).then (supported => {
+      console.log (supported);
+      if (supported) {
+        Linking.openURL (url);
+      } else {
+        console.log ('dont know');
+      }
+    });
+  };
   render () {
     if (this.props.showName) {
       return (
@@ -171,16 +183,26 @@ class ChatBox extends React.Component {
               </Text>
             </View>
             <View style={[ChatRoomStyles.chatBox]}>
-              <Text
+              <ParsedText
                 style={{
                   fontSize: 13,
                   opacity: 0.9,
                   fontWeight: '200',
                   color: global.user.getPrimaryTextColor (),
                 }}
+                parse={[
+                  {
+                    type: 'url',
+                    style: {
+                      fontWeight: '500',
+                      textDecorationLine: 'underline',
+                    },
+                    onPress: this.handleURLPress,
+                  },
+                ]}
               >
                 {this.props.message.message}
-              </Text>
+              </ParsedText>
               {this.props.message.resources.map ((resource, index, array) => {
                 return (
                   <View style={boxShadows.boxShadow4} key={resource._id}>
@@ -657,9 +679,24 @@ export default class ChatRoom extends React.Component {
         callback (e, []);
       });
   };
+  removeChatroomKey = () => {
+    let api = new ApexAPI (global.user);
+    api
+      .put (`chatroom-keys/pull/${global.user.id}`, {
+        key: global.chatroomKey,
+      })
+      .then (data => data.json ())
+      .then (data => {
+        // console.log(data);
+      })
+      .catch (e => {
+        console.log (e);
+      });
+  };
   componentDidMount () {
     this._isMounted = true;
     AppState.addEventListener ('change', this._handleAppStateChange);
+    this.removeChatroomKey ();
     this.loadChats (this.state.limit, (err, body) => {
       if (err) {
         this.setState ({chats: [], updated: true});
@@ -671,6 +708,7 @@ export default class ChatRoom extends React.Component {
   componentWillUnmount () {
     this._isMounted = false;
     AppState.removeEventListener ('change', this._handleAppStateChange);
+    this.removeChatroomKey ();
     this.props.navigation.goBack ();
   }
   _handleAppStateChange = nextAppState => {
@@ -686,6 +724,11 @@ export default class ChatRoom extends React.Component {
           this.setState ({chats: body, updated: true});
         }
       });
+    } else if (
+      this.state.appState.match (/inactive|active/) &&
+      nextAppState === 'background'
+    ) {
+      this.removeChatroomKey ();
     }
     this.setState ({appState: nextAppState});
   };
@@ -729,7 +772,7 @@ export default class ChatRoom extends React.Component {
     this.setState ({images: this.state.images});
   };
   _onRefresh = () => {
-    this.setState ({refreshing: true, limit: this.state.limit + 50}, () => {
+    this.setState ({refreshing: true, limit: this.state.chats.length + 50}, () => {
       this.loadChats (this.state.limit, (err, body) => {
         if (err) {
           this.setState ({refreshing: false, chats: []});

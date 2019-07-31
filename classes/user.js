@@ -2,11 +2,25 @@ import {AsyncStorage} from 'react-native';
 
 export class User {
   constructor (user) {
+    this.districtUsername = user.districtUsername || user.username;
+
+    this.districtPassword = user.districtPassword || '';
+
+    this.grade = user.grade || 9;
+
+    this.automaticCourseUpdating = user.automaticCourseUpdating
+      ? user.automaticCourseUpdating
+      : false;
+
+    this.block_colors = user.block_colors || {};
+
+    this.block_names = user.block_names || {};
+
     this.username = user.username;
     this.password = user.password;
     this['x-api-key'] = user['x-api-key'];
     this['x-id-key'] = user['x-id-key'];
-    this.courses = user.courses;
+    this.courses = user.courses || [];
     this.school = user.school;
     this.id = user.id;
     this.firstName = user.firstName;
@@ -28,9 +42,11 @@ export class User {
     this.accountId = user.accountId || '_';
     this.trueDark = user.trueDark || false;
     this.visuallyImpared = user.visuallyImpared || false;
-    this.automaticMarkRetrieval = user.automaticMarkRetrieval || false;
-    this.automaticCourseUpdating == user.automaticCourseUpdating || false;
-    this.profile_picture = user.profile_picture || "";
+    this.automaticMarkRetrieval = user.automaticMarkRetrieval
+      ? user.automaticMarkRetrieval
+      : false;
+    this.profile_picture = user.profile_picture || '';
+    this.grade_only_announcements = user.grade_only_announcements || false;
     this.beforeSchoolActivities = user.beforeSchoolActivities || {
       day_1: [],
       day_2: [],
@@ -76,7 +92,10 @@ export class User {
         markedAssignments: false,
         imageReplies: true,
         upcomingEvents: true,
+        grade_only_announcements: false,
       },
+      block_colors: this.block_colors || {},
+      block_names: this.block_names || {},
       theme: this.theme || 'Light',
       trueDark: this.trueDark || false,
       visuallyImpared: this.visuallyImpared || false,
@@ -238,11 +257,39 @@ export class User {
       }
     }
   };
+  static _saveDistrictInfo = async info => {
+    try {
+      await AsyncStorage.setItem ('district_info', JSON.stringify (info));
+      return await User._getDistrictInfo ();
+    } catch (e) {
+      console.log (e);
+      return {districtUsername: '', districtPassword: '', grade: ''};
+    }
+  };
+  static _getDistrictInfo = async () => {
+    try {
+      let storageInfo = await AsyncStorage.getItem ('district_info') || "{}";
+      let info = JSON.parse (storageInfo);
+      if (info.districtUsername) {
+        return info;
+      } else {
+        return {districtUsername: '', districtPassword: '', grade: ''};
+      }
+    } catch (e) {
+      console.log (e);
+      return {districtUsername: '', districtPassword: '', grade: ''};
+    }
+  };
   static _saveToStorage = async user => {
     try {
+      // console.log(user);
       // console.log("saved to storage: ");
       // console.log(JSON.stringify(user));
+      // console.log({user});
+      // console.log(user.automaticCourseUpdating);
       await AsyncStorage.setItem ('user', JSON.stringify (user));
+      user = await User._retrieveFromStorage ();
+      // console.log({user});
       return user;
     } catch (e) {
       return user;
@@ -254,7 +301,9 @@ export class User {
       // console.log("Retrieved from storage: ");
       // console.log(storageUser);
       let user = JSON.parse (storageUser);
-      return new User (user);
+      user = new User (user);
+      // console.log(user);
+      return user;
     } catch (e) {
       return {};
     }

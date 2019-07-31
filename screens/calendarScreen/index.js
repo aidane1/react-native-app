@@ -142,7 +142,7 @@ function makeMonthRows (month) {
   let currentDay = new Date (month.getFullYear (), month.getMonth (), 1);
   let currentDayInfo = global.dayMap[
     `${currentDay.getFullYear ()}_${currentDay.getMonth ()}_${currentDay.getDate ()}`
-  ] || {week: 0, day: 'day_1'};
+  ] || {week: 0, day: 'day_1', school_in: false};
   while (
     (currentDay.getDate () == 1 &&
       currentDay.getMonth () == month.getMonth ()) ||
@@ -158,6 +158,7 @@ function makeMonthRows (month) {
         events: currentDayInfo.events,
         scheduleDay: currentDayInfo.day,
         scheduleWeek: currentDayInfo.week,
+        school_in: currentDayInfo.school_in,
         isLast: false,
         date: currentDay,
         isInMonth: true,
@@ -168,6 +169,7 @@ function makeMonthRows (month) {
           events: currentDayInfo.events,
           scheduleDay: currentDayInfo.day,
           scheduleWeek: currentDayInfo.week,
+          school_in: currentDayInfo.school_in,
           isLast: false,
           date: currentDay,
           isInMonth: true,
@@ -190,6 +192,7 @@ function makeMonthRows (month) {
         events: currentDayInfo.events,
         scheduleDay: currentDayInfo.day,
         scheduleWeek: currentDayInfo.week,
+        school_in: currentDayInfo.school_in,
         date: new Date (
           currentDay.getFullYear (),
           currentDay.getMonth (),
@@ -288,6 +291,7 @@ class CalendarMonth extends React.Component {
                   zDay = {
                     isInMonth: false,
                     is_displayed: false,
+                    school_in: false,
                     date: z.date,
                   };
                 }
@@ -296,6 +300,7 @@ class CalendarMonth extends React.Component {
                     modal={this.props.modal}
                     titles={this.props.dayTitles}
                     key={`day_${index1}_${index2}`}
+                    eventsMap={this.props.eventsMap}
                     day={zDay}
                   />
                 );
@@ -312,12 +317,17 @@ class CalendarDay extends React.Component {
   constructor (props) {
     super (props);
     this.props = props;
+    let date = this.props.day.date;
+    this.events = this.props.eventsMap[
+      `${date.getFullYear ()}_${date.getMonth ()}_${date.getDate ()}`
+    ] || [];
   }
   handleClick = () => {
     this.props.modal.current.setState ({
       schedule: [this.props.day.week, this.props.day.day],
+      school_in: this.props.day.school_in,
       modalShown: true,
-      events: this.props.day.events || [],
+      events: this.events,
       date: this.props.day.date,
     });
   };
@@ -327,7 +337,7 @@ class CalendarDay extends React.Component {
       this.props.day.week !== undefined &&
       this.props.day.day !== undefined
     ) {
-      if (this.props.day.events.length > 0) {
+      if (this.events.length > 0) {
         return (
           <Touchable onPress={this.handleClick}>
             <View
@@ -343,7 +353,7 @@ class CalendarDay extends React.Component {
                 {this.props.day.date.getDate ()}
               </Text>
               {(() => {
-                if (this.props.day.is_displayed) {
+                if (this.props.day.school_in) {
                   return (
                     <Text
                       style={[
@@ -362,13 +372,12 @@ class CalendarDay extends React.Component {
                   return <Text style={styles.calendarTitle}> </Text>;
                 }
               }) ()}
-              {(() => {
-                if (this.props.day.events.length > 0) {
-                  return <View style={styles.hasEvents} />;
-                } else {
-                  return <View style={styles.noEvents} />;
-                }
-              }) ()}
+              <View
+                style={[
+                  styles.hasEvents,
+                  {backgroundColor: global.user.getTertiaryTextColor ()},
+                ]}
+              />
             </View>
           </Touchable>
         );
@@ -389,7 +398,7 @@ class CalendarDay extends React.Component {
                 {this.props.day.date.getDate ()}
               </Text>
               {(() => {
-                if (this.props.day.is_displayed) {
+                if (this.props.day.school_in) {
                   return (
                     <Text
                       style={[
@@ -408,13 +417,9 @@ class CalendarDay extends React.Component {
                   return <Text style={styles.calendarTitle}> </Text>;
                 }
               }) ()}
-              {(() => {
-                if (this.props.day.events.length > 0) {
-                  return <View style={styles.hasEvents} />;
-                } else {
-                  return <View style={styles.noEvents} />;
-                }
-              }) ()}
+
+              <View style={[styles.noEvents]} />
+
             </View>
           </Touchable>
         );
@@ -441,6 +446,7 @@ class ModalSelect extends React.Component {
     this.state = {
       modalShown: false,
       events: [],
+      school_in: false,
       scheduled: [],
       date: new Date (),
       schedule: [],
@@ -487,7 +493,12 @@ class SideBarEvent extends React.Component {
           {backgroundColor: global.user.getBorderColor ()},
         ]}
       >
-        <Text style={styles.eventTimeText}>
+        <Text
+          style={[
+            styles.eventTimeText,
+            {backgroundColor: global.user.getBorderColor ()},
+          ]}
+        >
           {this.props.event.time}
         </Text>
         <ScrollView
@@ -496,7 +507,7 @@ class SideBarEvent extends React.Component {
           style={styles.eventScroll}
         >
           <Text style={styles.eventText}>
-            {this.props.event.info || 'No Events!'}
+            {this.props.event.title || 'No Events!'}
           </Text>
         </ScrollView>
       </View>
@@ -548,7 +559,11 @@ class SideBar extends React.Component {
               : [{time: '', event: 'No Events!'}]
           }
         />
-        <SideBarList schedule={this.props.schedule} date={this.props.date} />
+        <SideBarList
+          schedule={this.props.schedule}
+          date={this.props.date}
+          school_in={this.props.school_in}
+        />
       </View>
     );
   }
@@ -630,11 +645,16 @@ class SideBarList extends React.Component {
       '#6666FF',
     ];
     let courses = calculateCurrentCourses (global.semesters, this.props.date);
+
     let courseList = makeSemesterCourseList (
       courses,
       this.props.schedule[0],
       this.props.schedule[1]
     );
+
+    if (!this.props.school_in) {
+      courseList = [];
+    }
     return (
       <View style={styles.sidebarList}>
         <ScrollView>
@@ -721,6 +741,7 @@ class Calendars extends React.Component {
             date={item}
             current={this}
             modal={this.props.modal}
+            eventsMap={this.props.eventsMap}
           />
         )}
         keyExtractor={(item, index) => `month_${index}`}
@@ -746,6 +767,25 @@ export default class CalendarScreenTile extends React.Component {
       );
     }
     this.modal = React.createRef ();
+
+    let events = global.events;
+    let eventsMap = {};
+    events.forEach (event => {
+      if (
+        eventsMap[
+          `${event.event_date.getFullYear ()}_${event.event_date.getMonth ()}_${event.event_date.getDate ()}`
+        ]
+      ) {
+        eventsMap[
+          `${event.event_date.getFullYear ()}_${event.event_date.getMonth ()}_${event.event_date.getDate ()}`
+        ].push (event);
+      } else {
+        eventsMap[
+          `${event.event_date.getFullYear ()}_${event.event_date.getMonth ()}_${event.event_date.getDate ()}`
+        ] = [event];
+      }
+    });
+    this.eventsMap = eventsMap;
   }
   openModal = () => {
     this.modal.current.setState ({modalShown: true});
@@ -777,6 +817,7 @@ export default class CalendarScreenTile extends React.Component {
             months={this.months}
             modal={this.modal}
             dayTitles={global.school.dayTitles}
+            eventsMap={this.eventsMap}
           />
           <ModalSelect ref={this.modal} />
         </View>
@@ -823,6 +864,7 @@ const styles = StyleSheet.create ({
     height: 7.5,
     borderRadius: 7.5,
     backgroundColor: 'rgba(0,0,0,0)',
+    opacity: 0,
   },
   calendarMonthTitle: {
     width: width,

@@ -18,7 +18,7 @@ import {
   CourseIcon,
   EventsIcon,
   LogoutIcon,
-  NotesIcon,
+  CourseConfigIcon,
   AssignmentsIcon,
   SchoolAssignmentsIcon,
   BeforeSchoolIcon,
@@ -29,7 +29,7 @@ import {
   QuestionIcon,
   MegaPhoneIcon,
   NotificationIcon,
-  QuestionMarkIcon
+  QuestionMarkIcon,
 } from '../../classes/icons';
 
 import {
@@ -282,7 +282,13 @@ export default class AccountScreen extends React.Component {
             <ButtonSection header={'HELP'}>
               <CourseRow
                 color={'#aaa'}
-                icon={<QuestionMarkIcon style={{marginRight: 2, marginBottom: 2}} size={20} color={'black'} />}
+                icon={
+                  <QuestionMarkIcon
+                    style={{marginRight: 2, marginBottom: 2}}
+                    size={20}
+                    color={'black'}
+                  />
+                }
                 text={'Tutorial'}
                 last={true}
                 onPress={() => this._navigateToPage ('Tutorial')}
@@ -395,8 +401,17 @@ export default class AccountScreen extends React.Component {
               />
             </ButtonSection>
             <ButtonSection header={'PRIVATE'}>
-              <CourseRow
+            <CourseRow
                 color={'#b2b1f9'}
+                icon={<CourseConfigIcon size={20} color={'black'} />}
+                text={'Course Names & Colours'}
+                onPress={() => {
+                  this._navigateToPage ('CourseConfig');
+                }}
+                last={false}
+              />
+              <CourseRow
+                color={'#d7b1f9'}
                 icon={<BeforeSchoolIcon size={20} color={'black'} />}
                 text={'Before School Activities'}
                 onPress={() => {
@@ -410,7 +425,7 @@ export default class AccountScreen extends React.Component {
                 last={false}
               />
               <CourseRow
-                color={'#d7b1f9'}
+                color={'#f6b1f9'}
                 icon={<LunchTimeIcon size={20} color={'black'} />}
                 text={'Lunchtime Activities'}
                 onPress={() => {
@@ -424,7 +439,7 @@ export default class AccountScreen extends React.Component {
                 last={false}
               />
               <CourseRow
-                color={'#f6b1f9'}
+                color={'#ce7ff5'}
                 icon={<AfterSchoolIcon size={20} color={'black'} />}
                 text={'After School Activities'}
                 onPress={() => {
@@ -437,6 +452,7 @@ export default class AccountScreen extends React.Component {
                 }}
                 last={true}
               />
+              
             </ButtonSection>
             <ButtonSection header={'LOGOUT'}>
               <CourseRow

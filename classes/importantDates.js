@@ -37,6 +37,8 @@ export class ImportantDates {
   static _saveToStorage = async dates => {
     try {
       await AsyncStorage.setItem ('important_dates', JSON.stringify (dates));
+      dates = await ImportantDates._retrieveFromStorage();
+      return dates;
     } catch (e) {
       console.log (e);
       return dates;

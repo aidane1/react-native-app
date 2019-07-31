@@ -35,7 +35,7 @@ import ApexAPI from '../../http/api';
 const width = Dimensions.get ('window').width; //full width
 const height = Dimensions.get ('window').height; //full height
 
-function makeColorMap (blockNames) {
+function makeColorMap (blockNames, userColors = {}) {
   let colorArray = [
     '#FF6633',
     '#FFB399',
@@ -96,6 +96,7 @@ function makeColorMap (blockNames) {
       colorMap[blockNames[i]._id] = '#ffffff';
     }
   }
+  colorMap = {...colorMap, ...userColors}
   return colorMap;
 }
 
@@ -207,11 +208,10 @@ function getBlock (block, courses, colorMap) {
               '#ffffff',
               colorMap[block.block.block],
               colorMap[block.block.block],
+              colorMap[block.block.block],
             ]),
             averageColors ([
               '#ffffff',
-              '#ffffff',
-              colorMap[block.block.block],
               colorMap[block.block.block],
               colorMap[block.block.block],
             ]),
@@ -225,7 +225,7 @@ function getBlock (block, courses, colorMap) {
           }}
         >
           <Text style={{textAlign: 'center', fontSize: 16, fontWeight: '500'}}>
-            {course.course}
+            {global.user.block_names[course.block] || course.course}
           </Text>
           <Text
             style={{
@@ -408,12 +408,13 @@ export default class ScheduleScreenTile extends React.Component {
       }
     }
     this.courseMap = courseMap;
-    this.colorMap = makeColorMap (global.school.blocks);
+    this.colorMap = makeColorMap (global.school.blocks, global.user.block_colors);
     return (
       <View
-        style={{width, height: ifIphoneX (height - 80 - 60, height - 60 - 45)}}
+      // height: ifIphoneX (height - 80 - 60, height - 60 - 45)
+        style={{width, marginTop: 30}}
       >
-        <ScrollView style={[styles.scrollBack, global.user.primaryTheme ()]}>
+        {/* <ScrollView style={[styles.scrollBack, global.user.primaryTheme ()]}> */}
           <View style={[styles.titleBlock, global.user.borderColor ()]}>
             <Text
               style={[styles.h1, {color: global.user.getPrimaryTextColor ()}]}
@@ -686,7 +687,7 @@ export default class ScheduleScreenTile extends React.Component {
               </View>
             </Touchable>
           </View>
-        </ScrollView>
+        {/* </ScrollView> */}
         <ImageViewerModal ref={this.imageViewerModal} parent={this} />
       </View>
     );

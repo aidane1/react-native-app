@@ -59,6 +59,7 @@ export function constructSchoolObject (serverData, blocks) {
 }
 
 export function constructUserObject (serverData) {
+  // console.log(serverData.automaticCourseUpdating);
   let user = new User (serverData);
   return user;
 }
