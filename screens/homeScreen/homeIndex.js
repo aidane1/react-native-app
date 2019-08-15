@@ -11,9 +11,12 @@ import {
   AsyncStorage,
   Button,
   RefreshControl,
+  TouchableNativeFeedback,
 } from 'react-native';
 
 import {LinearGradient} from 'expo-linear-gradient';
+
+import ParsedText from 'react-native-parsed-text';
 
 import {boxShadows} from '../../constants/boxShadows';
 
@@ -23,15 +26,23 @@ import {Courses} from '../../classes/courses';
 
 import moment from 'moment';
 
+import ApexAPI from '../../http/api';
+import {FlatList} from 'react-native-gesture-handler';
+
 const width = Dimensions.get ('window').width; //full width
 const height = Dimensions.get ('window').height; //full height
 
 class GradientBlock extends React.Component {
   render () {
+    console.log (this.props);
     return (
-      <View style={[styles.gradientBlock, boxShadows.boxShadow4]}>
+      <Touchable
+        style={[styles.gradientBlock, boxShadows.boxShadow4]}
+        onPress={() => this.props.navigateToPage ('CourseInfo', this.props.id)}
+      >
         <LinearGradient
           colors={['#e8865c', '#e86e5c']}
+          // colors={['#e64b90', '#d81e72']}
           style={[styles.gradientBlockChild]}
         >
           <View style={styles.blockBody}>
@@ -53,16 +64,23 @@ class GradientBlock extends React.Component {
             </View>
           </View>
         </LinearGradient>
-      </View>
+      </Touchable>
     );
   }
 }
 class EventBlock extends React.Component {
   render () {
     return (
-      <View style={[styles.gradientBlock, boxShadows.boxShadow4]}>
+      <Touchable
+        style={[styles.gradientBlock, boxShadows.boxShadow4]}
+        onPress={() => this.props.navigation.navigate ('Events')}
+        // useForeground={true}
+        // background={TouchableNativeFeedback.SelectableBackground ()}
+        // background={Touchable.Ripple ('white')}
+      >
         <LinearGradient
-          colors={['#5cc0e8', '#5c9be8']}
+          // colors={['#5cc0e8', '#5c9be8']}
+          colors={['#5c9be8', '#3b87e3']}
           style={styles.gradientBlockChild}
         >
           <View style={[styles.blockBody, {flexDirection: 'column'}]}>
@@ -73,13 +91,15 @@ class EventBlock extends React.Component {
               >
                 <Text style={styles.eventTopRow}>
                   {this.props.title}
+                  {' '}
+                  {!this.props.school_in ? '(No School)' : ''}
                 </Text>
               </ScrollView>
             </View>
             <View style={styles.eventBottomRow}>
               <Text style={styles.eventBottomRowText}>
 
-                {moment (this.props.event_date).format ('YYYY-MM-DD')}
+                {moment (this.props.event_date).format ('dddd, MMMM Do, YYYY')}
               </Text>
               <Text style={styles.eventBottomRowText}>
                 {this.props.time}
@@ -87,7 +107,131 @@ class EventBlock extends React.Component {
             </View>
           </View>
         </LinearGradient>
+
+      </Touchable>
+    );
+  }
+}
+
+class RecentNotifications extends React.Component {
+  constructor (props) {
+    super (props);
+    this.state = {
+      notifications: [
+        {
+          data: 'No Notifications!',
+          send_date: new Date (),
+        },
+      ],
+    };
+  }
+  componentDidMount () {
+    let api = new ApexAPI (global.user);
+    api.get ('/notifications').then (data => data.json ()).then (data => {
+      if (data.status == 'ok') {
+        let current = new Date ();
+        let notifications = data.body
+          .filter (notification => {
+            return (
+              new Date (notification.send_date).getTime () >
+              new Date (
+                current.getFullYear (),
+                current.getMonth (),
+                current.getDate () - 3
+              ).getTime ()
+            );
+          })
+          .sort ((a, b) => {
+            return new Date (a.send_date).getTime () >
+              new Date (b.send_date).getTime ()
+              ? -1
+              : 1;
+          });
+        notifications.length && this.setState ({notifications});
+      }
+    });
+  }
+  render () {
+    return (
+      <View>
+        <FlatList
+          data={this.state.notifications}
+          keyExtractor={(item, index) => item._id}
+          renderItem={({item, index}) => (
+            <NotificationBlock
+              notification={item}
+              navigation={this.props.navigation}
+            />
+          )}
+        />
       </View>
+    );
+  }
+}
+class NotificationBlock extends React.Component {
+  constructor (props) {
+    super (props);
+  }
+  handleURLPress = (url, matchIndex) => {
+    Linking.canOpenURL (url).then (supported => {
+      console.log (supported);
+      if (supported) {
+        Linking.openURL (url);
+      } else {
+        console.log ('dont know');
+      }
+    });
+  };
+  render () {
+    return (
+      <Touchable
+        onPress={() => this.props.navigation.navigate ('Notifications')}
+        style={[
+          {
+            width: width * 0.95,
+            marginTop: 10,
+            marginBottom: 10,
+            alignSelf: 'center',
+          },
+          boxShadows.boxShadow4,
+        ]}
+      >
+        <LinearGradient
+          colors={['#67b71a', '#508e14']}
+          style={{
+            borderRadius: 5,
+            paddingTop: 10,
+            paddingBottom: 10,
+            paddingLeft: 10,
+            paddingRight: 10,
+          }}
+        >
+          <View style={[styles.blockBody, {flexDirection: 'column'}]}>
+            <View style={{marginBottom: 10}}>
+              <ParsedText
+                style={{color: 'white', fontSize: 16}}
+                parse={[
+                  {
+                    type: 'url',
+                    style: {
+                      fontWeight: '500',
+                      textDecorationLine: 'underline',
+                    },
+                    onPress: this.handleURLPress,
+                  },
+                ]}
+              >
+                {this.props.notification.data}
+              </ParsedText>
+            </View>
+            <Text style={{fontSize: 14, color: 'rgba(255,255,255,0.7)'}}>
+              {moment (this.props.notification.send_date).format (
+                'dddd, MMMM Do, YYYY'
+              )}
+            </Text>
+          </View>
+        </LinearGradient>
+      </Touchable>
     );
   }
 }
@@ -186,6 +330,7 @@ export default class HomeScreenTile extends React.Component {
   };
 
   _navigateToPage = async (page, id) => {
+    console.log ({page, id});
     global.courseInfoCourse = await Courses._retrieveCourseById (id);
     if (global.courseInfoCourse.id != '_') {
       this.props.parent.props.navigation.navigate (page);
@@ -214,8 +359,14 @@ export default class HomeScreenTile extends React.Component {
               {this.props.dayTitle}
             </Text>
           </View>
-          <GradientBlock {...this.props.current} />
-          <GradientBlock {...this.props.next} />
+          <GradientBlock
+            {...this.props.current}
+            navigateToPage={this._navigateToPage}
+          />
+          <GradientBlock
+            {...this.props.next}
+            navigateToPage={this._navigateToPage}
+          />
           <View style={[styles.titleBlock, global.user.borderColor ()]}>
             <Text
               style={[styles.h1, {color: global.user.getPrimaryTextColor ()}]}
@@ -224,24 +375,24 @@ export default class HomeScreenTile extends React.Component {
             </Text>
           </View>
           {this.props.events.map ((y, i) => {
-            return <EventBlock key={`event_${i}`} {...y} />;
+            return (
+              <EventBlock
+                key={`event_${i}`}
+                {...y}
+                navigation={this.props.parent.props.navigation}
+              />
+            );
           })}
           <View style={[styles.titleBlock, global.user.borderColor ()]}>
             <Text
               style={[styles.h1, {color: global.user.getPrimaryTextColor ()}]}
             >
-              Assignments
+              Notifications
             </Text>
           </View>
-          {this.props.assignments.map ((y, i) => {
-            return (
-              <AssignmentBlock
-                navigateToPage={this._navigateToPage}
-                key={`event_${i}`}
-                {...y}
-              />
-            );
-          })}
+          <RecentNotifications
+            navigation={this.props.parent.props.navigation}
+          />
           <View style={{width, height: 20}} />
         </View>
       </ScrollView>

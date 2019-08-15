@@ -173,7 +173,6 @@ class ColourPickerModal extends React.Component {
             }}
           >
             <ColorPicker
-              onColorSelected={color => alert (`Color selected: ${color}`)}
               style={{height: height * 0.5, width: width * 0.9}}
               //   hideSliders={true}
               onColorChange={this.updateColor}

@@ -3,7 +3,7 @@ import {
   StyleSheet,
   View,
   Dimensions,
-  Animated,
+  WebView,
   Alert,
   Text,
   Keyboard,
@@ -146,6 +146,7 @@ export default class AnnouncementScreen extends React.Component {
     this.state = {
       announcement: this.props.navigation.getParam ('announcement'),
     };
+    console.log (this.state.announcement);
     this._isMounted = false;
   }
   componentDidMount () {
@@ -173,7 +174,7 @@ export default class AnnouncementScreen extends React.Component {
           height={60}
           title="Announcement"
         />
-        <ScrollView style={styles.bodyHolder}>
+        <ScrollView style={styles.bodyHolder} bounces={false} >
           <View style={[styles.titleBlock, global.user.borderColor ()]}>
             <Text
               style={[styles.h1, {color: global.user.getPrimaryTextColor ()}]}
@@ -183,32 +184,51 @@ export default class AnnouncementScreen extends React.Component {
               )}
             </Text>
           </View>
-          <View
-            style={[
-              {
-                // width: width * 0.97,
-                width,
-                paddingTop: 40,
-                paddingBottom: 40,
-                borderRadius: 8,
-                alignSelf: 'center',
-                marginTop: 40,
-                // backgroundColor: global.user.theme == "Light" ? "#ebebeb" : "#313131",
-                backgroundColor: global.user.getSecondaryTheme (),
-              },
-              boxShadows.boxShadow5,
-            ]}
-          >
-            <FlatList
-              data={this.state.announcement.tiles}
-              keyExtractor={(item, index) => item._id}
-              renderItem={({item, index}) => <AnnouncmentTile tile={item} />}
-              style={{
-                borderTopColor: global.user.getBorderColor (),
-                borderTopWidth: StyleSheet.hairlineWidth,
-              }}
-            />
-          </View>
+          {global.user.pdf_announcements
+            ? <WebView
+                style={{
+                  width,
+                  height: height-ifIphoneX(170, 150)
+                  // flexGrow: 1, 
+                }}
+                source={{
+                  uri: `https://www.apexschools.co${this.state.announcement.file_path}.pdf`,
+                  headers: {
+                    'x-api-key': global.user['x-api-key'],
+                    'x-id-key': global.user['x-id-key'],
+                    school: global.school['id'],
+                  },
+                }}
+              />
+            : <View
+                style={[
+                  {
+                    // width: width * 0.97,
+                    width,
+                    paddingTop: 40,
+                    paddingBottom: 40,
+                    borderRadius: 8,
+                    alignSelf: 'center',
+                    marginTop: 40,
+                    // backgroundColor: global.user.theme == "Light" ? "#ebebeb" : "#313131",
+                    backgroundColor: global.user.getSecondaryTheme (),
+                  },
+                  boxShadows.boxShadow5,
+                ]}
+              >
+                <FlatList
+                  data={this.state.announcement.tiles}
+                  keyExtractor={(item, index) => item._id}
+                  renderItem={({item, index}) => (
+                    <AnnouncmentTile tile={item} />
+                  )}
+                  style={{
+                    borderTopColor: global.user.getBorderColor (),
+                    borderTopWidth: StyleSheet.hairlineWidth,
+                  }}
+                />
+              </View>}
+
           <View style={{width, height: 20}} />
         </ScrollView>
       </View>

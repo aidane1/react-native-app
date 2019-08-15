@@ -47,15 +47,49 @@ export default class HeaderBar extends React.Component {
               : ['rgb(0,78,78)', ', rgb(0,66,107)']
           }
         >
-          <View style={styles.iconLeft}>
-            {this.props.iconLeft}
+          <View
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              bottom: 0,
+              right: 0,
+              flexDirection: 'row',
+              justifyContent: 'center',
+              alignItems: 'flex-end',
+              paddingLeft: 10,
+              paddingRight: 10,
+            }}
+          >
+            <Text
+              style={[styles.headerText, {maxWidth: this.props.width * 0.7}]}
+              numberOfLines={1}
+            >
+              {this.props.title}
+            </Text>
           </View>
-          <Text style={[styles.headerText, {maxWidth: this.props.width*0.7}]} numberOfLines={1}>
-            {this.props.title}
-          </Text>
-          <View style={styles.iconRight}>
-            {this.props.iconRight}
+          <View
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              bottom: 0,
+              right: 0,
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'flex-end',
+              paddingLeft: 10,
+              paddingRight: 10,
+            }}
+          >
+            <View style={styles.iconLeft}>
+              {this.props.iconLeft}
+            </View>
+            <View style={styles.iconRight}>
+              {this.props.iconRight}
+            </View>
           </View>
+
         </LinearGradient>
       </View>
     );

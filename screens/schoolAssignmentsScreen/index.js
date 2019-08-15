@@ -392,7 +392,7 @@ export default class SchoolAssignmentsScreen extends React.Component {
     let api = new ApexAPI (global.user);
     api
       .get (
-        `district-assignments?username=${global.user.username}&password=${global.user.password}&district=sd83`,
+        `district-assignments?username=${global.districtInfo.username}&password=${global.districtInfo.password}&district=${global.school.district}`,
         this.abortController
       )
       .then (data => data.json ())

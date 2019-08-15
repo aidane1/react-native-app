@@ -38,7 +38,9 @@ import {ScrollView, TextInput, FlatList} from 'react-native-gesture-handler';
 
 import Touchable from 'react-native-platform-touchable';
 
-import {ImagePicker, Camera} from 'expo';
+import * as ImagePicker from 'expo-image-picker';
+
+import * as Camera from 'expo-camera';
 
 import Constants from 'expo-constants';
 
@@ -83,6 +85,8 @@ export default class ImageBar extends React.Component {
       cameraRollImages: global.cameraRollImages,
       uploading: 0,
     };
+    this.onImageRecieved = this.props.onImageRecieved || (() => {});
+    this.onImageLoaded = this.props.onImageLoaded || (() => {});
     this._isMounted = false;
   }
   getCameraPermissions = async () => {
@@ -96,14 +100,22 @@ export default class ImageBar extends React.Component {
     if (status !== 'granted') {
       alert ('Sorry, we need camera roll permissions to make this work!');
     } else {
-      let photos = await CameraRoll.getPhotos ({
-        first: 20,
-        assetType: 'Photos',
-        groupTypes: 'All',
-      });
-      global.cameraRollImages = photos.edges;
-      global.cameraRollImages.reverse ();
       global.status = 'granted';
+      let photos = await CameraRoll.getPhotos (
+        Platform.select ({
+          ios: {
+            first: 500,
+            assetType: 'Photos',
+            groupTypes: 'All',
+          },
+          android: {
+            first: 500,
+            assetType: 'Photos',
+          },
+        })
+      );
+      photos.edges.sort ((a, b) => b.node.timestamp - a.node.timestamp);
+      global.cameraRollImages = photos.edges.slice (0, 70);
       this.setState ({cameraRollImages: global.cameraRollImages});
     }
   };
@@ -128,6 +140,7 @@ export default class ImageBar extends React.Component {
       if (this.props.aspect) settings['aspect'] = this.props.aspect;
       if (this.props.allowsEditing) settings['allowsEditing'] = true;
       let result = await ImagePicker.launchImageLibraryAsync (settings);
+      console.log(result);
       if (result.uri) {
         result.id = new Date ().getTime ();
         this.setState (state => ({
@@ -140,7 +153,7 @@ export default class ImageBar extends React.Component {
           .then (json => {
             console.log(json);
             if (json.status == 'ok') {
-              // this.props.onImageRecieved (json.body);
+              this.onImageLoaded (json.body);
               this.setState (state => ({
                 unloadedImages: state.unloadedImages.filter (
                   image => image.id != result.id
@@ -177,9 +190,9 @@ export default class ImageBar extends React.Component {
         this.sendResourseToServer (result)
           .then (res => res.json ())
           .then (json => {
-            console.log(json);
+            // console.log (json);
             if (json.status == 'ok') {
-              // this.props.onImageRecieved (json.body);
+              this.onImageLoaded (json.body);
               this.setState (state => ({
                 unloadedImages: state.unloadedImages.filter (
                   image => image.id != result.id
@@ -196,7 +209,7 @@ export default class ImageBar extends React.Component {
   };
   sendResourseToServer (resource) {
     let id = new bson.ObjectId ();
-    this.props.onImageRecieved({_id : id});
+    this.onImageRecieved ({_id: id, uri: resource.uri});
     return fetch (
       `https://www.apexschools.co/api/v1/resources?base64=true&populate=resources&_id=${id}`,
       {
@@ -213,7 +226,13 @@ export default class ImageBar extends React.Component {
   }
   openCameraRollFile = async file => {
     let id = new bson.ObjectId ();
-    this.props.onImageRecieved({_id : id});
+    this.onImageRecieved ({
+      _id: id,
+      uri: file.node.image.uri,
+      width: file.node.image.width,
+      height: file.node.image.height,
+    });
+    file = file.node.image.uri;
     let response = await fetch (file);
     let blob = await response.blob ();
     const req = new XMLHttpRequest ();
@@ -231,6 +250,8 @@ export default class ImageBar extends React.Component {
       if (this.readyState == 4 && this.status == 201) {
         let response = JSON.parse (this.responseText);
         if (response.status == 'ok') {
+          console.log (self.props);
+          self.onImageLoaded (response.body);
           if (self._isMounted) {
             self.setState (
               state => ({
@@ -313,8 +334,7 @@ export default class ImageBar extends React.Component {
                       {this.state.cameraRollImages.map ((image, index) => {
                         return (
                           <Touchable
-                            onPress={() =>
-                              this.openCameraRollFile (image.node.image.uri)}
+                            onPress={() => this.openCameraRollFile (image)}
                             key={'roll_image_' + index}
                             style={{borderWidth: 3, borderColor: 'black'}}
                           >
@@ -453,6 +473,9 @@ export default class ImageBar extends React.Component {
     );
   }
 }
+
+//onImageRecieved: called as soon as user picks an image. returns an object containing {uri, _id}
+//onImageLoaded: called as soon as the server returns an ok, indicating that the image was successfully uploaded
 
 //props: onImageRecieved, onImageLoaded, displayImagesInline, path, displayCameraRollInline,
 //methods: getAllImages, clear, isLoaded

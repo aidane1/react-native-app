@@ -125,7 +125,7 @@ export default class AnnouncementsScreen extends React.Component {
     this.props = props;
     this.state = {
       announcements: [],
-      limit: 20,
+      limit: 365,
     };
     this.createQuestion = React.createRef ();
     this.actionSheet = React.createRef ();
@@ -136,7 +136,7 @@ export default class AnnouncementsScreen extends React.Component {
       header: null,
     };
   };
-  loadAnnouncements = (limit = 20, callback) => {
+  loadAnnouncements = (limit = 365, callback) => {
     let api = new ApexAPI (global.user);
     api
       .get (`announcements/announcements?limit=${limit}`)

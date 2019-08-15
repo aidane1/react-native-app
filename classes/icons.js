@@ -14,6 +14,27 @@ class IconBlock {
   constructor (icon) {}
 }
 
+export class WeekIcon extends React.Component {
+  render () {
+    return (
+      <MaterialCommunityIcons
+        color="white"
+        name="view-week"
+        size={16}
+        {...this.props}
+      />
+    );
+  }
+}
+
+export class PdfIcon extends React.Component {
+  render () {
+    return (
+      <FontAwesome color="white" name="file-pdf-o" size={16} {...this.props} />
+    );
+  }
+}
+
 export class ActivityIcon extends React.Component {
   render () {
     return <Feather color="white" name="activity" size={16} {...this.props} />;

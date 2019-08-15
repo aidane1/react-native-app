@@ -271,7 +271,7 @@ class CustomActionSheet extends React.Component {
     ];
     if (
       global.user.permission_level >= 3 ||
-      comment.uploaded_by == global.user.accountId
+      comment.uploaded_by == global.user.id
     ) {
       options[3] = 'Delete';
     }
@@ -418,7 +418,7 @@ class CustomActionSheet extends React.Component {
       case 3:
         if (
           global.user.permission_level >= 3 ||
-          this.state.comment.uploaded_by == global.user.accountId
+          this.state.comment.uploaded_by == global.user.id
         ) {
           api
             .delete (`comments/${this.state.comment._id}`)
@@ -1207,10 +1207,10 @@ export default class QuestionScreen extends React.Component {
                     </Touchable>}
 
                 <Touchable onPress={this.openCreate} style={{padding: 10}}>
-                  <ReplyIcon size={22} />
+                  <ReplyIcon size={22} color={global.user.getPrimaryTextColor()}/>
                 </Touchable>
                 <Touchable style={{padding: 10}}>
-                  <FlagIcon size={22} />
+                  <FlagIcon size={22} color={global.user.getPrimaryTextColor()} />
                 </Touchable>
               </View>
             </View>

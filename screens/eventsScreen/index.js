@@ -30,7 +30,8 @@ class EventBlock extends React.Component {
     return (
       <View style={[styles.gradientBlock, boxShadows.boxShadow4]}>
         <LinearGradient
-          colors={['#5cc0e8', '#5c9be8']}
+          // colors={['#5cc0e8', '#5c9be8']}
+          colors={['#5c9be8', '#3b87e3']}
           style={styles.gradientBlockChild}
         >
           <View style={[styles.blockBody, {flexDirection: 'column'}]}>
@@ -40,7 +41,9 @@ class EventBlock extends React.Component {
                 showsHorizontalScrollIndicator={false}
               >
                 <Text style={styles.eventTopRow}>
-                  {this.props.title} {!this.props.school_in ? "(No School)" : ""}
+                  {this.props.title}
+                  {' '}
+                  {!this.props.school_in ? '(No School)' : ''}
                 </Text>
               </ScrollView>
             </View>
@@ -183,7 +186,7 @@ const styles = StyleSheet.create ({
   },
   gradientBlock: {
     width: width * 0.95,
-    alignSelf: "center",
+    alignSelf: 'center',
     marginTop: 10,
     marginBottom: 10,
   },

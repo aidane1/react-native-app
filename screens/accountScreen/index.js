@@ -29,6 +29,7 @@ import {
   QuestionIcon,
   MegaPhoneIcon,
   NotificationIcon,
+  PdfIcon,
   QuestionMarkIcon,
 } from '../../classes/icons';
 
@@ -373,7 +374,7 @@ export default class AccountScreen extends React.Component {
                 icon={<AssignmentsIcon size={20} color={'black'} />}
                 text={'My Classes'}
                 onPress={() => this._navigateToPage ('Assignments')}
-                last={false}
+                last={true}
               />
 
             </ButtonSection>
@@ -397,11 +398,18 @@ export default class AccountScreen extends React.Component {
                 icon={<SchoolAssignmentsIcon size={20} color={'black'} />}
                 text={'School Assignments'}
                 onPress={() => this._navigateToPage ('SchoolAssignments')}
+                last={false}
+              />
+              <CourseRow
+                color={'#7d8af0'}
+                icon={<PdfIcon size={20} color={'black'} />}
+                text={'Transcript'}
+                onPress={() => this._navigateToPage ('Transcript')}
                 last={true}
               />
             </ButtonSection>
             <ButtonSection header={'PRIVATE'}>
-            <CourseRow
+              <CourseRow
                 color={'#b2b1f9'}
                 icon={<CourseConfigIcon size={20} color={'black'} />}
                 text={'Course Names & Colours'}
@@ -452,7 +460,7 @@ export default class AccountScreen extends React.Component {
                 }}
                 last={true}
               />
-              
+
             </ButtonSection>
             <ButtonSection header={'LOGOUT'}>
               <CourseRow

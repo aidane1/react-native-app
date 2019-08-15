@@ -8,7 +8,7 @@ import {
   Text,
   Keyboard,
   Easing,
-  RefreshControl
+  RefreshControl,
 } from 'react-native';
 
 import HeaderBar from '../../components/header';
@@ -112,26 +112,6 @@ class CreateQuestion extends React.Component {
     this.setState (state => ({
       tags: state.tags,
     }));
-  };
-  componentDidMount () {
-    this.keyboardWillShowSub = Keyboard.addListener (
-      'keyboardWillShow',
-      this.keyboardWillShow
-    );
-    this.keyboardWillHideSub = Keyboard.addListener (
-      'keyboardWillHide',
-      this.keyboardWillHide
-    );
-  }
-  componentWillUnmount () {
-    this.keyboardWillShowSub.remove ();
-    this.keyboardWillHideSub.remove ();
-  }
-  keyboardWillShow = event => {
-    this.compactScrollView (event);
-  };
-  keyboardWillHide = event => {
-    this.openScrollView (event);
   };
   compactScrollView = event => {
     Animated.timing (this.state.height, {
@@ -571,8 +551,19 @@ class Question extends React.Component {
           <View
             style={[
               styles.post,
-              global.user.secondaryTheme (),
+              // global.user.primaryTheme (),
               global.user.borderColor (),
+              global.user.theme == 'Light'
+                ? {
+                    backgroundColor: 'white',
+                  }
+                : !global.user.trueDark
+                    ? {
+                        backgroundColor: '#292a30',
+                      }
+                    : {
+                      backgroundColor: "#000000"
+                    },
             ]}
           >
             <ScrollView
@@ -739,6 +730,13 @@ class CustomActionSheet extends React.Component {
     super (props);
     this.state = {
       question: {},
+      options: [
+        'Open',
+        'Vote as Helpful',
+        'Vote as Unhelpful',
+        'Report',
+        'Cancel',
+      ],
     };
     this.actionSheet = React.createRef ();
   }
@@ -752,7 +750,7 @@ class CustomActionSheet extends React.Component {
     ];
     if (
       global.user.permission_level >= 3 ||
-      question.uploaded_by == global.user.accountId
+      question.uploaded_by == global.user.id
     ) {
       options[3] = 'Delete';
     }
@@ -905,7 +903,7 @@ class CustomActionSheet extends React.Component {
       case 3:
         if (
           global.user.permission_level >= 3 ||
-          this.state.question.uploaded_by == global.user.accountId
+          this.state.question.uploaded_by == global.user.id
         ) {
           api
             .delete (`posts/${this.state.question._id}`)

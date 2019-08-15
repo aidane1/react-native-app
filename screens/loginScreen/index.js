@@ -255,6 +255,17 @@ class LoginButton extends React.Component {
           global.school = await School._saveToStorage (
             constructSchoolObject (response.body.school, response.body.blocks)
           );
+          // console.log ({
+          //   grade: response.body.user.grade || '9',
+          //   districtUsername: response.body.username,
+          //   districtPassword: password,
+          // });
+          global.districtInfo = await User._saveDistrictInfo ({
+            grade: response.body.user.grade || '9',
+            districtUsername: response.body.username,
+            districtPassword: password,
+          });
+          // console.log (global.districtInfo);
           global.user = await User._saveToStorage (
             constructUserObject ({
               scheduleImages: response.body.user.schedule_images,
@@ -268,6 +279,10 @@ class LoginButton extends React.Component {
               studentNumber: response.body.user.student_number,
               block_colors: response.body.user.block_colors,
               block_names: response.body.user.block_names,
+              pdf_announcements: response.body.user.pdf_announcements !==
+                undefined
+                ? response.body.user.pdf_announcements
+                : true,
               username: response.body.username,
               password,
               'x-api-key': response.body['api_key'],
@@ -301,9 +316,12 @@ class LoginButton extends React.Component {
               automaticMarkRetrieval: response.body.user
                 .automatic_mark_retrieval || false,
               automaticCourseUpdating: response.body.user
-                .automatic_course_retrieval || true,
+                .automatic_course_retrieval !== undefined
+                ? response.body.user.automatic_course_retrieval
+                : true,
             })
           );
+
           await User._setLoginState (true);
           const resetAction = StackActions.reset ({
             index: 0,
@@ -437,14 +455,25 @@ export default class LoginScreen extends React.Component {
     this.modal.current.setState ({modalShown: true});
   };
   componentDidMount () {
-    this.keyboardWillShowSub = Keyboard.addListener (
-      'keyboardWillShow',
-      this.keyboardWillShow
-    );
-    this.keyboardWillHideSub = Keyboard.addListener (
-      'keyboardWillHide',
-      this.keyboardWillHide
-    );
+    if (Platform.OS == 'ios') {
+      this.keyboardWillShowSub = Keyboard.addListener (
+        'keyboardWillShow',
+        this.keyboardWillShow
+      );
+      this.keyboardWillHideSub = Keyboard.addListener (
+        'keyboardWillHide',
+        this.keyboardWillHide
+      );
+    } else {
+      this.keyboardWillShowSub = Keyboard.addListener (
+        'keyboardDidShow',
+        this.keyboardWillShow
+      );
+      this.keyboardWillHideSub = Keyboard.addListener (
+        'keyboardDidHide',
+        this.keyboardWillHide
+      );
+    }
     ApexAPI.getSchoolList ()
       .then (res => res.json ())
       .then (res => {

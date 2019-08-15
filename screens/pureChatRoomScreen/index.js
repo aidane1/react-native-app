@@ -15,6 +15,7 @@ import {
   Alert,
   RefreshControl,
   KeyboardAvoidingView,
+  Easing,
 } from 'react-native';
 
 import {
@@ -28,6 +29,8 @@ import {
   PhotoIcon,
   CloseCircleIcon,
 } from '../../classes/icons';
+
+import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
 
 import {
   BallIndicator,
@@ -62,6 +65,17 @@ import ApexAPI from '../../http/api';
 import ImageBar from '../../components/imagePicker';
 
 import {ifIphoneX} from 'react-native-iphone-x-helper';
+import {Platform} from '@unimodules/core';
+
+function cacheImages (images) {
+  return images.map (image => {
+    if (typeof image === 'string') {
+      return Image.prefetch (image);
+    } else {
+      return Asset.fromModule (image).downloadAsync ();
+    }
+  });
+}
 
 const width = Dimensions.get ('window').width; //full width
 const height = Dimensions.get ('window').height; //full height
@@ -71,8 +85,20 @@ class ImagePickerPopup extends React.Component {
     super (props);
     this.state = {
       isBackdropVisible: false,
+      input: false,
+      keyBoardIsUp: false,
     };
   }
+  backdropPress = () => {
+    this.setState ({isBackdropVisible: false}, () => {});
+  };
+  hide = () => {
+    if (this.state.input) {
+      if (this.state.keyBoardIsUp) {
+        this.state.input.current.focus ();
+      }
+    }
+  };
   render () {
     return (
       <View>
@@ -84,12 +110,15 @@ class ImagePickerPopup extends React.Component {
             justifyContent: 'flex-end',
           }}
           animationIn="slideInUp"
+          animationInTiming={250}
+          animationOutTiming={250}
           animationOut="slideOutDown"
           isVisible={this.state.isBackdropVisible}
           backdropColor={
             global.user.theme == 'Light' ? 'black' : 'rgba(255,255,255,0.4)'
           }
-          onBackdropPress={() => this.setState ({isBackdropVisible: false})}
+          onModalHide={this.hide}
+          onBackdropPress={this.backdropPress}
           propagateSwipe={true}
         >
 
@@ -295,32 +324,55 @@ class CreateChatBar extends React.Component {
     super (props);
     this.state = {
       value: '',
+      typing: false,
+      usersTyping: [],
     };
     this.text = React.createRef ();
     this.keyboardIsUp = false;
     this.canSendMessage = true;
   }
   componentDidMount () {
-    this.keyboardWillShowSub = Keyboard.addListener (
-      'keyboardWillShow',
-      this.keyboardWillShow
-    );
-    this.keyboardWillHideSub = Keyboard.addListener (
-      'keyboardWillHide',
-      this.keyboardWillHide
-    );
+    if (Platform.OS == 'ios') {
+      this.keyboardWillShowSub = Keyboard.addListener (
+        'keyboardWillShow',
+        this.keyboardWillShow
+      );
+      this.keyboardWillHideSub = Keyboard.addListener (
+        'keyboardWillHide',
+        this.keyboardWillHide
+      );
+    } else {
+      // this.keyboardWillShowSub = Keyboard.addListener (
+      //   'keyboardDidShow',
+      //   this.keyboardWillShow
+      // );
+      // this.keyboardWillHideSub = Keyboard.addListener (
+      //   'keyboardDidHide',
+      //   this.keyboardWillHide
+      // );
+    }
   }
   componentWillUnmount () {
-    this.keyboardWillShowSub.remove ();
-    this.keyboardWillHideSub.remove ();
+    if (Platform.OS == 'ios') {
+      this.keyboardWillShowSub.remove ();
+      this.keyboardWillHideSub.remove ();
+    }
   }
   keyboardWillShow = event => {
     this.keyboardIsUp = true;
-    this.props.compactScrollView (event);
+    if (Platform.OS == 'ios') {
+      this.props.compactScrollView (event);
+    } else {
+      // this.props.compactAndroidScrollView (event);
+    }
     this.dropTextBar = true;
   };
   keyboardWillHide = event => {
-    this.props.openScrollView (event);
+    if (Platform.OS == 'ios') {
+      this.props.openScrollView (event);
+    } else {
+      // this.props.openAndroidScrollView (event);
+    }
     this.keyboardIsUp = false;
   };
   sendMessage = () => {
@@ -334,7 +386,7 @@ class CreateChatBar extends React.Component {
       };
       this.props.sendMessage (message);
       this.text.current.clear ();
-      this.setState ({value: ''});
+      this.setState ({value: '', typing: false});
       this.canSendMessage = true;
     } else {
       Alert.alert (
@@ -359,10 +411,16 @@ class CreateChatBar extends React.Component {
       setTimeout (() => {
         this.props.imagePickerPopup.current.setState ({
           isBackdropVisible: true,
+          input: this.text,
+          keyBoardIsUp: true,
         });
-      }, 250);
+      }, 20);
     } else {
-      this.props.imagePickerPopup.current.setState ({isBackdropVisible: true});
+      this.props.imagePickerPopup.current.setState ({
+        isBackdropVisible: true,
+        input: this.text,
+        keyBoardIsUp: false,
+      });
     }
     Keyboard.dismiss ();
     this.keyboardIsUp = false;
@@ -374,98 +432,156 @@ class CreateChatBar extends React.Component {
       ),
     });
   };
+  typing = text => {
+    let typing = !!text;
+    if (typing && !this.state.typing) {
+      this.props.updateTyping (true);
+    } else if (!typing && this.state.typing) {
+      this.props.updateTyping (false);
+    }
+    this.setState ({value: text, typing});
+  };
   render () {
+    this.state.usersTyping = this.state.usersTyping.filter (
+      user => user != global.user.username
+    );
     return (
-      <View
-        style={[
-          ChatRoomStyles.createChat,
-          boxShadows.boxShadow3,
-          global.user.secondaryTheme (),
-        ]}
-      >
-        {this.props.images.length == 0
+      <View style={{width, flexDirection: 'column', alignItems: 'center'}}>
+        {this.state.usersTyping.length == 0
           ? <View />
           : <View
-              style={[
-                {
-                  width,
-                  height: 80,
-                  backgroundColor: global.user.getSecondaryTheme (),
-                },
-              ]}
+              style={{
+                width: width * 0.90,
+                paddingTop: 5,
+                paddingBottom: 3,
+                paddingLeft: 10,
+                paddingRight: 10,
+                backgroundColor: global.user.getSecondaryTheme (),
+                opacity: 0.8,
+                borderTopLeftRadius: 2,
+                borderTopRightRadius: 2,
+              }}
             >
-              <ScrollView
-                horizontal={true}
-                showsHorizontalScrollIndicator={false}
-                style={{paddingTop: 10, paddingLeft: 10}}
+              <Text
+                numberOfLines={1}
+                style={{
+                  color: global.user.getSecondaryTextColor (),
+                  fontSize: 12,
+                }}
               >
-                {this.props.images.map ((image, index) => {
-                  return (
-                    <View key={'barImage_' + index}>
-                      <Touchable
-                        onPress={() => this.removeImage (image)}
-                        style={{
-                          position: 'absolute',
-                          top: -5,
-                          left: 0,
-                          zIndex: 1,
-                        }}
-                        hitSlop={{top: 10, left: 10, bottom: 10, right: 10}}
-                      >
-                        <CloseCircleIcon
-                          size={20}
+                <Text style={{fontWeight: '700'}}>
+                  {this.state.usersTyping.join (', ')}
+                </Text>
+                <Text style={{opacity: 0.8}}>
+                  {this.state.usersTyping.length > 1 ? ' are ' : ' is '}
+                  typing...
+                </Text>
+              </Text>
+            </View>}
+        <View
+          style={[
+            ChatRoomStyles.createChat,
+            boxShadows.boxShadow5,
+            {
+              borderTopWidth: StyleSheet.hairlineWidth,
+              borderTopColor: global.user.theme == 'Light'
+                ? 'rgba(255,255,255,0.5)'
+                : 'rgba(0,0,0,0.5)',
+            },
+            // global.user.secondaryTheme (),
+            global.user.primaryTheme (),
+          ]}
+        >
+          {this.props.images.length == 0
+            ? <View />
+            : <View
+                style={[
+                  {
+                    width,
+                    height: 80,
+                    backgroundColor: global.user.getPrimaryTheme (),
+                  },
+                ]}
+              >
+                <ScrollView
+                  horizontal={true}
+                  showsHorizontalScrollIndicator={false}
+                  style={{paddingTop: 10, paddingLeft: 10}}
+                >
+                  {this.props.images.map ((image, index) => {
+                    return (
+                      <View key={'barImage_' + index}>
+                        <Touchable
+                          onPress={() => this.removeImage (image)}
                           style={{
-                            width: 20,
-                            height: 20,
-                            color: 'black',
-                            backgroundColor: 'white',
-                            borderRadius: 10,
-                            overflow: 'hidden',
+                            position: 'absolute',
+                            top: -5,
+                            left: 0,
+                            zIndex: 1,
+                          }}
+                          hitSlop={{top: 10, left: 10, bottom: 10, right: 10}}
+                        >
+                          <CloseCircleIcon
+                            size={20}
+                            style={{
+                              width: 20,
+                              height: 20,
+                              color: 'black',
+                              backgroundColor: 'white',
+                              borderRadius: 10,
+                              overflow: 'hidden',
+                            }}
+                          />
+                        </Touchable>
+                        <Image
+                          source={{
+                            uri: image.uri,
+                          }}
+                          style={{
+                            zIndex: 0,
+                            height: 70,
+                            width: image.width / image.height * 70,
+                            backgroundColor: 'black',
+                            marginLeft: 10,
+                            marginRight: 10,
                           }}
                         />
-                      </Touchable>
-                      <Image
-                        source={{
-                          uri: `https://www.apexschools.co${image.path}`,
-                        }}
-                        style={{
-                          zIndex: 0,
-                          height: 70,
-                          width: image.width / image.height * 70,
-                          backgroundColor: 'black',
-                          marginLeft: 10,
-                          marginRight: 10,
-                        }}
-                      />
-                    </View>
-                  );
-                })}
-              </ScrollView>
-            </View>}
+                      </View>
+                    );
+                  })}
+                </ScrollView>
+              </View>}
 
-        <View style={{width, flexDirection: 'row'}}>
-          <Touchable onPress={this.sendPhoto}>
-            <View style={ChatRoomStyles.photoChat}>
-              <PhotoIcon color={global.user.getPrimaryTextColor ()} size={20} />
-            </View>
-          </Touchable>
-          <TextInput
-            value={this.state.value}
-            onChangeText={text => this.setState ({value: text})}
-            ref={this.text}
-            style={[
-              ChatRoomStyles.createChatText,
-              global.user.secondaryTextColor (),
-            ]}
-            placeholder="Write a message"
-            placeholderTextColor={global.user.getTertiaryTextColor ()}
-            keyboardAppearance={global.user.theme.toLowerCase ()}
-          />
-          <Touchable onPress={this.sendMessage}>
-            <View style={ChatRoomStyles.sendChat}>
-              <SendIcon color={global.user.getPrimaryTextColor ()} size={20} />
-            </View>
-          </Touchable>
+          <View style={{width, flexDirection: 'row'}}>
+            <Touchable onPress={this.sendPhoto}>
+              <View style={ChatRoomStyles.photoChat}>
+                <PhotoIcon
+                  color={global.user.getPrimaryTextColor ()}
+                  size={20}
+                />
+              </View>
+            </Touchable>
+            <TextInput
+              value={this.state.value}
+              onChangeText={this.typing}
+              ref={this.text}
+              style={[
+                ChatRoomStyles.createChatText,
+                global.user.secondaryTextColor (),
+              ]}
+              placeholder={`Message ${global.chatroomName}`}
+              placeholderTextColor={global.user.getTertiaryTextColor ()}
+              keyboardAppearance={global.user.theme.toLowerCase ()}
+            />
+            <Touchable onPress={this.sendMessage}>
+              <View style={ChatRoomStyles.sendChat}>
+                <SendIcon
+                  color={global.user.getPrimaryTextColor ()}
+                  size={20}
+                />
+              </View>
+            </Touchable>
+          </View>
         </View>
       </View>
     );
@@ -570,6 +686,7 @@ export default class ChatRoom extends React.Component {
     this.canSendMessages = false;
     this.scrollToBottom = true;
     this.imageBar = React.createRef ();
+    this.createChatBar = React.createRef ();
     this.webSocketOpen = true;
     this.error = false;
     this.errorMessage = '';
@@ -579,7 +696,8 @@ export default class ChatRoom extends React.Component {
     this.state = {
       chats: [],
       images: [],
-      height: new Animated.Value (ifIphoneX (height - 80, height - 60)),
+      // height: new Animated.Value (ifIphoneX (height - 80, height - 60)),
+      height: new Animated.Value (200),
       appState: AppState.currentState,
       updated: false,
       refreshing: false,
@@ -604,16 +722,34 @@ export default class ChatRoom extends React.Component {
 
   showMessage = message => {
     if (this._isMounted) {
-      this.setState (state => ({
-        chats: [...state.chats, message],
-      }));
+      if (message.type == 'typing') {
+        this.createChatBar.current.setState ({usersTyping: message.users});
+      } else if (message.type == 'request') {
+        if (message.request == 'users-typing') {
+          this.createChatBar.current.setState ({usersTyping: message.users});
+        }
+      } else {
+        console.log (message);
+        this.setState (state => ({
+          chats: [...state.chats, message],
+        }));
+      }
     }
   };
-
+  updateTyping = typing => {
+    global.websocket.client.sendMessage ({
+      type: 'typing',
+      username: global.user.username,
+      typing,
+      room: global.chatroomKey,
+    });
+  };
   sendMessage = message => {
+    this.updateTyping (false);
     if (message.message || message.resources.length > 0) {
       message.resources = this.state.images.map (image => image._id);
       message.room = global.chatroomKey;
+      message.type = 'message';
       global.websocket.client.sendMessage (message);
       this.setState ({images: []});
     } else {
@@ -697,6 +833,11 @@ export default class ChatRoom extends React.Component {
     this._isMounted = true;
     AppState.addEventListener ('change', this._handleAppStateChange);
     this.removeChatroomKey ();
+    global.websocket.client.sendMessage ({
+      type: 'request',
+      request: 'users-typing',
+      room: global.chatroomKey,
+    });
     this.loadChats (this.state.limit, (err, body) => {
       if (err) {
         this.setState ({chats: [], updated: true});
@@ -709,6 +850,7 @@ export default class ChatRoom extends React.Component {
     this._isMounted = false;
     AppState.removeEventListener ('change', this._handleAppStateChange);
     this.removeChatroomKey ();
+    this.updateTyping (false);
     this.props.navigation.goBack ();
   }
   _handleAppStateChange = nextAppState => {
@@ -728,6 +870,7 @@ export default class ChatRoom extends React.Component {
       this.state.appState.match (/inactive|active/) &&
       nextAppState === 'background'
     ) {
+      this.updateTyping (false);
       this.removeChatroomKey ();
     }
     this.setState ({appState: nextAppState});
@@ -759,6 +902,36 @@ export default class ChatRoom extends React.Component {
       this.scrollView.current.scrollToEnd ({animated: true});
     }
   };
+  compactAndroidScrollView = event => {
+    // console.log (event.endCoordinates);
+    // console.log (height);
+    // Animated.timing (this.state.height, {
+    //   toValue: event.endCoordinates.screenY - 60,
+    //   easing: Easing.bezier (0.2, 0.73, 0.33, 0.99),
+    //   duration: 280,
+    //   delay: 50,
+    // }).start (() => {
+    //   this.scrollView.current.scrollTo ({
+    //     x: 0,
+    //     y: this.scrollViewHeight,
+    //     animated: 'true',
+    //   });
+    // });
+    // if (this.scrollToBottom) {
+    //   this.scrollView.current.scrollToEnd ({animated: true});
+    // }
+    if (this.scrollToBottom) {
+      this.scrollView.current.scrollToEnd ({animated: true});
+    }
+  };
+  openAndroidScrollView = event => {
+    // Animated.timing (this.state.height, {
+    //   toValue: ifIphoneX (height - 80, height - 60),
+    //   easing: Easing.bezier (0.2, 0.73, 0.33, 0.99),
+    //   duration: 280,
+    //   delay: 0,
+    // }).start ();
+  };
   openScrollView = event => {
     // Animated.timing (this.state.height, {
     //   toValue: ifIphoneX (height - 80, height - 60),
@@ -772,16 +945,19 @@ export default class ChatRoom extends React.Component {
     this.setState ({images: this.state.images});
   };
   _onRefresh = () => {
-    this.setState ({refreshing: true, limit: this.state.chats.length + 50}, () => {
-      this.loadChats (this.state.limit, (err, body) => {
-        if (err) {
-          this.setState ({refreshing: false, chats: []});
-        } else {
-          this.refreshingScrollView = true;
-          this.setState ({refreshing: false, chats: body});
-        }
-      });
-    });
+    this.setState (
+      {refreshing: true, limit: this.state.chats.length + 50},
+      () => {
+        this.loadChats (this.state.limit, (err, body) => {
+          if (err) {
+            this.setState ({refreshing: false, chats: []});
+          } else {
+            this.refreshingScrollView = true;
+            this.setState ({refreshing: false, chats: body});
+          }
+        });
+      }
+    );
   };
   render () {
     // console.log(this.state.chats);
@@ -814,14 +990,16 @@ export default class ChatRoom extends React.Component {
               global.user.primaryTheme (),
             ]}
           > */}
-          <KeyboardAvoidingView
-            style={[ChatRoomStyles.chatroom, global.user.primaryTheme ()]}
-            behavior={'height'}
-            enabled
-            keyboardVerticalOffset={60}
-          >
-            {/* this  flatlist is a posibility if need be, but try to avoid using it  */}
-            {/* <FlatList
+          {Platform.OS == 'ios'
+            ? <KeyboardAvoidingView
+                style={[ChatRoomStyles.chatroom, global.user.primaryTheme ()]}
+                behavior={'height'}
+                enabled={true}
+                keyboardVerticalOffset={ifIphoneX (80, 60)}
+                // keyboardVerticalOffset={200}
+              >
+                {/* this  flatlist is a posibility if need be, but try to avoid using it  */}
+                {/* <FlatList
               onScroll={this.onScroll}
               keyboardDismissMode={'on-drag'}
               keyboardShouldPersistTaps={'always'}
@@ -881,82 +1059,172 @@ export default class ChatRoom extends React.Component {
               }
               ref={this.scrollView}
             /> */}
-            <ScrollView
-              ref={this.scrollView}
-              onScroll={this.onScroll}
-              keyboardDismissMode="on-drag"
-              keyboardShouldPersistTaps={'always'}
-              scrollEventThrottle={25}
-              onContentSizeChange={(contentWidth, contentHeight) => {
-                if (this.scrollToBottom) {
-                  this.scrollView.current.scrollToEnd ({animated: true});
-                } else if (this.refreshingScrollView) {
-                  this.refreshingScrollView = false;
-                  this.scrollView.current.scrollTo ({
-                    x: 0,
-                    y: contentHeight - this.scrollViewHeight,
-                    animated: false,
-                  });
-                }
-                this.scrollViewHeight = contentHeight;
-              }}
-              refreshControl={
-                <RefreshControl
-                  refreshing={this.state.refreshing}
-                  onRefresh={this._onRefresh}
-                />
-              }
-            >
-              {this.state.updated
-                ? this.state.chats.map ((chat, index) => {
-                    let showName = true;
-                    if (index != 0) {
-                      if (
-                        this.state.chats[index - 1].username == chat.username
-                      ) {
-                        showName = false;
-                        chat.date = new Date (chat.date);
-                        this.state.chats[index - 1].date = new Date (
-                          this.state.chats[index - 1].date
-                        );
-                        if (
-                          chat.date.getTime () -
-                            this.state.chats[index - 1].date.getTime () >
-                          216000
-                        ) {
-                          showName = true;
-                        }
-                      }
+                <ScrollView
+                  ref={this.scrollView}
+                  onScroll={this.onScroll}
+                  keyboardDismissMode="on-drag"
+                  keyboardShouldPersistTaps={'always'}
+                  scrollEventThrottle={25}
+                  onContentSizeChange={(contentWidth, contentHeight) => {
+                    if (this.scrollToBottom) {
+                      this.scrollView.current.scrollToEnd ({animated: true});
+                    } else if (this.refreshingScrollView) {
+                      this.refreshingScrollView = false;
+                      this.scrollView.current.scrollTo ({
+                        x: 0,
+                        y: contentHeight - this.scrollViewHeight,
+                        animated: false,
+                      });
                     }
-                    return (
-                      <ChatBox
-                        showName={showName}
-                        imageViewer={this.imageViewerModal}
-                        key={'chat_' + index}
-                        sent={global.user.username == chat.username}
-                        message={chat}
-                      />
-                    );
-                  })
-                : <UIActivityIndicator
-                    color={global.user.getPrimaryTextColor ()}
-                    count={12}
-                    size={20}
-                    style={{marginTop: 80}}
-                  />}
+                    this.scrollViewHeight = contentHeight;
+                  }}
+                  refreshControl={
+                    <RefreshControl
+                      refreshing={this.state.refreshing}
+                      onRefresh={this._onRefresh}
+                    />
+                  }
+                >
+                  {this.state.updated
+                    ? this.state.chats.map ((chat, index) => {
+                        let showName = true;
+                        if (index != 0) {
+                          if (
+                            this.state.chats[index - 1].username ==
+                            chat.username
+                          ) {
+                            showName = false;
+                            chat.date = new Date (chat.date);
+                            this.state.chats[index - 1].date = new Date (
+                              this.state.chats[index - 1].date
+                            );
+                            if (
+                              chat.date.getTime () -
+                                this.state.chats[index - 1].date.getTime () >
+                              216000
+                            ) {
+                              showName = true;
+                            }
+                          }
+                        }
+                        return (
+                          <ChatBox
+                            showName={showName}
+                            imageViewer={this.imageViewerModal}
+                            key={'chat_' + index}
+                            sent={global.user.username == chat.username}
+                            message={chat}
+                          />
+                        );
+                      })
+                    : <UIActivityIndicator
+                        color={global.user.getPrimaryTextColor ()}
+                        count={12}
+                        size={20}
+                        style={{marginTop: 80}}
+                      />}
 
-              <View style={{width, height: 20}} />
-            </ScrollView>
-            <CreateChatBar
-              imagePickerPopup={this.imagePickerPopup}
-              compactScrollView={this.compactScrollView}
-              openScrollView={this.openScrollView}
-              sendMessage={this.sendMessage}
-              images={this.state.images}
-              parent={this}
-            />
-            {/* </Animated.View> */}
-          </KeyboardAvoidingView>
+                  <View style={{width, height: 20}} />
+                </ScrollView>
+                <CreateChatBar
+                  imagePickerPopup={this.imagePickerPopup}
+                  compactScrollView={this.compactScrollView}
+                  openScrollView={this.openScrollView}
+                  sendMessage={this.sendMessage}
+                  updateTyping={this.updateTyping}
+                  images={this.state.images}
+                  parent={this}
+                  ref={this.createChatBar}
+                />
+              </KeyboardAvoidingView>
+            : <KeyboardAvoidingView
+                style={[ChatRoomStyles.chatroom, global.user.primaryTheme ()]}
+                behavior={'height'}
+                enabled={true}
+                // keyboardVerticalOffset={ifIphoneX (80, 60)}
+                keyboardVerticalOffset={-height/2-60}
+              >
+                <ScrollView
+                  ref={this.scrollView}
+                  onScroll={this.onScroll}
+                  keyboardDismissMode="on-drag"
+                  keyboardShouldPersistTaps={'always'}
+                  scrollEventThrottle={25}
+                  onContentSizeChange={(contentWidth, contentHeight) => {
+                    if (this.scrollToBottom) {
+                      this.scrollView.current.scrollToEnd ({animated: true});
+                    } else if (this.refreshingScrollView) {
+                      this.refreshingScrollView = false;
+                      this.scrollView.current.scrollTo ({
+                        x: 0,
+                        y: contentHeight - this.scrollViewHeight,
+                        animated: false,
+                      });
+                    }
+                    this.scrollViewHeight = contentHeight;
+                  }}
+                  refreshControl={
+                    <RefreshControl
+                      refreshing={this.state.refreshing}
+                      onRefresh={this._onRefresh}
+                    />
+                  }
+                >
+                  {this.state.updated
+                    ? this.state.chats.map ((chat, index) => {
+                        let showName = true;
+                        if (index != 0) {
+                          if (
+                            this.state.chats[index - 1].username ==
+                            chat.username
+                          ) {
+                            showName = false;
+                            chat.date = new Date (chat.date);
+                            this.state.chats[index - 1].date = new Date (
+                              this.state.chats[index - 1].date
+                            );
+                            if (
+                              chat.date.getTime () -
+                                this.state.chats[index - 1].date.getTime () >
+                              216000
+                            ) {
+                              showName = true;
+                            }
+                          }
+                        }
+                        return (
+                          <ChatBox
+                            showName={showName}
+                            imageViewer={this.imageViewerModal}
+                            key={'chat_' + index}
+                            sent={global.user.username == chat.username}
+                            message={chat}
+                          />
+                        );
+                      })
+                    : <UIActivityIndicator
+                        color={global.user.getPrimaryTextColor ()}
+                        count={12}
+                        size={20}
+                        style={{marginTop: 80}}
+                      />}
+
+                  <View style={{width, height: 20}} />
+                </ScrollView>
+                <CreateChatBar
+                  imagePickerPopup={this.imagePickerPopup}
+                  compactScrollView={this.compactScrollView}
+                  openScrollView={this.openScrollView}
+                  compactAndroidScrollView={this.compactAndroidScrollView}
+                  openAndroidScrollView={this.openAndroidScrollView}
+                  sendMessage={this.sendMessage}
+                  updateTyping={this.updateTyping}
+                  images={this.state.images}
+                  parent={this}
+                  ref={this.createChatBar}
+                />
+              </KeyboardAvoidingView>}
+
         </View>
         <ImageViewerModal ref={this.imageViewerModal} parent={this} />
         <ImagePickerPopup
@@ -1001,19 +1269,19 @@ const ChatRoomStyles = StyleSheet.create ({
   },
   createChatText: {
     width: width - 100,
-    height: 55,
+    height: 47,
     fontSize: 16,
   },
   photoChat: {
     width: 40,
-    height: 55,
+    height: 47,
     flexDirection: 'column',
     justifyContent: 'center',
     alignItems: 'center',
   },
   sendChat: {
     width: 60,
-    height: 55,
+    height: 47,
     flexDirection: 'column',
     justifyContent: 'center',
     alignItems: 'center',

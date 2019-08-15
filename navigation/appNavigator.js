@@ -19,8 +19,9 @@ import OnboardingScreen from '../screens/onboardingScreen/index';
 import AnnouncementsScreen from '../screens/announcementsScreen/index';
 import AnnouncementScreen from '../screens/announcementScreen/index';
 import tutorialScreen from '../screens/tutorialScreen/index';
-import NotificationScreen from "../screens/notificationsScreen/index";
-import CourseConfigScreen from "../screens/courseConfigScreen/index";
+import NotificationScreen from '../screens/notificationsScreen/index';
+import CourseConfigScreen from '../screens/courseConfigScreen/index';
+import TranscriptScreen from '../screens/transcriptScreen/index';
 import {createAppContainer, createStackNavigator} from 'react-navigation';
 
 const MainNavigator = createStackNavigator (
@@ -47,7 +48,8 @@ const MainNavigator = createStackNavigator (
     Announcement: {screen: AnnouncementScreen, lazy: false},
     Tutorial: {screen: tutorialScreen, lazy: true},
     Notifications: {screen: NotificationScreen, lazy: true},
-    CourseConfig: {screen: CourseConfigScreen, lazy: true}
+    CourseConfig: {screen: CourseConfigScreen, lazy: true},
+    Transcript: {screen: TranscriptScreen, lazy: true},
   },
   {
     initialRouteName: 'Loading',

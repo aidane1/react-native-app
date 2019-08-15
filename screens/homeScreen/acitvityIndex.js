@@ -58,26 +58,50 @@ class AssignmentBlock extends React.Component {
   }
   render () {
     return (
-      <View style={[styles.gradientBlock, boxShadows.boxShadow4]}>
+      <View style={[styles.gradientBlock]}>
         <Touchable
           onPress={() =>
             this.props._navigateToPage (
               'CourseInfo',
-              this.props.assignment.referenceCourse
+              this.props.assignment.referenceCourse,
+              'assignments'
             )}
         >
           <LinearGradient
-            colors={['#289e10', '#147500']}
-            style={[styles.gradientBlockChild]}
+            // colors={['#289e10', '#147500']}
+            colors={
+              global.user.theme == 'Dark'
+                ? ['#147500', '#147500']
+                : ['#6cc46c', '#51ad51']
+            }
+            style={[
+              styles.gradientBlockChild,
+              {
+                // borderWidth: global.user.theme == 'Dark'
+                //   ? StyleSheet.hairlineWidth * 8
+                //   : 0,
+                borderWidth: StyleSheet.hairlineWidth * 8,
+                borderColor: global.user.theme == 'Dark'
+                  ? '#1e631e'
+                  : '#32a14e',
+              },
+            ]}
           >
             <View style={{flexGrow: 1, flexDirection: 'column'}}>
               <View style={{flexGrow: 0}}>
                 <Text
                   numberOfLines={1}
                   style={{
-                    fontSize: '20',
+                    fontSize: 20,
                     fontWeight: 'bold',
-                    color: 'white',
+                    // color: 'white',
+                    color: global.user.theme == 'Dark'
+                      ? this.props.assignment.referenceCourse == '_'
+                          ? 'rgba(255,255,255,0.8)'
+                          : 'rgba(255,255,255,0.95)'
+                      : this.props.assignment.referenceCourse == '_'
+                          ? 'rgba(255,255,255,0.8)'
+                          : 'rgba(255,255,255,0.95)',
                     paddingTop: 5,
                     paddingBottom: 10,
                   }}
@@ -115,30 +139,34 @@ class ChatBlock extends React.Component {
     super (props);
   }
   navigate = async key => {
-    global.chatroomKey = `${key}`;
-    global.textPath = `texts?find_fields=key&key=${key}&order_by=date&order_direction=-1&populate=resources`;
-    key = key.split ('_');
-    if (key[0] == 'course') {
-      let course = await Courses._retrieveCourseById (key[1]);
-      if (course.id != '_') {
-        global.chatroomName = `${course.course}`;
-        global.resourcePath = `/chatrooms/courses/${course.id}`;
-        this.props.navigation.navigate ('PureChatroom');
-      }
-    } else if (key[0] == 'grade') {
-      let grade = key[1].split ('-')[1];
-      if (isNaN (parseInt (grade)) || !global.districtInfo) {
-      } else {
-        if (grade.toString () == global.districtInfo.grade.toString ()) {
-          global.chatroomName = `Grade ${grade}`;
-          global.resourcePath = ` /chatrooms/grades/${grade}`;
+    if (key !== '_') {
+      global.chatroomKey = `${key}`;
+      global.textPath = `texts?find_fields=key&key=${key}&order_by=date&order_direction=-1&populate=resources`;
+      key = key.split ('_');
+      if (key[0] == 'course') {
+        let course = await Courses._retrieveCourseById (key[1]);
+        if (course.id != '_') {
+          global.chatroomName = `${course.course}`;
+          global.resourcePath = `/chatrooms/courses/${course.id}`;
           this.props.navigation.navigate ('PureChatroom');
         }
+      } else if (key[0] == 'grade') {
+        let grade = key[1].split ('-')[1];
+        if (isNaN (parseInt (grade)) || !global.districtInfo) {
+        } else {
+          if (grade.toString () == global.districtInfo.grade.toString ()) {
+            global.chatroomName = `Grade ${grade}`;
+            global.resourcePath = ` /chatrooms/grades/${grade}`;
+            this.props.navigation.navigate ('PureChatroom');
+          }
+        }
+      } else if (key[0] == 'school') {
+        global.chatroomName = `${global.school.name}`;
+        global.resourcePath = `/chatrooms/schools/${global.school.id}`;
+        this.props.navigation.navigate ('PureChatroom');
       }
-    } else if (key[0] == 'school') {
-      global.chatroomName = `${global.school.name}`;
-      global.resourcePath = `/chatrooms/schools/${global.school.id}`;
-      this.props.navigation.navigate ('PureChatroom');
+    } else {
+      this.props.navigation.navigate ('Chatrooms');
     }
   };
   render () {
@@ -146,10 +174,20 @@ class ChatBlock extends React.Component {
       <View style={[styles.gradientBlock, boxShadows.boxShadow4]}>
         <Touchable onPress={() => this.navigate (this.props.chat.key)}>
           <LinearGradient
-            colors={['#8a8a8a', '#6e6e6e']}
+            // colors={['#8a8a8a', '#6e6e6e']}
+            colors={
+              global.user.theme == 'Dark'
+                ? ['#2b0c99', '#2b0c99']
+                : ['#428af5', '#3269ba']
+            }
             style={[
               styles.gradientBlockChild,
-              // {borderWidth: 2, borderColor: 'black'},
+              {
+                borderWidth: StyleSheet.hairlineWidth * 8,
+                borderColor: global.user.theme == 'Dark'
+                  ? '#19065e'
+                  : '#325fa1',
+              },
             ]}
           >
             <View style={{flexGrow: 1, flexDirection: 'column'}}>
@@ -157,7 +195,7 @@ class ChatBlock extends React.Component {
                 <Text
                   numberOfLines={1}
                   style={{
-                    fontSize: '20',
+                    fontSize: 20,
                     fontWeight: 'bold',
                     color: 'white',
                     paddingTop: 5,
@@ -206,48 +244,72 @@ class NoteBlock extends React.Component {
   }
   render () {
     return (
-      <View style={[styles.gradientBlock, boxShadows.boxShadow4]}>
-        <Touchable
-          onPress={() =>
-            this.props._navigateToPage (
-              'CourseInfo',
-              this.props.note.referenceCourse
-            )}
-        >
-          <LinearGradient
-            colors={['#6f2fbd', '#4e1791']}
-            style={[styles.gradientBlockChild]}
+      // <View style={[styles.gradientBlock, boxShadows.boxShadow4]}>
+      (
+        <View style={[styles.gradientBlock]}>
+          <Touchable
+            onPress={() =>
+              this.props._navigateToPage (
+                'CourseInfo',
+                this.props.note.referenceCourse,
+                'notes'
+              )}
           >
-            <View style={{flexGrow: 1, flexDirection: 'column'}}>
-              <View style={{flexGrow: 0}}>
-                <Text
-                  numberOfLines={1}
+            <LinearGradient
+              // colors={['#6f2fbd', '#4e1791']}
+              colors={
+                global.user.theme == 'Dark'
+                  ? ['#7f3fbf', '#7f3fbf']
+                  : ['#cd78ff', '#a14ad4']
+              }
+              style={[
+                styles.gradientBlockChild,
+                {
+                  borderWidth: StyleSheet.hairlineWidth * 8,
+                  borderColor: global.user.theme == 'Dark'
+                    ? '#3e2359'
+                    : '#853cb0',
+                },
+              ]}
+            >
+              <View style={{flexGrow: 1, flexDirection: 'column'}}>
+                <View style={{flexGrow: 0}}>
+                  <Text
+                    numberOfLines={1}
+                    style={{
+                      fontSize: 20,
+                      fontWeight: 'bold',
+                      // color: 'white',
+                      // color: 'rgba(255,255,255,0.95)',
+                      color: this.props.note.referenceCourse == '_'
+                        ? 'rgba(255,255,255,0.8)'
+                        : 'rgba(255,255,255,0.95)',
+                      paddingTop: 5,
+                      paddingBottom: 10,
+                    }}
+                  >
+                    {this.props.note.note}
+                  </Text>
+                </View>
+                <View
                   style={{
-                    fontSize: '20',
-                    fontWeight: 'bold',
-                    color: 'white',
-                    paddingTop: 5,
-                    paddingBottom: 10,
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
                   }}
                 >
-                  {this.props.note.note}
-                </Text>
+                  <Text style={{fontSize: 14, color: 'rgba(255,255,255,0.5)'}}>
+                    {this.props.note.topic}
+                  </Text>
+                  <Text style={{fontSize: 14, color: 'rgba(255,255,255,0.5)'}}>
+                    {this.props.note.courseName.course}
+                  </Text>
+                </View>
               </View>
-              <View
-                style={{flexDirection: 'row', justifyContent: 'space-between'}}
-              >
-                <Text style={{fontSize: 14, color: 'rgba(255,255,255,0.7)'}}>
-                  {this.props.note.topic}
-                </Text>
-                <Text style={{fontSize: 14, color: 'rgba(255,255,255,0.7)'}}>
-                  {this.props.note.courseName.course}
-                </Text>
-              </View>
-            </View>
-          </LinearGradient>
-        </Touchable>
+            </LinearGradient>
+          </Touchable>
 
-      </View>
+        </View>
+      )
     );
   }
 }
@@ -263,21 +325,38 @@ class ImportantDateBlock extends React.Component {
           onPress={() =>
             this.props._navigateToPage (
               'CourseInfo',
-              this.props.importantDate.reference_course
+              this.props.importantDate.reference_course,
+              'importantDates'
             )}
         >
           <LinearGradient
-            colors={['#c42b56', '#9e1038']}
-            style={[styles.gradientBlockChild]}
+            // colors={['#c42b56', '#9e1038']}
+            colors={
+              global.user.theme == 'Dark'
+                ? [`#9e1038`, `#9e1038`]
+                : ['#db4f76', '#a13251']
+            }
+            style={[
+              styles.gradientBlockChild,
+              {
+                borderWidth: StyleSheet.hairlineWidth * 8,
+                borderColor: global.user.theme == 'Dark'
+                  ? '#630520'
+                  : '#a3343d',
+              },
+            ]}
           >
             <View style={{flexGrow: 1, flexDirection: 'column'}}>
               <View style={{flexGrow: 0}}>
                 <Text
                   numberOfLines={1}
                   style={{
-                    fontSize: '20',
+                    fontSize: 20,
                     fontWeight: 'bold',
-                    color: 'white',
+                    // color:'white',
+                    color: this.props.importantDate.reference_course == '_'
+                      ? 'rgba(255,255,255,0.8)'
+                      : 'rgba(255,255,255,0.95)',
                     paddingTop: 5,
                     paddingBottom: 10,
                   }}
@@ -306,28 +385,123 @@ class ImportantDateBlock extends React.Component {
   }
 }
 
+class QuestionBlock extends React.Component {
+  constructor (props) {
+    super (props);
+  }
+  navigate = async question => {
+    console.log (question);
+    if (question._id !== '_') {
+      this.props.navigation.navigate ('Question', {question});
+    } else {
+      this.props.navigation.navigate ('Questions');
+    }
+  };
+  render () {
+    return (
+      // <View style={[styles.gradientBlock, boxShadows.boxShadow4]}>
+      (
+        <View style={[styles.gradientBlock]}>
+          <Touchable onPress={() => this.navigate (this.props.question)}>
+            <LinearGradient
+              colors={
+                global.user.theme == 'Dark'
+                  ? ['#575757', '#575757']
+                  : ['#878787', '#6e6e6e']
+              }
+              style={[
+                styles.gradientBlockChild,
+                {
+                  borderWidth: StyleSheet.hairlineWidth * 8,
+                  borderColor: global.user.theme == 'Dark'
+                    ? '#313131'
+                    : '#616161',
+                },
+              ]}
+            >
+              <View style={{flexGrow: 1, flexDirection: 'column'}}>
+                <View style={{flexGrow: 0}}>
+                  <Text
+                    numberOfLines={1}
+                    style={{
+                      fontSize: 20,
+                      fontWeight: 'bold',
+                      // color: 'white',
+                      // color: 'rgba(255,255,255,0.8)',
+                      color: this.props.question._id == '_'
+                        ? 'rgba(255,255,255,0.8)'
+                        : 'rgba(255,255,255,0.95)',
+                      paddingTop: 5,
+                      paddingBottom: 10,
+                    }}
+                  >
+                    {this.props.question.title}
+                  </Text>
+                </View>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      // color: 'rgba(255,255,255,0.7)',
+                      color: 'rgba(255,255,255,0.5)',
+                      maxWidth: width * 0.95 * 0.45,
+                    }}
+                    numberOfLines={1}
+                  >
+                    {moment (this.props.question.date).calendar ()}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      // color: 'rgba(255,255,255,0.7)',
+                      color: 'rgba(255,255,255,0.5)',
+                      maxWidth: width * 0.95 * 0.45,
+                    }}
+                    numberOfLines={1}
+                  >
+                    {this.props.question.username}
+                  </Text>
+                </View>
+              </View>
+            </LinearGradient>
+          </Touchable>
+
+        </View>
+      )
+    );
+  }
+}
+
 export default class LinksScreenTile extends React.Component {
   constructor (props) {
     super (props);
     this.state = {
       refreshing: false,
       chatrooms: [],
+      questions: [],
     };
   }
 
-  _navigateToPage = async (page, id) => {
+  _navigateToPage = async (page, id, section) => {
     try {
       global.courseInfoCourse = await Courses._retrieveCourseById (id);
-      global.courseInfoPage = 'assignments';
+      global.courseInfoPage = section;
       if (global.courseInfoCourse.id != '_') {
         this.props.navigation.navigate (page);
+      } else {
+        this.props.navigation.navigate ('Assignments');
       }
     } catch (e) {
       console.log (e);
     }
   };
 
-  componentDidMount () {
+  getData = () => {
     let api = new ApexAPI (global.user);
     api
       .get ('chatroom-keys')
@@ -344,10 +518,38 @@ export default class LinksScreenTile extends React.Component {
       .catch (e => {
         console.log (e);
       });
+    let current = this.props.parent.state.currentDate;
+    console.log (
+      new Date (
+        current.getFullYear (),
+        current.getMonth (),
+        current.getDate () - 2
+      ).toISOString ()
+    );
+    api
+      .get (
+        `/posts?created_after=${new Date (current.getFullYear (), current.getMonth (), current.getDate () - 2).toISOString ()}`
+      )
+      .then (data => data.json ())
+      .then (data => {
+        console.log (data);
+        if (data.status == 'ok') {
+          this.setState ({questions: data.body});
+        }
+      });
+  };
+
+  componentDidMount () {
+    this._isMounted = true;
+    this.getData ();
+  }
+  componentWillUnmount () {
+    this._isMounted = false;
   }
 
   _onRefresh = () => {
     this.setState ({refreshing: true});
+    this.getData ();
     // this.props.navigation.replace("Home");
     setTimeout (() => {
       this.props.parent.setState (
@@ -463,7 +665,7 @@ export default class LinksScreenTile extends React.Component {
           global.importantDates,
           courseMap[block].id
         );
-        let current = new Date ();
+        let current = this.props.parent.state.currentDate;
         let isUpcoming = courseDates.reduce ((accumulator, currentValue) => {
           return (
             accumulator ||
@@ -478,7 +680,7 @@ export default class LinksScreenTile extends React.Component {
       })
       .map (block => {
         if (courseMap[block].id != '_') {
-          let current = new Date ();
+          let current = this.props.parent.state.currentDate;
           let courseDates = ImportantDates._retrieveDatesByCourse (
             global.importantDates,
             courseMap[block].id
@@ -532,12 +734,14 @@ export default class LinksScreenTile extends React.Component {
           data={
             importantDates.length !== 0
               ? importantDates
-              : [{
-                  title: 'No Upcoming Important Dates!',
-                  reference_course: '_',
-                  courseName: {course: '_', _id: ''},
-                  date_of_event: new Date (),
-                }]
+              : [
+                  {
+                    title: 'No Upcoming Important Dates!',
+                    reference_course: '_',
+                    courseName: {course: 'No Course', _id: ''},
+                    date_of_event: this.props.parent.state.currentDate,
+                  },
+                ]
           }
           keyExtractor={(item, index) => item._id}
           renderItem={({item, index}) => {
@@ -557,7 +761,18 @@ export default class LinksScreenTile extends React.Component {
           </Text>
         </View>
         <FlatList
-          data={chats}
+          data={
+            chats.length
+              ? chats
+              : [
+                  {
+                    name: 'No Chats!',
+                    date: new Date (),
+                    users: ['Empty'],
+                    key: '_',
+                  },
+                ]
+          }
           keyExtractor={(item, index) => item._id}
           renderItem={({item, index}) => {
             return <ChatBlock navigation={this.props.navigation} chat={item} />;
@@ -571,14 +786,18 @@ export default class LinksScreenTile extends React.Component {
           </Text>
         </View>
         <FlatList
-          data={assignments.length ? assignments: [
-            {
-              assignmentTitle: "No Recent Assignments!",
-              topic: "No Topic",
-              courseName: {course: "_", id: "_"},
-              referenceCourse: "_",
-            }
-          ]}
+          data={
+            assignments.length
+              ? assignments
+              : [
+                  {
+                    assignmentTitle: 'No Recent Assignments!',
+                    topic: 'No Topic',
+                    courseName: {course: 'No Course', id: '_'},
+                    referenceCourse: '_',
+                  },
+                ]
+          }
           keyExtractor={(item, index) => item.id}
           renderItem={({item, index}) => {
             return (
@@ -594,11 +813,54 @@ export default class LinksScreenTile extends React.Component {
           <Text
             style={[styles.h1, {color: global.user.getPrimaryTextColor ()}]}
           >
+            Recent Questions
+          </Text>
+        </View>
+        <FlatList
+          data={
+            this.state.questions.length
+              ? this.state.questions
+              : [
+                  {
+                    title: 'No Recent Forum Posts!',
+                    date: new Date (),
+                    username: 'Empty',
+                    _id: '_',
+                  },
+                ]
+          }
+          keyExtractor={(item, index) => item.id}
+          renderItem={({item, index}) => {
+            return (
+              <QuestionBlock
+                _navigateToPage={this._navigateToPage}
+                question={item}
+                navigation={this.props.navigation}
+              />
+            );
+          }}
+        />
+
+        <View style={[styles.titleBlock, global.user.borderColor ()]}>
+          <Text
+            style={[styles.h1, {color: global.user.getPrimaryTextColor ()}]}
+          >
             Recent Notes
           </Text>
         </View>
         <FlatList
-          data={notes}
+          data={
+            notes.length
+              ? notes
+              : [
+                  {
+                    note: 'No Recent Notes!',
+                    topic: 'No Topic',
+                    courseName: {course: 'No Course', id: '_'},
+                    referenceCourse: '_',
+                  },
+                ]
+          }
           keyExtractor={(item, index) => item.id}
           _navigateToPage={this._navigateToPage}
           renderItem={({item, index}) => {

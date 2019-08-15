@@ -10,7 +10,7 @@ import {
   View,
   Dimensions,
   CameraRoll,
-  AsyncStorage,
+  Alert,
   Button,
 } from 'react-native';
 
@@ -29,6 +29,8 @@ import HeaderBar from '../../components/header';
 import HomeScreenTile from './homeIndex';
 
 import LinkScreenTile from './courseIndex';
+
+import VisualTile from './visualIndex';
 
 import ActivityScreenTile from './acitvityIndex';
 
@@ -94,6 +96,7 @@ export default class HomeScreen extends React.Component {
     };
   };
   constructor (props) {
+    global.courseInfoPage = 'assignments';
     super (props);
     this.props = props;
     this.dayMap = global.dayMap || {};
@@ -106,7 +109,7 @@ export default class HomeScreen extends React.Component {
     //these will hold the value of the items that will be displayed. they will be programically updated before the
     //widget is rendered. It makes the rendering code cleaner
     this.state = {
-      // currentDate: new Date (2019, 9, 14, 9, 10),
+      // currentDate: new Date (2019, 8, 19, 9, 10),
       currentDate: new Date (),
     };
 
@@ -118,29 +121,85 @@ export default class HomeScreen extends React.Component {
     this.events;
     this.assignments;
     this.courses;
+  }
 
-    this.events = global.events.filter (event => {
-      return (
-        event.event_date.getTime () - this.state.currentDate.getTime () > 0 &&
-        event.event_date.getTime () - this.state.currentDate.getTime () <
-          129600000
+  loadHelpBanner = async () => {
+    let state = await User._hasViewedHelp ();
+    if (!state) {
+      Alert.alert (
+        'Help',
+        'It is greatly advised that you skim through the tutorial before continued use. View the tutorial?',
+        [
+          {
+            text: 'Tutorial',
+            onPress: async () => {
+              User._setHelpState (true);
+              this.props.navigation.navigate ('Tutorial');
+            },
+          },
+          {
+            text: 'No',
+            onPress: () => {
+              Alert.alert (
+                'Are you sure?',
+                "The help page can be viewed from the more ... button or the navigation page any time you'd like",
+                [
+                  {
+                    text: 'Tutorial',
+                    onPress: async () => {
+                      User._setHelpState (true);
+                      this.props.navigation.navigate ('Tutorial');
+                    },
+                  },
+                  {
+                    text: 'Okay',
+                    style: 'cancel',
+                    onPress: async () => {
+                      User._setHelpState (true);
+                    },
+                  },
+                ]
+              );
+            },
+            style: 'cancel',
+          },
+        ]
       );
-    });
-    if (this.events.length == 0) {
-      this.events = [
-        {event_date: new Date (), title: 'No Events!', time: 'now'},
-      ];
+    }
+  };
+
+  loadCoursesBanner () {
+    if (global.user.courses.length === 0) {
+      Alert.alert (
+        'Courses',
+        'You have no courses selected - select courses?',
+        [
+          {
+            text: 'Yes',
+            onPress: () => {
+              this.props.navigation.navigate ('Courses');
+            },
+          },
+          {
+            text: 'No',
+            onPress: () => {},
+            style: 'cancel',
+          },
+        ]
+      );
     }
   }
 
   componentDidMount () {
+    this.loadHelpBanner ();
+    this.loadCoursesBanner ();
+
     let api = new ApexAPI ({
       'x-api-key': global.user['x-api-key'],
       school: global.user['school'],
       'x-id-key': global.user['x-id-key'],
     });
     let chatrooms = global.user.courses.map (course => `course_${course}`);
-    console.log(global.districtInfo);
     if (global.districtInfo.grade) {
       chatrooms.push (`grade_${global.school.id}-${global.districtInfo.grade}`);
     }
@@ -299,56 +358,64 @@ export default class HomeScreen extends React.Component {
             constructSchoolObject (response.body.school, response.body.blocks)
           );
           global.dayMap = global.school['dayMap'];
-          global.user = await User._saveToStorage (
-            constructUserObject ({
-              grade: response.body.user.grade || global.user.grade || 9,
-              scheduleImages: response.body.user.schedule_images,
-              permission_level: response.body.permission_level,
-              scheduleType: response.body.schedule_type,
-              profile_picture: response.body.user.profile_picture,
-              id: response.body.user._id,
-              accountId: response.body.accountId,
-              firstName: response.body.user.first_name,
-              lastName: response.body.user.last_name,
-              studentNumber: response.body.user.student_number,
-              block_colors: response.body.user.block_colors,
-              block_names: response.body.user.block_names,
-              username: response.body.username,
-              password: global.user.password,
-              'x-api-key': response.body['api_key'],
-              'x-id-key': response.body['_id'],
-              courses: response.body.user.courses,
-              school: school._id,
-              notifications: {
-                dailyAnnouncements: response.body.user.notifications
-                  .daily_announcements || false,
-                nextClass: response.body.user.notifications.next_class || false,
-                newAssignments: response.body.user.notifications
-                  .new_assignments !== undefined
-                  ? response.body.user.notifications.new_assignments
-                  : true,
-                markedAssignments: response.body.user.notifications
-                  .marked_assignments || false,
-                imageReplies: response.body.user.notifications.image_replies !==
-                  undefined
-                  ? response.body.user.notifications.image_replies
-                  : true,
-                upcomingEvents: response.body.user.notifications
-                  .upcoming_events !== undefined
-                  ? response.body.user.notifications.upcoming_events
-                  : true,
-                activities: response.body.user.notifications.activities ||
-                  false,
-              },
-              theme: response.body.user.theme || 'Light',
-              trueDark: response.body.user.true_dark || false,
-              visuallyImpared: response.body.user.visuallyImpared || false,
-              automaticMarkRetrieval: response.body.user
-                .automatic_mark_retrieval || false,
-              automaticCourseUpdating: response.body.user
-                .automatic_course_retrieval || false,
-            })
-          );
+          global.user.permission_level = response.body.permission_level;
+          await User._saveToStorage (global.user);
+          // global.user = await User._saveToStorage (
+          //   constructUserObject ({
+          //     grade: response.body.user.grade || global.user.grade || 9,
+          //     scheduleImages: response.body.user.schedule_images,
+          //     permission_level: response.body.permission_level,
+          //     scheduleType: response.body.user.schedule_type,
+          //     profile_picture: response.body.user.profile_picture,
+          //     id: response.body.user._id,
+          //     accountId: response.body.accountId,
+          //     firstName: response.body.user.first_name,
+          //     lastName: response.body.user.last_name,
+          //     studentNumber: response.body.user.student_number,
+          //     block_colors: response.body.user.block_colors,
+          //     block_names: response.body.user.block_names,
+          //     username: response.body.username,
+          //     password: global.user.password,
+          //     'x-api-key': response.body['api_key'],
+          //     'x-id-key': response.body['_id'],
+          //     courses: response.body.user.courses,
+          //     pdf_announcements: response.body.user.pdf_announcements !==
+          //       undefined
+          //       ? response.body.user.pdf_announcements
+          //       : true,
+          //     school: school._id,
+          //     notifications: {
+          //       dailyAnnouncements: response.body.user.notifications
+          //         .daily_announcements || false,
+          //       nextClass: response.body.user.notifications.next_class || false,
+          //       newAssignments: response.body.user.notifications
+          //         .new_assignments !== undefined
+          //         ? response.body.user.notifications.new_assignments
+          //         : true,
+          //       markedAssignments: response.body.user.notifications
+          //         .marked_assignments || false,
+          //       imageReplies: response.body.user.notifications.image_replies !==
+          //         undefined
+          //         ? response.body.user.notifications.image_replies
+          //         : true,
+          //       upcomingEvents: response.body.user.notifications
+          //         .upcoming_events !== undefined
+          //         ? response.body.user.notifications.upcoming_events
+          //         : true,
+          //       activities: response.body.user.notifications.activities ||
+          //         false,
+          //     },
+          //     theme: response.body.user.theme || 'Light',
+          //     trueDark: response.body.user.true_dark || false,
+          //     visuallyImpared: response.body.user.visuallyImpared || false,
+          //     automaticMarkRetrieval: response.body.user
+          //       .automatic_mark_retrieval || false,
+          //     automaticCourseUpdating: response.body.user
+          //       .automatic_course_retrieval !== undefined
+          //       ? response.body.user.automatic_course_retrieval
+          //       : true,
+          //   })
+          // );
         }
       })
       .catch (e => {
@@ -387,6 +454,7 @@ export default class HomeScreen extends React.Component {
   };
   longPress = section => {};
   render () {
+    // return <View />;
     try {
       const actions = [
         {
@@ -493,7 +561,7 @@ export default class HomeScreen extends React.Component {
             courseList.push ({
               time_num: currentTime,
               block: todaySchedule[i].block,
-              course: "LC's",
+              course: global.school.spareName,
               category: 'other',
               teacher: 'Free',
               time: formatTime (currentTime),
@@ -510,6 +578,12 @@ export default class HomeScreen extends React.Component {
           course: 'Nothing!',
           teacher: 'Free',
           time: 'All Day',
+          time_num: {
+            start_hour: 0,
+            end_hour: 23,
+            start_minute: 0,
+            end_minute: 59,
+          },
           category: 'other',
           id: '_',
           isReal: false,
@@ -524,9 +598,14 @@ export default class HomeScreen extends React.Component {
         dayTitle = global.school.day_titles[today.week][today.day];
       }
       // {title, main, secondary}
-      let current = {title: 'Current', main: 'Nothing!', secondary: 'Now'};
+      let current = {
+        title: 'Current',
+        main: 'Nothing!',
+        secondary: 'Now',
+        id: '_',
+      };
       // {title, main, secondary}
-      let next = {title: 'Next', main: 'Nothing!', secondary: 'Now'};
+      let next = {title: 'Next', main: 'Nothing!', secondary: 'Now', id: '_'};
 
       let foundCurrent = false;
       if (courseList[0].isEmptyDay) {
@@ -548,6 +627,7 @@ export default class HomeScreen extends React.Component {
                 title: 'Current',
                 main: courseList[i].course,
                 secondary: courseList[i].time,
+                id: courseList[i].id,
               };
             } else {
               beforeStart = true;
@@ -558,12 +638,14 @@ export default class HomeScreen extends React.Component {
                   title: 'Next',
                   main: courseList[i].course,
                   secondary: courseList[i].time,
+                  id: courseList[i].id,
                 };
               } else {
                 next = {
                   title: 'Next',
                   main: courseList[i + 1].course,
                   secondary: courseList[i + 1].time,
+                  id: courseList[i].id,
                 };
               }
             }
@@ -631,6 +713,24 @@ export default class HomeScreen extends React.Component {
         ];
       }
       this.assignments = assignments;
+
+      this.events = global.events.filter (event => {
+        return (
+          event.event_date.getTime () - this.state.currentDate.getTime () > 0 &&
+          event.event_date.getTime () - this.state.currentDate.getTime () <
+            129600000
+        );
+      });
+      if (this.events.length == 0) {
+        this.events = [
+          {
+            event_date: this.state.currentDate,
+            title: 'No Events!',
+            time: 'now',
+            school_in: true,
+          },
+        ];
+      }
       return (
         <View style={styles.container}>
           <HeaderBar
@@ -661,44 +761,17 @@ export default class HomeScreen extends React.Component {
             title="Home"
           />
           {global.user.visuallyImpared
-            ? <View
-                style={{
-                  flexDirection: 'column',
-                  height: ifIphoneX (height - 80, height - 60),
-                }}
-              >
-                <View
-                  style={{
-                    flexDirection: 'column',
-                    width,
-                    height: ifIphoneX (
-                      2 * (height - 80) / 2,
-                      2 * (height - 60) / 2
-                    ),
-                  }}
-                >
-                  <Touchable
-                    style={styles.accessButton}
-                    onPress={() => this.readOut ('today')}
-                    onLongPress={() => this.longPress ('today')}
-                  >
-                    <Text style={styles.accessButtonText}>Today</Text>
-                  </Touchable>
-                  <Touchable
-                    style={styles.accessButton}
-                    onPress={() => this.readOut ('courses')}
-                    onLongPress={() => this.longPress ('courses')}
-                  >
-                    <Text style={styles.accessButtonText}>Courses</Text>
-                  </Touchable>
-                  <Touchable
-                    style={styles.accessButton}
-                    onPress={() => this.readOut ('schedule')}
-                  >
-                    <Text style={styles.accessButtonText}>Schedule</Text>
-                  </Touchable>
-                </View>
-              </View>
+            ? <VisualTile
+                courses={this.courses}
+                next={this.next}
+                current={this.current}
+                dayTitle={this.dayTitle}
+                height={height}
+                width={width}
+                date={this.state.currentDate}
+                events={this.events}
+                parent={this}
+              />
             : <View>
                 <View style={styles.bodyHolder}>
                   <ScrollView
@@ -738,15 +811,17 @@ export default class HomeScreen extends React.Component {
                 </View>
                 <TabBar tapFunction={this} />
               </View>}
+          {global.user.visuallyImpared
+            ? null
+            : <FloatingAction
+                actions={actions}
+                distanceToEdge={ifIphoneX (70, 50)}
+                floatingIcon={<MoreIcon size={30} color="white" />}
+                onPressItem={name => {
+                  this.props.navigation.navigate (name);
+                }}
+              />}
 
-          <FloatingAction
-            actions={actions}
-            distanceToEdge={ifIphoneX (70, 50)}
-            floatingIcon={<MoreIcon size={30} color="white" />}
-            onPressItem={name => {
-              this.props.navigation.navigate (name);
-            }}
-          />
         </View>
       );
     } catch (e) {

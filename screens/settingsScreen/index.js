@@ -19,8 +19,8 @@ import {
   LeftIcon,
   CheckMarkIcon,
   ConfirmIcon,
-  EmptyIcon,
-  CourseIcon,
+  UpIcon,
+  DownIcon,
   EventsIcon,
   LogoutIcon,
   NotesIcon,
@@ -31,6 +31,18 @@ import {
   AfterSchoolIcon,
   AccountIcon,
 } from '../../classes/icons';
+
+import {
+  BallIndicator,
+  BarIndicator,
+  DotIndicator,
+  MaterialIndicator,
+  PacmanIndicator,
+  PulseIndicator,
+  SkypeIndicator,
+  UIActivityIndicator,
+  WaveIndicator,
+} from 'react-native-indicators';
 
 import Modal from 'react-native-modal';
 
@@ -53,6 +65,8 @@ import {Notifications} from 'expo';
 import * as Permissions from 'expo-permissions';
 
 import {StackActions, NavigationActions} from 'react-navigation';
+import Collapsible from 'react-native-collapsible';
+import {Platform} from '@unimodules/core';
 
 const width = Dimensions.get ('window').width; //full width
 const height = Dimensions.get ('window').height; //full height
@@ -79,6 +93,61 @@ async function registerForPushNotificationsAsync () {
     .then (data => {});
 }
 
+// const AnimatedCourseRow = Animated.createAnimatedComponent (CourseRowAnimated);
+
+// class CourseRowAnimated extends React.Component {
+//   constructor(props) {
+//     super(props);
+//   }
+//   render () {
+//     // if (this.props.last) {
+//       return (
+//         <View style={this.props.style}>
+//           <View
+//             style={[styles.courseRowInfo, {borderBottomColor: 'rgba(0,0,0,0)'}]}
+//           >
+//             <Text
+//               style={[
+//                 styles.courseRowText,
+//                 {color: global.user.getSecondaryTextColor ()},
+//               ]}
+//             >
+//               {this.props.text}
+//             </Text>
+//             {this.props.control}
+//           </View>
+//         </View>
+//       );
+//     // } else {
+//     //   return (
+//     //     <View
+//     //       style={[
+//     //         styles.courseRow,
+//     //         // {backgroundColor: global.user.getSecondaryTheme ()},
+//     //       ]}
+//     //     >
+//     //       <View
+//     //         style={[
+//     //           styles.courseRowInfo,
+//     //           {borderBottomColor: global.user.getBorderColor ()},
+//     //         ]}
+//     //       >
+//     //         <Text
+//     //           style={[
+//     //             styles.courseRowText,
+//     //             {color: global.user.getSecondaryTextColor ()},
+//     //           ]}
+//     //         >
+//     //           {this.props.text}
+//     //         </Text>
+//     //         {this.props.control}
+//     //       </View>
+//     //     </View>
+//     //   );
+//     // }
+//   }
+// }
+
 class CourseRow extends React.Component {
   render () {
     if (this.props.last) {
@@ -86,7 +155,7 @@ class CourseRow extends React.Component {
         <View
           style={[
             styles.courseRow,
-            {backgroundColor: global.user.getSecondaryTheme ()},
+            // {backgroundColor: global.user.getSecondaryTheme ()},
           ]}
         >
           <View
@@ -109,7 +178,7 @@ class CourseRow extends React.Component {
         <View
           style={[
             styles.courseRow,
-            {backgroundColor: global.user.getSecondaryTheme ()},
+            // {backgroundColor: global.user.getSecondaryTheme ()},
           ]}
         >
           <View
@@ -165,7 +234,7 @@ class ImagePickerPopup extends React.Component {
             <ImageBar
               style={{marginBottom: 0, padding: 0}}
               displayImagesInline={false}
-              onImageRecieved={this.props.onImageRecieved}
+              onImageLoaded={this.props.onImageLoaded}
               allowsEditing={true}
               aspect={[1, 1]}
               column={true}
@@ -242,9 +311,205 @@ class SwitchList extends React.Component {
   }
 }
 
+class InteractionTokens extends React.Component {
+  constructor (props) {
+    super (props);
+    this.state = {
+      interaction_tokens: {},
+      collapsed: true,
+      loaded: false,
+    };
+  }
+  componentDidMount () {
+    let api = new ApexAPI (global.user);
+    api
+      .get (`users/${global.user.id}`)
+      .then (data => data.json ())
+      .then (data => {
+        if (data.status == 'ok') {
+          let body = data.body.interaction_tokens || {};
+          let keys = [
+            'votes',
+            'created_assignments',
+            'created_notes',
+            'created_important_dates',
+            'created_posts',
+            'created_comments',
+          ];
+          let tokens = {};
+          keys.forEach (key => {
+            if (body[key]) {
+              tokens[key] = body[key];
+            } else {
+              tokens[key] = [];
+            }
+          });
+          this.setState ({
+            interaction_tokens: tokens,
+            loaded: true,
+          });
+        }
+      });
+  }
+  render () {
+    let {interaction_tokens} = this.state;
+    let total = Object.keys (interaction_tokens).reduce ((acc, current) => {
+      return (
+        acc +
+        interaction_tokens[current].reduce ((acc, current) => {
+          return acc + current.tokens;
+        }, 0)
+      );
+    }, 0);
+    let keys = {
+      created_assignments: 'Created Assignments',
+      votes: 'Votes',
+      created_notes: 'Created Notes',
+      created_important_dates: 'Created Important Dates',
+      created_posts: 'Created Posts',
+      created_comments: 'Created Comments',
+    };
+    return (
+      <View>
+        <View
+          style={{
+            borderTopWidth: StyleSheet.hairlineWidth,
+            borderBottomWidth: StyleSheet.hairlineWidth,
+            borderColor: global.user.getBorderColor (),
+          }}
+        >
+          <Touchable
+            onPress={() => {
+              this.state.loaded
+                ? this.setState ({collapsed: !this.state.collapsed})
+                : () => {};
+            }}
+          >
+            <View
+              style={[
+                styles.courseRow,
+                // {backgroundColor: global.user.getSecondaryTheme ()},
+              ]}
+            >
+              <View
+                style={[
+                  styles.courseRowInfo,
+                  {
+                    borderBottomColor: this.state.collapsed
+                      ? 'rgba(0,0,0,0)'
+                      : global.user.getBorderColor (),
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.courseRowText,
+                    {color: global.user.getSecondaryTextColor ()},
+                  ]}
+                >
+                  Total
+                </Text>
+                {this.state.loaded
+                  ? <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                      <Text
+                        style={{
+                          fontSize: 18,
+                          color: global.user.getSecondaryTextColor (),
+                        }}
+                      >
+                        {total}
+                      </Text>
+                      <View style={{paddingLeft: 10, paddingTop: 3}}>
+                        {this.state.collapsed
+                          ? <DownIcon
+                              color={global.user.getPrimaryTextColor ()}
+                              size={28}
+                            />
+                          : <UpIcon
+                              color={global.user.getPrimaryTextColor ()}
+                              size={28}
+                            />}
+                      </View>
+                    </View>
+                  : <UIActivityIndicator
+                      color="white"
+                      count={12}
+                      size={20}
+                      style={{flexGrow: 0, paddingLeft: 15, paddingRight: 15}}
+                    />}
+
+              </View>
+            </View>
+          </Touchable>
+          <Collapsible collapsed={this.state.collapsed}>
+            {Object.keys (interaction_tokens).map ((token, index) => {
+              return (
+                <View
+                  style={[
+                    styles.courseRow,
+                    {backgroundColor: global.user.getSecondaryTheme ()},
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.courseRowInfo,
+                      {
+                        marginLeft: 20,
+                      },
+                      {
+                        borderBottomColor: index ==
+                          Object.keys (interaction_tokens).length - 1
+                          ? 'rgba(0,0,0,0)'
+                          : global.user.getBorderColor (),
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.courseRowText,
+                        {color: global.user.getSecondaryTextColor ()},
+                      ]}
+                    >
+                      {keys[token]}
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 18,
+                        color: global.user.getTertiaryTextColor (),
+                      }}
+                    >
+                      {interaction_tokens[token].reduce ((acc, current) => {
+                        return acc + current.tokens;
+                      }, 0)}
+                    </Text>
+                  </View>
+                </View>
+              );
+            })}
+          </Collapsible>
+        </View>
+      </View>
+    );
+  }
+}
+
 export default class SettingsScreen extends React.Component {
   constructor (props) {
     super (props);
+
+    let num = global.user.getPrimaryTheme ();
+    num = num.substring (1, 7);
+
+    let secondaryTheme = global.user.getSecondaryTheme ();
+    secondaryTheme = secondaryTheme.substring (1, 7);
+
+    let primaryTextColor = global.user.getPrimaryTextColor ();
+    primaryTextColor = primaryTextColor.substring (1, 7);
+    let secondaryTextColor = global.user.getSecondaryTextColor ();
+    secondaryTextColor = primaryTextColor.substring (1, 7);
+    let tertiaryTextColor = global.user.getTertiaryTextColor ();
+    tertiaryTextColor = primaryTextColor.substring (1, 7);
+
     this.state = {
       profile_picture: global.user.profile_picture,
       notifications: global.user.notifications,
@@ -252,6 +517,18 @@ export default class SettingsScreen extends React.Component {
       theme: global.user.theme,
 
       grade: global.districtInfo.grade || 9,
+
+      primaryTheme: new Animated.Value (parseInt (num, 16)),
+
+      secondaryTheme: new Animated.Value (parseInt (secondaryTheme, 16)),
+
+      primaryTextColor: new Animated.Value (parseInt (primaryTextColor, 16)),
+
+      secondaryTextColor: new Animated.Value (
+        parseInt (secondaryTextColor, 16)
+      ),
+
+      tertiaryTextColor: new Animated.Value (parseInt (tertiaryTextColor, 16)),
 
       trueDark: global.user.trueDark,
 
@@ -262,6 +539,7 @@ export default class SettingsScreen extends React.Component {
       automaticMarkRetrieval: global.user.automaticMarkRetrieval,
       automaticCourseUpdating: global.user.automaticCourseUpdating,
       grade_only_announcements: global.user.grade_only_announcements,
+      pdf_announcements: global.user.pdf_announcements,
 
       scrollEnabled: true,
 
@@ -278,6 +556,7 @@ export default class SettingsScreen extends React.Component {
     };
   };
   onImageRecieved = result => {
+    // console.log (result);
     let api = new ApexAPI (global.user);
     api
       .put (`users/${global.user.id}`, {
@@ -286,6 +565,7 @@ export default class SettingsScreen extends React.Component {
       .then (data => data.json ())
       .then (async data => {
         if (data.status == 'ok') {
+          console.log (data.body.profile_picture);
           global.user.profile_picture = data.body.profile_picture;
           await User._saveToStorage (global.user);
           this.setState ({profile_picture: data.body.profile_picture});
@@ -299,12 +579,17 @@ export default class SettingsScreen extends React.Component {
     this.imagePicker.current.setState ({isBackdropVisible: true});
   };
   toggleSettings = async (setting, value) => {
-    console.log (setting);
+    // console.log (setting);
     let state = {...this.state};
     state[setting] = value;
     // console.log (state);
     global.user[setting] = value;
     await User._saveToStorage (global.user);
+
+    if (setting == 'trueDark') {
+      this.updateColors ();
+    }
+
     let api = new ApexAPI (global.user);
     this.setState (state, () => {
       api
@@ -319,8 +604,10 @@ export default class SettingsScreen extends React.Component {
           theme: this.state.theme,
           true_dark: this.state.trueDark,
           visually_impared: this.state.visuallyImpared,
+          pdf_announcements: this.state.pdf_announcements,
+          grade_only_announcements: this.state.grade_only_announcements,
           automatic_mark_retrieval: this.state.automaticMarkRetrieval,
-          automatic_course_updating: this.state.automaticCourseUpdating,
+          automatic_course_retrieval: this.state.automaticCourseUpdating,
         })
         .then (data => data.json ())
         .then (data => {});
@@ -357,14 +644,26 @@ export default class SettingsScreen extends React.Component {
     });
   };
   componentDidMount () {
-    this.keyboardWillShowSub = Keyboard.addListener (
-      'keyboardWillShow',
-      this.keyboardWillShow
-    );
-    this.keyboardWillHideSub = Keyboard.addListener (
-      'keyboardWillHide',
-      this.keyboardWillHide
-    );
+    if (Platform.OS == 'ios') {
+      this.keyboardWillShowSub = Keyboard.addListener (
+        'keyboardWillShow',
+        this.keyboardWillShow
+      );
+      this.keyboardWillHideSub = Keyboard.addListener (
+        'keyboardWillHide',
+        this.keyboardWillHide
+      );
+    } else {
+      this.keyboardWillShowSub = Keyboard.addListener (
+        'keyboardDidShow',
+        this.keyboardWillShow
+      );
+      this.keyboardWillHideSub = Keyboard.addListener (
+        'keyboardDidHide',
+        this.keyboardWillHide
+      );
+    }
+
     setTimeout (() => {
       registerForPushNotificationsAsync ();
     }, 1000);
@@ -407,35 +706,70 @@ export default class SettingsScreen extends React.Component {
     state[field] = value;
     global.districtInfo[field] = value;
     global.districtInfo = await User._saveDistrictInfo (global.districtInfo);
-    console.log (global.districtInfo);
+    // console.log (global.districtInfo);
     this.setState (state);
+  };
+  updateColors = () => {
+    let num = global.user.getPrimaryTheme ();
+    num = num.substring (1, 7);
+
+    // console.log(parseInt(num, 16));
+
+    Animated.timing (this.state.primaryTheme, {
+      toValue: parseInt (num, 16),
+      // easing: Easing.bezier (0.2, 0.73, 0.33, 0.99),
+      duration: 330,
+      delay: 0,
+    }).start ();
+
+    let secondaryTheme = global.user.getSecondaryTheme ();
+    secondaryTheme = secondaryTheme.substring (1, 7);
+
+    let primaryTextColor = global.user.getPrimaryTextColor ();
+    primaryTextColor = primaryTextColor.substring (1, 7);
+    let secondaryTextColor = global.user.getSecondaryTextColor ();
+    secondaryTextColor = primaryTextColor.substring (1, 7);
+    let tertiaryTextColor = global.user.getTertiaryTextColor ();
+    tertiaryTextColor = primaryTextColor.substring (1, 7);
+
+    Animated.timing (this.state.secondaryTheme, {
+      toValue: parseInt (secondaryTheme, 16),
+      // easing: Easing.bezier (0.2, 0.73, 0.33, 0.99),
+      duration: 330,
+      delay: 0,
+    }).start ();
   };
   updateTheme = async theme => {
     global.user.theme = theme;
     await User._saveToStorage (global.user);
     let api = new ApexAPI (global.user);
-    this.setState ({theme}, () => {
-      api
-        .put (`users/${global.user.id}`, {
-          notifications: {
-            daily_announcements: this.state.notifications.dailyAnnouncements,
-            next_class: this.state.notifications.nextClass,
-            new_assignments: this.state.notifications.newAssignments,
-            image_replies: this.state.notifications.imageReplies,
-            upcoming_events: this.state.notifications.upcomingEvents,
-            marked_assignments: this.state.notifications.markedAssignments,
-          },
-          theme: this.state.theme,
-          true_dark: this.state.trueDark,
-          visually_impared: this.state.visuallyImpared,
-          automatic_mark_retrieval: this.state.automaticMarkRetrieval,
-          automatic_course_updating: this.state.automaticCourseUpdating,
-        })
-        .then (data => data.json ())
-        .then (data => {
-          console.log (data);
-        });
-    });
+
+    this.updateColors ();
+
+    console.log (this.state.backgroundColor);
+    this.setState ({theme});
+    // this.setState ({theme}, () => {
+    //   api
+    //     .put (`users/${global.user.id}`, {
+    //       notifications: {
+    //         daily_announcements: this.state.notifications.dailyAnnouncements,
+    //         next_class: this.state.notifications.nextClass,
+    //         new_assignments: this.state.notifications.newAssignments,
+    //         image_replies: this.state.notifications.imageReplies,
+    //         upcoming_events: this.state.notifications.upcomingEvents,
+    //         marked_assignments: this.state.notifications.markedAssignments,
+    //       },
+    //       theme: this.state.theme,
+    //       true_dark: this.state.trueDark,
+    //       visually_impared: this.state.visuallyImpared,
+    //       automatic_mark_retrieval: this.state.automaticMarkRetrieval,
+    //       automatic_course_updating: this.state.automaticCourseUpdating,
+    //     })
+    //     .then (data => data.json ())
+    //     .then (data => {
+    //       // console.log (data);
+    //     });
+    // });
   };
   finish = () => {
     const resetAction = StackActions.reset ({
@@ -445,11 +779,22 @@ export default class SettingsScreen extends React.Component {
     this.props.navigation.dispatch (resetAction);
   };
   render () {
+    console.log (
+      this.state.secondaryTheme.interpolate ({
+        inputRange: [0, 16777215],
+        outputRange: ['#000000', '#ffffff'],
+      })
+    );
     return (
-      <View
+      <Animated.View
         style={[
           styles.container,
-          {backgroundColor: global.user.getPrimaryTheme ()},
+          {
+            backgroundColor: this.state.primaryTheme.interpolate ({
+              inputRange: [0, 16777215],
+              outputRange: ['#000000', '#ffffff'],
+            }),
+          },
         ]}
       >
         <HeaderBar
@@ -467,6 +812,7 @@ export default class SettingsScreen extends React.Component {
           height={60}
           title="Settings"
         />
+
         <Animated.ScrollView
           scrollEnabled={this.state.scrollEnabled}
           ref={this.scrollView}
@@ -491,6 +837,7 @@ export default class SettingsScreen extends React.Component {
                   overflow: 'hidden',
                   backgroundColor: 'black',
                   marginBottom: 10,
+                  marginTop: 5,
                 }}
               >
                 {this.state.profile_picture !== ''
@@ -501,7 +848,6 @@ export default class SettingsScreen extends React.Component {
                       style={{
                         width: 80,
                         height: 80,
-                        marginTop: 5,
                       }}
                     />
                   : <AccountIcon
@@ -541,206 +887,310 @@ export default class SettingsScreen extends React.Component {
               Student ID {global.user.studentNumber}
             </Text>
           </View>
+
+          <View>
+            <Text
+              style={{
+                marginTop: 20,
+                marginLeft: 5,
+                marginBottom: 5,
+                color: global.user.getTertiaryTextColor (),
+                fontSize: 12,
+              }}
+            >
+              INTERACTION TOKENS
+            </Text>
+
+            <Animated.View
+              style={[
+                {
+                  backgroundColor: this.state.secondaryTheme.interpolate ({
+                    inputRange: [0, 16777215],
+                    outputRange: ['#000000', '#ffffff'],
+                  }),
+                },
+              ]}
+            >
+
+              <InteractionTokens />
+            </Animated.View>
+          </View>
+
           <ButtonSection header={'PUSH NOTIFICATIONS'}>
-            <CourseRow
-              text={'Daily Announcements'}
-              control={
-                <Switch
-                  value={this.state.notifications.dailyAnnouncements}
-                  onValueChange={val =>
-                    this.toggleNotifications ('dailyAnnouncements', val)}
-                />
-              }
-              last={false}
-            />
-            <CourseRow
-              text={'Next Class'}
-              control={
-                <Switch
-                  value={this.state.notifications.nextClass}
-                  onValueChange={val =>
-                    this.toggleNotifications ('nextClass', val)}
-                />
-              }
-              last={false}
-            />
-            <CourseRow
-              text={'New Assignments'}
-              control={
-                <Switch
-                  value={this.state.notifications.newAssignments}
-                  onValueChange={val =>
-                    this.toggleNotifications ('newAssignments', val)}
-                />
-              }
-              last={false}
-            />
-            <CourseRow
-              text={'Image Replies'}
-              control={
-                <Switch
-                  value={this.state.notifications.imageReplies}
-                  onValueChange={val =>
-                    this.toggleNotifications ('imageReplies', val)}
-                />
-              }
-              last={false}
-            />
-            <CourseRow
-              text={'Upcoming Events'}
-              control={
-                <Switch
-                  value={this.state.notifications.upcomingEvents}
-                  onValueChange={val =>
-                    this.toggleNotifications ('upcomingEvents', val)}
-                />
-              }
-              last={true}
-            />
+            <Animated.View
+              style={[
+                {
+                  backgroundColor: this.state.secondaryTheme.interpolate ({
+                    inputRange: [0, 16777215],
+                    outputRange: ['#000000', '#ffffff'],
+                  }),
+                },
+              ]}
+            >
+
+              <CourseRow
+                text={'Daily Announcements'}
+                control={
+                  <Switch
+                    value={this.state.notifications.dailyAnnouncements}
+                    onValueChange={val =>
+                      this.toggleNotifications ('dailyAnnouncements', val)}
+                  />
+                }
+                last={false}
+              />
+              <CourseRow
+                text={'Next Class'}
+                control={
+                  <Switch
+                    value={this.state.notifications.nextClass}
+                    onValueChange={val =>
+                      this.toggleNotifications ('nextClass', val)}
+                  />
+                }
+                last={false}
+              />
+              <CourseRow
+                text={'New Assignments'}
+                control={
+                  <Switch
+                    value={this.state.notifications.newAssignments}
+                    onValueChange={val =>
+                      this.toggleNotifications ('newAssignments', val)}
+                  />
+                }
+                last={false}
+              />
+              <CourseRow
+                text={'Image Replies'}
+                control={
+                  <Switch
+                    value={this.state.notifications.imageReplies}
+                    onValueChange={val =>
+                      this.toggleNotifications ('imageReplies', val)}
+                  />
+                }
+                last={false}
+              />
+              <CourseRow
+                text={'Upcoming Events'}
+                control={
+                  <Switch
+                    value={this.state.notifications.upcomingEvents}
+                    onValueChange={val =>
+                      this.toggleNotifications ('upcomingEvents', val)}
+                  />
+                }
+                last={true}
+              />
+            </Animated.View>
           </ButtonSection>
-          <SwitchList
-            header="THEME"
-            options={['Light', 'Dark']}
-            value={this.state.theme}
-            onChange={this.updateTheme}
-          />
+
+          <ButtonSection header={'THEME'}>
+
+            <Animated.View
+              style={[
+                {
+                  backgroundColor: this.state.secondaryTheme.interpolate ({
+                    inputRange: [0, 16777215],
+                    outputRange: ['#000000', '#ffffff'],
+                  }),
+                },
+              ]}
+            >
+              {['Light', 'Dark'].map ((option, index, array) => {
+                return (
+                  <Touchable
+                    key={'row_' + index}
+                    onPress={() => this.updateTheme (option)}
+                  >
+                    <CourseRow
+                      text={option}
+                      last={index + 1 == array.length}
+                      control={
+                        this.state.theme == option
+                          ? <CheckMarkIcon color="#ffbb54" size={22} />
+                          : <View />
+                      }
+                    />
+                  </Touchable>
+                );
+              })}
+            </Animated.View>
+
+          </ButtonSection>
+
           <ButtonSection header={'DARK THEME'}>
-            <CourseRow
-              text={'Pure Black'}
-              control={
-                <Switch
-                  value={this.state.trueDark}
-                  onValueChange={val => this.toggleSettings ('trueDark', val)}
-                />
-              }
-              last={true}
-            />
+            <Animated.View
+              style={[
+                {
+                  backgroundColor: this.state.secondaryTheme.interpolate ({
+                    inputRange: [0, 16777215],
+                    outputRange: ['#000000', '#ffffff'],
+                  }),
+                },
+              ]}
+            >
+              <CourseRow
+                text={'Pure Black'}
+                control={
+                  <Switch
+                    value={this.state.trueDark}
+                    onValueChange={val => this.toggleSettings ('trueDark', val)}
+                  />
+                }
+                last={true}
+              />
+            </Animated.View>
+
           </ButtonSection>
           <ButtonSection header={`${global.school.district} ACCOUNT INFO`}>
-            <CourseRow
-              text={'Username'}
-              value={this.state.username}
-              control={
-                <TextInput
-                  multiline={false}
-                  value={this.state.districtUsername}
-                  placeholderTextColor={global.user.getTertiaryTextColor ()}
-                  onChangeText={text =>
-                    this.updateText ('districtUsername', text)}
-                  style={{
-                    fontSize: 20,
-                    color: global.user.getSecondaryTextColor (),
-                    opacity: 0.9,
-                    alignSelf: 'stretch',
-                    textAlign: 'right',
-                    flexGrow: 1,
-                  }}
-                  placeholder="Username"
-                />
-              }
-              last={false}
-            />
-            <CourseRow
-              text={'Password'}
-              value={this.state.password}
-              control={
-                <TextInput
-                  secureTextEntry={true}
-                  multiline={false}
-                  placeholderTextColor={global.user.getTertiaryTextColor ()}
-                  value={this.state.districtPassword}
-                  onChangeText={text =>
-                    this.updateText ('districtPassword', text)}
-                  style={{
-                    fontSize: 20,
-                    color: global.user.getSecondaryTextColor (),
-                    opacity: 0.9,
-                    alignSelf: 'stretch',
-                    textAlign: 'right',
-                    flexGrow: 1,
-                  }}
-                  placeholder="Password"
-                />
-              }
-              last={false}
-            />
-            <CourseRow
-              text={'Grade'}
-              value={this.state.grade}
-              control={
-                <TextInput
-                  multiline={false}
-                  placeholderTextColor={global.user.getTertiaryTextColor ()}
-                  keyboardType={'number-pad'}
-                  value={this.state.grade.toString ()}
-                  onChangeText={text => this.updateText ('grade', text)}
-                  style={{
-                    fontSize: 20,
-                    color: global.user.getSecondaryTextColor (),
-                    opacity: 0.9,
-                    alignSelf: 'stretch',
-                    textAlign: 'right',
-                    flexGrow: 1,
-                  }}
-                  placeholder="Grade"
-                />
-              }
-              last={true}
-            />
+            <Animated.View
+              style={[
+                {
+                  backgroundColor: this.state.secondaryTheme.interpolate ({
+                    inputRange: [0, 16777215],
+                    outputRange: ['#000000', '#ffffff'],
+                  }),
+                },
+              ]}
+            >
+              <CourseRow
+                text={'Username'}
+                value={this.state.username}
+                control={
+                  <TextInput
+                    multiline={false}
+                    value={this.state.districtUsername}
+                    placeholderTextColor={global.user.getTertiaryTextColor ()}
+                    onChangeText={text =>
+                      this.updateText ('districtUsername', text)}
+                    style={{
+                      fontSize: 20,
+                      color: global.user.getSecondaryTextColor (),
+                      opacity: 0.9,
+                      alignSelf: 'stretch',
+                      textAlign: 'right',
+                      flexGrow: 1,
+                    }}
+                    placeholder="Username"
+                  />
+                }
+                last={false}
+              />
+              <CourseRow
+                text={'Password'}
+                value={this.state.password}
+                control={
+                  <TextInput
+                    secureTextEntry={true}
+                    multiline={false}
+                    placeholderTextColor={global.user.getTertiaryTextColor ()}
+                    value={this.state.districtPassword}
+                    onChangeText={text =>
+                      this.updateText ('districtPassword', text)}
+                    style={{
+                      fontSize: 20,
+                      color: global.user.getSecondaryTextColor (),
+                      opacity: 0.9,
+                      alignSelf: 'stretch',
+                      textAlign: 'right',
+                      flexGrow: 1,
+                    }}
+                    placeholder="Password"
+                  />
+                }
+                last={false}
+              />
+              <CourseRow
+                text={'Grade'}
+                value={this.state.grade}
+                control={
+                  <TextInput
+                    multiline={false}
+                    placeholderTextColor={global.user.getTertiaryTextColor ()}
+                    keyboardType={'number-pad'}
+                    value={this.state.grade.toString ()}
+                    onChangeText={text => this.updateText ('grade', text)}
+                    style={{
+                      fontSize: 20,
+                      color: global.user.getSecondaryTextColor (),
+                      opacity: 0.9,
+                      alignSelf: 'stretch',
+                      textAlign: 'right',
+                      flexGrow: 1,
+                    }}
+                    placeholder="Grade"
+                  />
+                }
+                last={true}
+              />
+            </Animated.View>
           </ButtonSection>
           <ButtonSection header={'MISCELLANEOUS'}>
-            <CourseRow
-              text={'Visually Impared'}
-              control={
-                <Switch
-                  value={this.state.visuallyImpared}
-                  onValueChange={val =>
-                    this.toggleSettings ('visuallyImpared', val)}
-                />
-              }
-              last={false}
-            />
-            <CourseRow
-              text={'Grade only Announcements'}
-              control={
-                <Switch
-                  value={this.state.grade_only_announcements}
-                  onValueChange={val =>
-                    this.toggleSettings ('grade_only_announcements', val)}
-                />
-              }
-              last={false}
-            />
-            <CourseRow
-              text={'Automatic Mark Retrieval'}
-              control={
-                <Switch
-                  value={this.state.automaticMarkRetrieval}
-                  onValueChange={val =>
-                    this.toggleSettings ('automaticMarkRetrieval', val)}
-                />
-              }
-              last={false}
-            />
-            <CourseRow
-              text={'Automatic Course Updating'}
-              control={
-                <Switch
-                  value={this.state.automaticCourseUpdating}
-                  onValueChange={val =>
-                    this.toggleSettings ('automaticCourseUpdating', val)}
-                />
-              }
-              last={true}
-            />
+            <Animated.View
+              style={[
+                {
+                  backgroundColor: this.state.secondaryTheme.interpolate ({
+                    inputRange: [0, 16777215],
+                    outputRange: ['#000000', '#ffffff'],
+                  }),
+                },
+              ]}
+            >
+              <CourseRow
+                text={'Visually Impared'}
+                control={
+                  <Switch
+                    value={this.state.visuallyImpared}
+                    onValueChange={val =>
+                      this.toggleSettings ('visuallyImpared', val)}
+                  />
+                }
+                last={false}
+              />
+              <CourseRow
+                text={'PDF Announcements'}
+                control={
+                  <Switch
+                    value={this.state.pdf_announcements}
+                    onValueChange={val =>
+                      this.toggleSettings ('pdf_announcements', val)}
+                  />
+                }
+                last={false}
+              />
+              <CourseRow
+                text={'Automatic Mark Retrieval'}
+                control={
+                  <Switch
+                    value={this.state.automaticMarkRetrieval}
+                    onValueChange={val =>
+                      this.toggleSettings ('automaticMarkRetrieval', val)}
+                  />
+                }
+                last={false}
+              />
+              <CourseRow
+                text={'Automatic Course Updating'}
+                control={
+                  <Switch
+                    value={this.state.automaticCourseUpdating}
+                    onValueChange={val =>
+                      this.toggleSettings ('automaticCourseUpdating', val)}
+                  />
+                }
+                last={true}
+              />
+            </Animated.View>
           </ButtonSection>
           <View style={{width, marginTop: 20}} />
         </Animated.ScrollView>
         <ImagePickerPopup
           ref={this.imagePicker}
-          onImageRecieved={this.onImageRecieved}
+          onImageLoaded={this.onImageRecieved}
         />
-      </View>
+      </Animated.View>
     );
   }
 }
@@ -766,7 +1216,7 @@ const styles = StyleSheet.create ({
     flexDirection: 'row',
     width: width,
     height: 50.0,
-    backgroundColor: 'white',
+    // backgroundColor: 'white',
     paddingLeft: 15,
   },
   courseRowInfo: {

@@ -75,6 +75,7 @@ import {ifIphoneX} from 'react-native-iphone-x-helper';
 import ActionSheet from 'react-native-actionsheet';
 
 import * as Haptics from 'expo-haptics';
+import {Platform} from '@unimodules/core';
 
 const width = Dimensions.get ('window').width; //full width
 const height = Dimensions.get ('window').height; //full height
@@ -131,8 +132,8 @@ class CheckButton extends React.Component {
           style={{
             paddingTop: 10,
             paddingBottom: 10,
-            paddingLeft: 20,
-            paddingRight: 20,
+            paddingLeft: 5,
+            paddingRight: 10,
             transform: [{scale: scaleVal}],
           }}
         >
@@ -247,6 +248,9 @@ class AssignmentRow extends React.Component {
                   numberOfLines={1}
                   style={{
                     fontSize: 14,
+                    flexGrow: 0,
+                    maxWidth: (width - 30 - 55) * 0.55,
+                    marginRight: 5,
                     color: global.user.getTertiaryTextColor (),
                     fontWeight: '500',
                     color: '#e03634',
@@ -263,6 +267,8 @@ class AssignmentRow extends React.Component {
                     numberOfLines={1}
                     style={{
                       fontSize: 12,
+                      flexGrow: 0,
+                      maxWidth: (width - 30 - 55) * 0.40,
                       color: this.props.assignment.userVote == -1
                         ? '#e03634'
                         : this.props.assignment.userVote == 1
@@ -353,7 +359,7 @@ class CustomActionSheet extends React.Component {
     ];
     if (
       global.user.permission_level >= 3 ||
-      resource.uploaded_by == global.user.accountId
+      resource.uploaded_by == global.user.id
     ) {
       assignmentOptions[4] = 'Delete';
       noteOptions[4] = 'Delete';
@@ -532,7 +538,7 @@ class CustomActionSheet extends React.Component {
         case 4:
           if (
             global.user.permission_level >= 3 ||
-            this.state.resource.uploaded_by == global.user.accountId
+            this.state.resource.uploaded_by == global.user.id
           ) {
             api
               .delete (`assignments/${this.state.resource.id}`)
@@ -749,7 +755,7 @@ class CustomActionSheet extends React.Component {
         case 4:
           if (
             global.user.permission_level >= 3 ||
-            this.state.resource.uploaded_by == global.user.accountId
+            this.state.resource.uploaded_by == global.user.id
           ) {
             api
               .delete (`notes/${this.state.resource.id}`)
@@ -962,7 +968,7 @@ class CustomActionSheet extends React.Component {
         case 4:
           if (
             global.user.permission_level >= 3 ||
-            this.state.resource.uploaded_by == global.user.accountId
+            this.state.resource.uploaded_by == global.user.id
           ) {
             api
               .delete (`important-dates/${this.state.resource._id}`)
@@ -1123,14 +1129,7 @@ class ImageViewerModal extends React.Component {
     this.state = {
       isBackdropVisible: false,
       index: 0,
-      images: [
-        {
-          url: 'https://www.apexschools.co/info/5d1d2f28c7563c6ce08a960b/courses/5d216334eeb4d72ef19de8dc/resources/5d24f5ef288dda6d00eefcc8/1562703343368.jpg',
-        },
-        {
-          url: 'https://www.apexschools.co/info/5d1d2f28c7563c6ce08a960b/courses/5d216334eeb4d72ef19de8dc/resources/5d24f5f7288dda6d00eefcca/1562703351641.jpg',
-        },
-      ],
+      images: [],
     };
   }
   swipeDown = () => {
@@ -1411,7 +1410,7 @@ class DisplayAssignmentModal extends React.Component {
                   </View>
                   <ImageBar
                     displayImagesInline={false}
-                    onImageRecieved={this.imageFunction}
+                    onImageLoaded={this.imageFunction}
                     displayCameraRollInline={false}
                     path={`/courses/${global.courseInfoCourse.id}/assignments`}
                   />
@@ -1451,14 +1450,25 @@ class AssignmentModal extends React.Component {
     this.create = React.createRef ();
   }
   componentWillMount () {
-    this.keyboardWillShowSub = Keyboard.addListener (
-      'keyboardWillShow',
-      this.keyboardWillShow
-    );
-    this.keyboardWillHideSub = Keyboard.addListener (
-      'keyboardWillHide',
-      this.keyboardWillHide
-    );
+    if (Platform.OS == 'ios') {
+      this.keyboardWillShowSub = Keyboard.addListener (
+        'keyboardWillShow',
+        this.keyboardWillShow
+      );
+      this.keyboardWillHideSub = Keyboard.addListener (
+        'keyboardWillHide',
+        this.keyboardWillHide
+      );
+    } else {
+      this.keyboardWillShowSub = Keyboard.addListener (
+        'keyboardDidShow',
+        this.keyboardWillShow
+      );
+      this.keyboardWillHideSub = Keyboard.addListener (
+        'keyboardDidHide',
+        this.keyboardWillHide
+      );
+    }
   }
   componentWillUnmount () {
     this.keyboardWillShowSub.remove ();
@@ -1794,14 +1804,25 @@ class NoteModal extends React.Component {
     this.create = React.createRef ();
   }
   componentWillMount () {
-    this.keyboardWillShowSub = Keyboard.addListener (
-      'keyboardWillShow',
-      this.keyboardWillShow
-    );
-    this.keyboardWillHideSub = Keyboard.addListener (
-      'keyboardWillHide',
-      this.keyboardWillHide
-    );
+    if (Platform.OS == 'ios') {
+      this.keyboardWillShowSub = Keyboard.addListener (
+        'keyboardWillShow',
+        this.keyboardWillShow
+      );
+      this.keyboardWillHideSub = Keyboard.addListener (
+        'keyboardWillHide',
+        this.keyboardWillHide
+      );
+    } else {
+      this.keyboardWillShowSub = Keyboard.addListener (
+        'keyboardDidShow',
+        this.keyboardWillShow
+      );
+      this.keyboardWillHideSub = Keyboard.addListener (
+        'keyboardDidHide',
+        this.keyboardWillHide
+      );
+    }
   }
   componentWillUnmount () {
     this.keyboardWillShowSub.remove ();
@@ -2435,6 +2456,7 @@ class NoAssignmentsBubble extends React.Component {
           >
             <Touchable
               style={{width: 0, flexGrow: 1, flexDirection: 'row', zIndex: 2}}
+              onPress={this.props.onPress}
             >
               <View style={[styles.assignmentInfo, {overflow: 'hidden'}]}>
                 <View style={styles.assignmentTitle}>
@@ -2544,6 +2566,7 @@ class NoNotesBubble extends React.Component {
           >
             <Touchable
               style={{width: 0, flexGrow: 1, flexDirection: 'row', zIndex: 2}}
+              onPress={this.props.onPress}
             >
               <View style={[styles.assignmentInfo, {overflow: 'hidden'}]}>
                 <View style={styles.assignmentTitle}>
@@ -2628,6 +2651,7 @@ class NoImportantDatesBubble extends React.Component {
     super (props);
   }
   render () {
+    console.log (this.props);
     return (
       <View
         style={[
@@ -2653,6 +2677,7 @@ class NoImportantDatesBubble extends React.Component {
           >
             <Touchable
               style={{width: 0, flexGrow: 1, flexDirection: 'row', zIndex: 2}}
+              onPress={this.props.onPress}
             >
               <View style={[styles.assignmentInfo, {overflow: 'hidden'}]}>
                 <View style={styles.assignmentTitle}>
@@ -2807,7 +2832,9 @@ class ImportantDateRow extends React.Component {
                   numberOfLines={1}
                   style={{
                     fontSize: 14,
+                    maxWidth: (width - 30 - 40) * 0.55,
                     color: global.user.getTertiaryTextColor (),
+                    marginRight: 5,
                   }}
                 >
                   {moment (this.props.date.date_of_event).format (
@@ -2822,6 +2849,7 @@ class ImportantDateRow extends React.Component {
                   <Text
                     numberOfLines={1}
                     style={{
+                      maxWidth: (width - 30 - 40) * 0.40,
                       fontSize: 12,
                       color: this.props.date.userVote == -1
                         ? '#e03634'
@@ -2938,7 +2966,7 @@ export default class CourseInfoScreen extends React.Component {
         this.changePage (0);
       } else if (global.courseInfoPage == 'notes') {
         this.changePage (1);
-      } else if (global.courseInfoPage == 'chatrooms') {
+      } else if (global.courseInfoPage == 'importantDates') {
         this.changePage (2);
       }
     }, 0);
@@ -3124,7 +3152,7 @@ export default class CourseInfoScreen extends React.Component {
                         />
                       );
                     })
-                  : <NoAssignmentsBubble />}
+                  : <NoAssignmentsBubble onPress={this.openModal} />}
               </View>
             </ScrollView>
             <ScrollView
@@ -3145,7 +3173,7 @@ export default class CourseInfoScreen extends React.Component {
                         />
                       );
                     })
-                  : <NoNotesBubble />}
+                  : <NoNotesBubble onPress={this.openNoteModal} />}
               </View>
             </ScrollView>
 
@@ -3167,7 +3195,7 @@ export default class CourseInfoScreen extends React.Component {
                         />
                       );
                     })
-                  : <NoImportantDatesBubble />}
+                  : <NoImportantDatesBubble onPress={this.openDateModal} />}
               </View>
             </ScrollView>
 

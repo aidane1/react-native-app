@@ -58,6 +58,13 @@ import {
 const width = Dimensions.get ('window').width; //full width
 const height = Dimensions.get ('window').height; //full height
 
+function formatUnit (hour, minute) {
+  return `${(hour + 11) % 12 + 1}:${minute.toString ().length == 1 ? '0' + minute.toString () : minute}`;
+}
+function formatTime (time) {
+  return `${formatUnit (time.start_hour, time.start_minute)} - ${formatUnit (time.end_hour, time.end_minute)}`;
+}
+
 function cacheImages (images) {
   return images.map (image => {
     if (typeof image === 'string') {
@@ -140,6 +147,203 @@ class WSConnection {
   };
 }
 
+async function getNextClassNotifiction (date) {
+  if (global.user.notifications.nextClass) {
+    let currentSemesters = global.semesters
+      .filter (semester => {
+        return (
+          semester.startDate.getTime () <= date.getTime () &&
+          semester.endDate.getTime () >= date.getTime ()
+        );
+      })
+      .map (semester => {
+        return semester.id;
+      });
+    let courseMap = {};
+    for (var i = 0; i < currentSemesters.length; i++) {
+      for (var key in global.semesterMap[currentSemesters[i]]) {
+        if (
+          courseMap[key] == undefined ||
+          global.semesterMap[currentSemesters[i]][key].isReal
+        ) {
+          courseMap[key] = global.semesterMap[currentSemesters[i]][key];
+        }
+      }
+    }
+
+    let today =
+      global.dayMap[
+        `${date.getFullYear ()}_${date.getMonth ()}_${date.getDate ()}`
+      ];
+
+    let todaySchedule = today !== undefined
+      ? global.school.rawSchedule['day_blocks'][today.week][today.day]
+      : [];
+    let todayTimes = today !== undefined
+      ? global.school.rawSchedule['block_times']
+      : [];
+
+    // [{course, teacher, time, id, isReal}]
+    let courseList = [];
+    if (
+      today &&
+      today.school_in &&
+      todaySchedule !== undefined &&
+      todaySchedule.length > 0
+    ) {
+      let blockCount = 0;
+      for (var i = 0; i < todaySchedule.length; i++) {
+        let currentStartBlock = todayTimes[blockCount];
+        let currentEndBlock =
+          todayTimes[blockCount + todaySchedule[i].block_span - 1];
+        let currentTime = {
+          start_hour: currentStartBlock.start_hour,
+          start_minute: currentStartBlock.start_minute,
+          end_hour: currentEndBlock.end_hour,
+          end_minute: currentEndBlock.end_minute,
+        };
+        if (courseMap[todaySchedule[i].block]) {
+          courseList.push ({
+            time_num: currentTime,
+            block: todaySchedule[i].block,
+            course: courseMap[todaySchedule[i].block].course,
+            category: courseMap[todaySchedule[i].block].category,
+            teacher: courseMap[todaySchedule[i].block].teacher,
+            time: formatTime (currentTime),
+            id: courseMap[todaySchedule[i].block].id,
+            isReal: true,
+          });
+        } else {
+          courseList.push ({
+            time_num: currentTime,
+            block: todaySchedule[i].block,
+            course: global.school.spareName,
+            category: 'other',
+            teacher: 'Free',
+            time: formatTime (currentTime),
+            id: '_',
+            isReal: false,
+          });
+        }
+        blockCount += todaySchedule[i].block_span;
+      }
+    } else {
+    }
+
+    let current = {
+      title: 'Current',
+      main: 'Nothing!',
+      secondary: 'Now',
+      time_num: false,
+    };
+    // {title, main, secondary}
+    let next = {
+      title: 'Next',
+      main: 'Nothing!',
+      secondary: 'Now',
+      time_num: false,
+    };
+
+    let foundCurrent = false;
+    if (courseList.length == 0) {
+    } else {
+      for (var i = 0; i < courseList.length; i++) {
+        if (
+          !foundCurrent &&
+          courseList[i].time_num.end_hour * 60 +
+            courseList[i].time_num.end_minute >=
+            date.getHours () * 60 + date.getMinutes ()
+        ) {
+          let beforeStart = false;
+          if (
+            courseList[i].time_num.start_hour * 60 +
+              courseList[i].time_num.start_minute <=
+            date.getHours () * 60 + date.getMinutes ()
+          ) {
+            current = {
+              title: 'Current',
+              main: courseList[i].course,
+              secondary: courseList[i].time,
+              time_num: courseList[i].time_num,
+            };
+          } else {
+            beforeStart = true;
+          }
+          if (i != courseList.length - 1) {
+            if (beforeStart) {
+              next = {
+                title: 'Next',
+                main: courseList[i].course,
+                secondary: courseList[i].time,
+                time_num: courseList[i].time_num,
+              };
+            } else {
+              next = {
+                title: 'Next',
+                main: courseList[i + 1].course,
+                secondary: courseList[i + 1].time,
+                time_num: courseList[i + 1].time_num,
+              };
+            }
+          }
+          foundCurrent = true;
+        }
+      }
+    }
+    if (next.time_num !== false) {
+      if (
+        next.time_num.start_hour * 60 + next.time_num.start_minute ==
+        date.getHours () * 60 + date.getMinutes () + 10
+      ) {
+        // console.log ({current, next});
+        const permissions = await Permissions.getAsync (
+          Permissions.NOTIFICATIONS
+        );
+        if (permissions.status !== 'denied') {
+          let notificationId = await Notifications.presentLocalNotificationAsync (
+            {
+              title: 'Next Class',
+              body: `${next.main} from ${next.secondary}`,
+            }
+          );
+          console.log (notificationId); // can be saved in AsyncStorage or send to server
+        }
+      }
+    }
+  }
+}
+async function getUpcomingEventsNotification (date) {
+  if (global.user.notifications.upcomingEvents) {
+    if (date.getHours () == 7 && date.getMinutes () == 20) {
+      let events = global.events
+        .filter (event => {
+          return (
+            event.event_date.getFullYear () === date.getFullYear () &&
+            event.event_date.getMonth () === date.getMonth () &&
+            event.event_date.getDate () === date.getDate ()
+          );
+        })
+        .map (event => {
+          return `at ${event.time} : ${event.title}`;
+        });
+      if (events.length) {
+        const permissions = await Permissions.getAsync (
+          Permissions.NOTIFICATIONS
+        );
+        if (permissions.status !== 'denied') {
+          let notificationId = await Notifications.presentLocalNotificationAsync (
+            {
+              title: 'Events Today',
+              body: events.join (', '),
+            }
+          );
+          console.log (notificationId); // can be saved in AsyncStorage or send to server
+        }
+      }
+    }
+  }
+}
+
 export default class LoadingScreen extends React.Component {
   constructor (props) {
     super (props);
@@ -155,6 +359,10 @@ export default class LoadingScreen extends React.Component {
       require ('../../assets/questionTutorial.png'),
       require ('../../assets/createTutorial.png'),
       require ('../../assets/navigationTutorial.png'),
+      require ('../../assets/next-class.png'),
+      require ('../../assets/current-class.png'),
+      require ('../../assets/events.png'),
+      require ('../../assets/notifications.png'),
     ]);
     const fontAssets = cacheFonts ([
       FontAwesome.font,
@@ -173,6 +381,24 @@ export default class LoadingScreen extends React.Component {
     await Promise.all ([...imageAssets, ...fontAssets]);
     return true;
   }
+  _loadLocalNotifications = async () => {
+    // let date = new Date (2019, 8, 20, 7, 19);
+    let date = new Date ();
+    setInterval (async () => {
+      try {
+        // let currentDate = new Date (2019, 8, 20, 7, date.getMinutes () + 1);
+        let currentDate = new Date ();
+        if (!(date.getDate () === currentDate.getDate ()) || true) {
+          date = currentDate;
+          await getNextClassNotifiction (date);
+          await getUpcomingEventsNotification (date);
+        } else {
+        }
+      } catch (e) {
+        console.log (e);
+      }
+    }, 60000);
+  };
   _handleNotification = async notification => {
     try {
       if (notification.origin == 'selected') {
@@ -335,17 +561,28 @@ export default class LoadingScreen extends React.Component {
         } else if (notification.data.action == 'message') {
         } else if (notification.data.action == 'announcement') {
           // console.log(notification.data.announcement);
-          const resetAction = StackActions.reset ({
-            index: 1,
-            actions: [
-              NavigationActions.navigate ({routeName: 'Home'}),
-              NavigationActions.navigate ({
-                routeName: 'Announcement',
-                params: {announcement: notification.data.announcement},
-              }),
-            ],
-          });
-          this.props.navigation.dispatch (resetAction);
+          let api = new ApexAPI (global.user);
+          api
+            .get (
+              `announcements/announcements/${notification.data.announcement}`
+            )
+            .then (data => data.json ())
+            .then (data => {
+              console.log (data);
+              if (data.status == 'ok') {
+                const resetAction = StackActions.reset ({
+                  index: 1,
+                  actions: [
+                    NavigationActions.navigate ({routeName: 'Home'}),
+                    NavigationActions.navigate ({
+                      routeName: 'Announcement',
+                      params: {announcement: data.body},
+                    }),
+                  ],
+                });
+                this.props.navigation.dispatch (resetAction);
+              }
+            });
         } else if (notification.data.action == 'chatroom-text') {
           console.log (notification.data.text);
           let key = notification.data.text.key;
@@ -402,7 +639,9 @@ export default class LoadingScreen extends React.Component {
     }
   };
   async componentDidMount () {
-    // StatusBar.setHidden (true);
+    if (Platform.OS == 'android') {
+      StatusBar.setHidden (true);
+    }
     this._notificationSubscription = Notifications.addListener (
       this._handleNotification
     );
@@ -495,10 +734,16 @@ export default class LoadingScreen extends React.Component {
 
         let hasViewedTutorial = await User._hasViewedTutorial ();
         await this._loadAssetsAsync ();
+
         if (hasViewedTutorial) {
+          this._loadLocalNotifications ();
           const resetAction = StackActions.reset ({
             index: 0,
-            actions: [NavigationActions.navigate ({routeName: 'Home'})],
+            actions: [
+              NavigationActions.navigate ({
+                routeName: 'Home',
+              }),
+            ],
           });
           this.props.navigation.dispatch (resetAction);
         } else {

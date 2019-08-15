@@ -122,7 +122,7 @@ class TutorialSection extends React.Component {
                               <View>
                                 <Text
                                   style={{
-                                    fontSize: '24',
+                                    fontSize: 24,
                                     fontFamily: 'montserrat-400',
                                     color: global.user.getSecondaryTextColor (),
                                   }}
@@ -166,6 +166,12 @@ class TutorialSection extends React.Component {
                                     );
                                   })}
                                 </View>
+                                {item.image &&
+                                  <Image
+                                    source={item.image}
+                                    resizeMode={'contain'}
+                                    style={{width: '100%'}}
+                                  />}
                               </View>
                             </View>
                           );
@@ -219,24 +225,28 @@ export default class TutorialScreen extends React.Component {
                       body: [
                         'Indicates what class is being currently attended. Tap to navigate to that course.',
                       ],
+                      // image: require ('../../assets/current-class.png'),
                     },
                     {
                       title: 'Next Class',
                       body: [
                         'Indicated the next class to be attended. Tap to navigate to that course.',
                       ],
+                      // image: require ('../../assets/next-class.png'),
                     },
                     {
                       title: 'Events',
                       body: [
                         'Displays any event upcoming within the next 2 days. Tap to navigate to that calendar day.',
                       ],
+                      // image: require ('../../assets/events.png'),
                     },
                     {
-                      title: 'Recent Assignments',
+                      title: 'Notifications',
                       body: [
-                        'Displays the most recently created assignment from each class that semester. Tap to navigate to that assignment',
+                        'Displays any mass notifications from within the last 3 days. Click to be brought to notifications page',
                       ],
+                      // image: require ('../../assets/notifications.png'),
                     },
                   ],
                 },
@@ -251,19 +261,56 @@ export default class TutorialScreen extends React.Component {
                         "Tap on the date or 'Today' to manually specify a date",
                       ],
                     },
-                  ],
-                },
-                {
-                  title: 'Schedule',
-                  body: [
                     {
                       title: 'Schedule List',
-                      body: ['A full view of your entire schedule'],
+                      body: [
+                        'A full view of your entire schedule. Click a block to adjust the name or colour of that block in the schedule',
+                      ],
                     },
                     {
                       title: 'Image/Schedule Picker',
                       body: [
                         'Specify whether you would prefer a computer generated schedule, or an image of your schedule',
+                      ],
+                    },
+                  ],
+                },
+                {
+                  title: 'Activity',
+                  body: [
+                    {
+                      title: 'Important Dates',
+                      body: [
+                        'Any upcoming important dates, as added by your classmates or teacher',
+                        `Click to be brought to the important dates page of that course`,
+                      ],
+                    },
+                    {
+                      title: 'Recent Chats',
+                      body: [
+                        'A list of conversations in any of your courses/grades from the past 2 days',
+                        'Click to be brought to that chatroom',
+                      ],
+                    },
+                    {
+                      title: 'Recent Assignments',
+                      body: [
+                        'The most recently added assignment from each course',
+                        'Click to be brought to the assignments page of that course',
+                      ],
+                    },
+                    {
+                      title: 'Recent Questions',
+                      body: [
+                        'Any questions asked within the last 3 days',
+                        'Click to be brought to that question',
+                      ],
+                    },
+                    {
+                      title: 'Recent Notes',
+                      body: [
+                        'The most recently added note from each course',
+                        'Click to be brought to the notes page of that course',
                       ],
                     },
                   ],
@@ -329,9 +376,9 @@ export default class TutorialScreen extends React.Component {
                       ],
                     },
                     {
-                      title: 'Grade Only Announcements',
+                      title: 'PDF Announcements',
                       body: [
-                        'Specify whether to recieve all announcements, or just ones that have been selected for your grade',
+                        'Specify whether to recieve announcements in PDF form or as a group of dropdown blocks',
                       ],
                     },
                     {
@@ -401,11 +448,24 @@ export default class TutorialScreen extends React.Component {
                         'If you believe a resource to be offensive, you can report it from the 3 dot menu. 3 reports will delete a resource',
                       ],
                     },
+                    {
+                      title: 'Marking as Duplicate',
+                      body: [
+                        'If two resources are the same, mark what you can mark what you believe to be the lower quality resource as a duplicate. 3 duplicate markings will hide a resource',
+                      ],
+                    },
                   ],
                 },
                 {
                   title: 'School Forum',
                   body: [
+                    {
+                      title: 'Context',
+                      body: [
+                        'The school forum is a place to ask your classmates and teachers questions, anonymously. ',
+                        "Submitting a question to the forum that doesn't get removed within 48 hours is worth 0-5 interaction tokens, depending on how helpful your classmates view it as",
+                      ],
+                    },
                     {
                       title: 'Opening',
                       body: [
@@ -430,6 +490,13 @@ export default class TutorialScreen extends React.Component {
                   title: 'Assignments',
                   body: [
                     {
+                      title: 'Context',
+                      body: [
+                        'Assignments are meant to provide students with the opportunity to view the necessary course work to be completed, without being in class. They can be uploaded as a text description of the assignment, or as an image of a hand-out',
+                        "Submitting an assignment that doesn't get removed within 48 hours is worth 0-5 interaction tokens, depending on how helpful your classmates view it as",
+                      ],
+                    },
+                    {
                       title: 'Opening',
                       body: [
                         'To open an assignment for a more in depth list of information, you can either click on it or open it from the 3 dot menu',
@@ -451,19 +518,50 @@ export default class TutorialScreen extends React.Component {
                 },
                 {
                   title: 'Notes',
-                  body: ['Yeet'],
+                  body: [
+                    {
+                      title: 'Context',
+                      body: [
+                        "Notes are meant to provide students with a useful information pertaining to a day's lesson. They can be uploaded as text, or as images. All students will be able to view any note that gets uploaded",
+                        "Submitting a note that doesn't get removed within 48 hours is worth 0-3 interaction tokens, depending on how helpful your classmates view it as",
+                      ],
+                    },
+                    {
+                      title: 'Opening',
+                      body: [
+                        'To open a note for a more in depth list of information, you can either click on it or open it from the 3 dot menu',
+                      ],
+                    },
+                    {
+                      title: 'Creating',
+                      body: [
+                        'To create a new note, click the create button in the top left corner. All notes are publically viewable by everyone',
+                      ],
+                    },
+                  ],
                 },
                 {
                   title: 'Important Dates',
-                  body: ['Yeet'],
-                },
-                {
-                  title: 'Secondary Info',
                   body: [
-                    'Fuck',
-                    'Shit',
-                    'Bitch',
-                    'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque convallis vulputate tellus eget vestibulum. Duis lobortis augue et dolor luctus, a ornare turpis malesuada. Vivamus at neque aliquam, eleifend leo facilisis, commodo nisi. Proin porta libero quis risus eleifend faucibus.',
+                    {
+                      title: 'Context',
+                      body: [
+                        'Important dates are things such as field trips, rehersals, or exams that students should be aware of. When uploaded, the entire class will be able to view it',
+                        "Submitting an important date that doesn't get removed within 48 hours is worth 0-3 interaction tokens, depending on how helpful your classmates view it as",
+                      ],
+                    },
+                    {
+                      title: 'Opening',
+                      body: [
+                        'To open an important date for a more in depth list of information, you can either click on it or open it from the 3 dot menu',
+                      ],
+                    },
+                    {
+                      title: 'Creating',
+                      body: [
+                        'To create a new important date, click the create button in the top left corner. All important dates are publically viewable by everyone',
+                      ],
+                    },
                   ],
                 },
               ]}
@@ -473,15 +571,29 @@ export default class TutorialScreen extends React.Component {
               sections={[
                 {
                   title: 'Announcements',
-                  body: ['Yeet'],
+                  body: [
+                    'Announcements are send once daily by the school, and uploaded to the announcements page',
+                    "Announcements can be viewed either as a PDF, or as a series of dropdown menu's.",
+                    'Notifications for announcements can be configured in the settings page.',
+                  ],
                 },
                 {
                   title: 'Notifications',
-                  body: ['Yeet'],
+                  body: [
+                    'Mass alerts can be sent from the office to students. If notifications are enabled, you will recieve an alert when it is sent. All notifications ever sent are stored here.',
+                  ],
                 },
                 {
                   title: 'School Assignments',
-                  body: ['Yeet'],
+                  body: [
+                    'View assignments uploaded by your teacher to cimsweb',
+                  ],
+                },
+                {
+                  title: 'Transcript',
+                  body: [
+                    'View your graduation transcript as a PDF, pulled directly from cimsweb',
+                  ],
                 },
               ]}
             />
@@ -490,7 +602,16 @@ export default class TutorialScreen extends React.Component {
               sections={[
                 {
                   title: 'Activities',
-                  body: ['Yeet'],
+                  body: [
+                    'Enter in before, during, and after school activites. You will recieve alerts about these activites at the appropriate times during the school year',
+                    'These activities are private and can be viewed by no one else',
+                  ],
+                },
+                {
+                  title: 'Schedule Configuration',
+                  body: [
+                    'Change the colour & name of the blocks in your schedule. These changes do not effect other students',
+                  ],
                 },
               ]}
             />

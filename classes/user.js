@@ -8,7 +8,7 @@ export class User {
 
     this.grade = user.grade || 9;
 
-    this.automaticCourseUpdating = user.automaticCourseUpdating
+    this.automaticCourseUpdating = user.automaticCourseUpdating !== undefined
       ? user.automaticCourseUpdating
       : false;
 
@@ -47,6 +47,9 @@ export class User {
       : false;
     this.profile_picture = user.profile_picture || '';
     this.grade_only_announcements = user.grade_only_announcements || false;
+    this.pdf_announcements = user.pdf_announcements !== undefined
+      ? user.pdf_announcements
+      : true;
     this.beforeSchoolActivities = user.beforeSchoolActivities || {
       day_1: [],
       day_2: [],
@@ -143,7 +146,8 @@ export class User {
       if (this.trueDark) {
         return '#000000';
       } else {
-        return '#1b1d29';
+        // return '#1b1d29';
+        return "#1b1b1b";
       }
     }
   };
@@ -182,7 +186,7 @@ export class User {
   };
   getBorderColor = () => {
     if (this.theme == 'Light') {
-      return 'rgba(210,210,210, 0.9)';
+      return 'rgba(150,150,150, 0.9)';
     } else {
       if (this.trueDark) {
         return 'rgba(80, 80, 80, 0.9)';
@@ -209,7 +213,8 @@ export class User {
       if (this.trueDark) {
         return {backgroundColor: '#000000'};
       } else {
-        return {backgroundColor: '#1b1d29'};
+        // return {backgroundColor: '#1b1d29'};
+        return {backgroundColor: "#1b1b1b"};
       }
     }
   };
@@ -248,7 +253,7 @@ export class User {
   };
   borderColor = () => {
     if (this.theme == 'Light') {
-      return {borderColor: 'rgba(210,210,210, 0.9)'};
+      return {borderColor: 'rgba(150,150,150, 0.9)'};
     } else {
       if (this.trueDark) {
         return {borderColor: 'rgba(80, 80, 80, 0.9)'};
@@ -268,7 +273,7 @@ export class User {
   };
   static _getDistrictInfo = async () => {
     try {
-      let storageInfo = await AsyncStorage.getItem ('district_info') || "{}";
+      let storageInfo = (await AsyncStorage.getItem ('district_info')) || '{}';
       let info = JSON.parse (storageInfo);
       if (info.districtUsername) {
         return info;
@@ -319,6 +324,23 @@ export class User {
   static _setTutorialState = async state => {
     try {
       await AsyncStorage.setItem ('hasViewed', state ? 'true' : 'false');
+      return state;
+    } catch (e) {
+      return false;
+    }
+  };
+  static _hasViewedHelp = async () => {
+    try {
+      let help = await AsyncStorage.getItem ('help');
+      return help === 'true';
+    } catch (e) {
+      return false;
+    }
+  };
+  static _setHelpState = async state => {
+    console.log({state});
+    try {
+      await AsyncStorage.setItem ('help', state ? 'true' : 'false');
       return state;
     } catch (e) {
       return false;

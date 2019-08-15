@@ -16,7 +16,7 @@ import {ScrollView} from 'react-native-gesture-handler';
 
 import Touchable from 'react-native-platform-touchable';
 
-import {CloseCircleIcon} from '../../classes/icons';
+import {CloseCircleIcon, WeekIcon, PhotoIcon} from '../../classes/icons';
 
 import {boxShadows} from '../../constants/boxShadows';
 
@@ -96,7 +96,7 @@ function makeColorMap (blockNames, userColors = {}) {
       colorMap[blockNames[i]._id] = '#ffffff';
     }
   }
-  colorMap = {...colorMap, ...userColors}
+  colorMap = {...colorMap, ...userColors};
   return colorMap;
 }
 
@@ -189,7 +189,7 @@ function formatTime (time) {
   return `${formatUnit (time.start_hour, time.start_minute)} - ${formatUnit (time.end_hour, time.end_minute)}`;
 }
 
-function getBlock (block, courses, colorMap) {
+function getBlock (block, courses, colorMap, navigate) {
   if (block.type == 'block') {
     let course = courses[block.block.block];
     if (!course) {
@@ -201,43 +201,47 @@ function getBlock (block, courses, colorMap) {
       };
     }
     return (
-      <View style={[{flexGrow: 1}, boxShadows.boxShadow3]}>
-        <LinearGradient
-          colors={[
-            averageColors ([
-              '#ffffff',
-              colorMap[block.block.block],
-              colorMap[block.block.block],
-              colorMap[block.block.block],
-            ]),
-            averageColors ([
-              '#ffffff',
-              colorMap[block.block.block],
-              colorMap[block.block.block],
-            ]),
-          ]}
-          style={{
-            borderRadius: 3,
-            overflow: 'hidden',
-            flexGrow: 1,
-            flexDirection: 'column',
-            justifyContent: 'space-evenly',
-          }}
-        >
-          <Text style={{textAlign: 'center', fontSize: 16, fontWeight: '500'}}>
-            {global.user.block_names[course.block] || course.course}
-          </Text>
-          <Text
+      <Touchable style={{flexDirection: 'row', flexGrow: 1}} onPress={navigate}>
+        <View style={[{flexGrow: 1}, boxShadows.boxShadow3]}>
+          <LinearGradient
+            colors={[
+              averageColors ([
+                '#ffffff',
+                colorMap[block.block.block],
+                colorMap[block.block.block],
+                colorMap[block.block.block],
+              ]),
+              averageColors ([
+                '#ffffff',
+                colorMap[block.block.block],
+                colorMap[block.block.block],
+              ]),
+            ]}
             style={{
-              textAlign: 'center',
-              fontStyle: 'italic',
-              color: 'rgba(0,0,0,0.6)',
+              borderRadius: 3,
+              overflow: 'hidden',
+              flexGrow: 1,
+              flexDirection: 'column',
+              justifyContent: 'space-evenly',
             }}
           >
-            {course.teacher}
-          </Text>
-        </LinearGradient>
-      </View>
+            <Text
+              style={{textAlign: 'center', fontSize: 16, fontWeight: '500'}}
+            >
+              {global.user.block_names[course.block] || course.course}
+            </Text>
+            <Text
+              style={{
+                textAlign: 'center',
+                fontStyle: 'italic',
+                color: 'rgba(0,0,0,0.6)',
+              }}
+            >
+              {course.teacher}
+            </Text>
+          </LinearGradient>
+        </View>
+      </Touchable>
     );
   } else if (block.type == 'time') {
     return (
@@ -332,11 +336,14 @@ export default class ScheduleScreenTile extends React.Component {
         schedule_type: type,
       })
       .then (data => data.json ())
-      .then (data => {})
+      .then (data => {
+        console.log(data);
+      })
       .catch (e => {});
   };
   changeScheduleImage = async result => {
-    this.state.images.push (result);
+    // console.log (result);
+    this.state.images = [result];
     global.user.scheduleImages = [result];
     await User._saveToStorage (global.user);
     const imageAssets = await cacheImages ([
@@ -349,8 +356,13 @@ export default class ScheduleScreenTile extends React.Component {
         schedule_images: [result._id],
       })
       .then (data => data.json ())
-      .then (data => {})
+      .then (data => {
+        // console.log(data);
+      })
       .catch (e => {});
+  };
+  navigate = () => {
+    this.props.parent.props.navigation.navigate ('CourseConfig');
   };
   removeImage = async resource => {
     let images = [...global.user.scheduleImages];
@@ -408,286 +420,309 @@ export default class ScheduleScreenTile extends React.Component {
       }
     }
     this.courseMap = courseMap;
-    this.colorMap = makeColorMap (global.school.blocks, global.user.block_colors);
+    this.colorMap = makeColorMap (
+      global.school.blocks,
+      global.user.block_colors
+    );
     return (
       <View
-      // height: ifIphoneX (height - 80 - 60, height - 60 - 45)
+        // height: ifIphoneX (height - 80 - 60, height - 60 - 45)
         style={{width, marginTop: 30}}
       >
         {/* <ScrollView style={[styles.scrollBack, global.user.primaryTheme ()]}> */}
-          <View style={[styles.titleBlock, global.user.borderColor ()]}>
-            <Text
-              style={[styles.h1, {color: global.user.getPrimaryTextColor ()}]}
-            >
-              Schedule
-            </Text>
-          </View>
-          {this.state.scheduleType == 'image'
-            ? <View
+        <View
+          style={[
+            styles.titleBlock,
+            global.user.borderColor (),
+            {
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'flex-end',
+            },
+          ]}
+        >
+          <Text
+            style={[styles.h1, {color: global.user.getPrimaryTextColor ()}]}
+          >
+            Schedule
+          </Text>
+          <View style={{flexDirection: 'row', alignItems: 'center'}}>
+            <Touchable onPress={() => this.changeScheduleType ('schedule')}>
+              <View
                 style={{
-                  flexDirection: 'column',
+                  width: 40,
+                  height: 40,
+                  marginBottom: 5,
+                  marginRight: 20,
+                  borderRadius: 2,
+                  borderWidth: this.state.scheduleType == 'image'
+                    ? StyleSheet.hairlineWidth
+                    : StyleSheet.hairlineWidth * 5,
+                  flexDirection: 'row',
+                  justifyContent: 'center',
                   alignItems: 'center',
-                  paddingTop: 10,
+                  borderColor: global.user.getBorderColor (),
                 }}
               >
-                <View
-                  style={[
-                    {
-                      width: width * 0.95,
-                      paddingTop: 40,
-                      paddingBottom: 40,
-                      backgroundColor: global.user.getSecondaryTheme (),
-                      opacity: 0.9,
-                      borderRadius: 10,
-                    },
-                    boxShadows.boxShadow7,
-                  ]}
-                >
-                  {this.state.images.length != 0
-                    ? this.state.images.map ((resource, index, array) => {
-                        return (
-                          <View
-                            key={'image_' + index}
-                            style={[
-                              boxShadows.boxShadow5,
-                              {
-                                postion: 'relative',
-                                marginTop: 15,
-                                marginBottom: 15,
-                                flexDirection: 'row',
-                                justifyContent: 'center',
-                                // maxHeight: 150,
-                                // overflow: "hidden"
-                              },
-                            ]}
-                          >
-                            <Touchable
-                              onPress={() => {
-                                this.openImageModal (index, array);
-                              }}
-                            >
-                              <Image
-                                source={{
-                                  uri: `https://www.apexschools.co${resource.path}`,
-                                }}
-                                style={{
-                                  width: width * 0.93,
-                                  height: resource.height /
-                                    resource.width *
-                                    width *
-                                    0.93,
-                                }}
-                              />
-                            </Touchable>
-                          </View>
-                        );
-                      })
-                    : <View>
-                        <View
-                          style={{
-                            flexDirection: 'row',
-                            justifyContent: 'center',
-                          }}
-                        >
-                          <Text
-                            style={{
-                              width: width * 0.93,
-                              fontSize: 30,
-                              fontWeight: '500',
-                              backgroundColor: global.user.getPrimaryTheme (),
-                              textAlign: 'center',
-                              color: global.user.getPrimaryTextColor (),
-                              paddingTop: 40,
-                              paddingBottom: 40,
-                            }}
-                          >
-                            No Images Yet
-                          </Text>
-                        </View>
-                      </View>}
-                </View>
-
-                <ImageBar
-                  style={{
-                    width: width * 0.95,
-                    marginTop: 20,
-                  }}
-                  displayImagesInline={false}
-                  displayCameraRollInline={false}
-                  path={`/users/${global.user.id}/schedule_images`}
-                  onImageRecieved={this.changeScheduleImage}
+                <WeekIcon
+                  size={32}
+                  color={
+                    this.state.scheduleType == 'image'
+                      ? global.user.getTertiaryTextColor ()
+                      : global.user.getPrimaryTextColor ()
+                  }
+                  style={{paddingTop: 4, paddingLeft: 2}}
                 />
               </View>
-            : <View>
-                {this.currentSemesters.length > 0
-                  ? global.school.schedule.map ((schedule, index_1) => {
+            </Touchable>
+
+            <Touchable onPress={() => this.changeScheduleType ('image')}>
+              <View
+                style={{
+                  width: 40,
+                  height: 40,
+                  marginBottom: 5,
+                  marginRight: 10,
+                  borderRadius: 2,
+                  borderWidth: this.state.scheduleType == 'image'
+                    ? StyleSheet.hairlineWidth * 5
+                    : StyleSheet.hairlineWidth,
+                  flexDirection: 'row',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  borderColor: global.user.getBorderColor (),
+                }}
+              >
+                <PhotoIcon
+                  size={28}
+                  color={
+                    this.state.scheduleType == 'image'
+                      ? global.user.getPrimaryTextColor ()
+                      : global.user.getTertiaryTextColor ()
+                  }
+                  style={{
+                    paddingTop: 3,
+                  }}
+                />
+              </View>
+            </Touchable>
+
+          </View>
+
+        </View>
+        {this.state.scheduleType == 'image'
+          ? <View
+              style={{
+                flexDirection: 'column',
+                alignItems: 'center',
+                paddingTop: 10,
+              }}
+            >
+              <View
+                style={[
+                  {
+                    width: width * 0.95,
+                    paddingTop: 40,
+                    paddingBottom: 40,
+                    backgroundColor: global.user.getSecondaryTheme (),
+                    opacity: 0.9,
+                    borderRadius: 10,
+                  },
+                  boxShadows.boxShadow7,
+                ]}
+              >
+                {this.state.images.length != 0
+                  ? this.state.images.map ((resource, index, array) => {
                       return (
                         <View
-                          style={{width, flexDirection: 'row'}}
-                          key={'schedule_' + index_1}
+                          key={'image_' + index}
+                          style={[
+                            boxShadows.boxShadow5,
+                            {
+                              postion: 'relative',
+                              marginTop: 15,
+                              marginBottom: 15,
+                              flexDirection: 'row',
+                              justifyContent: 'center',
+                              // maxHeight: 150,
+                              // overflow: "hidden"
+                            },
+                          ]}
                         >
-                          <View style={[styles.scheduleDay, {width: 70}]}>
-                            {schedule[0].map ((block, index_3) => {
+                          <Touchable
+                            onPress={() => {
+                              this.openImageModal (index, array);
+                            }}
+                          >
+                            <Image
+                              source={{
+                                uri: `https://www.apexschools.co${resource.path}`,
+                              }}
+                              style={{
+                                width: width * 0.93,
+                                height: resource.height /
+                                  resource.width *
+                                  width *
+                                  0.93,
+                              }}
+                            />
+                          </Touchable>
+                        </View>
+                      );
+                    })
+                  : <View>
+                      <View
+                        style={{
+                          flexDirection: 'row',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <Text
+                          style={{
+                            width: width * 0.93,
+                            fontSize: 30,
+                            fontWeight: '500',
+                            backgroundColor: global.user.getPrimaryTheme (),
+                            textAlign: 'center',
+                            color: global.user.getPrimaryTextColor (),
+                            paddingTop: 40,
+                            paddingBottom: 40,
+                          }}
+                        >
+                          No Images Yet
+                        </Text>
+                      </View>
+                    </View>}
+              </View>
+
+              <ImageBar
+                style={{
+                  width: width * 0.95,
+                  marginTop: 20,
+                }}
+                displayImagesInline={false}
+                displayCameraRollInline={false}
+                path={`/users/${global.user.id}/schedule_images`}
+                onImageLoaded={this.changeScheduleImage}
+              />
+            </View>
+          : <View>
+              {this.currentSemesters.length > 0
+                ? global.school.schedule.map ((schedule, index_1) => {
+                    return (
+                      <View
+                        style={{width, flexDirection: 'row'}}
+                        key={'schedule_' + index_1}
+                      >
+                        <View style={[styles.scheduleDay, {width: 70}]}>
+                          {schedule[0].map ((block, index_3) => {
+                            return (
+                              <View
+                                key={
+                                  'schedule_' +
+                                    index_1 +
+                                    '_day_' +
+                                    0 +
+                                    '_block_' +
+                                    index_3
+                                }
+                                style={[
+                                  styles.scheduleBlock,
+                                  block.type == 'time'
+                                    ? {
+                                        width: 60,
+                                        height: 70,
+                                      }
+                                    : {
+                                        width: 60,
+                                        height: 40,
+                                      },
+                                ]}
+                              >
+                                {getBlock (
+                                  block,
+                                  this.courseMap,
+                                  this.colorMap
+                                )}
+                              </View>
+                            );
+                          })}
+                        </View>
+                        <ScrollView
+                          showsHorizontalScrollIndicator={false}
+                          horizontal={true}
+                          style={{width: width - 70}}
+                          contentContainerStyle={{width: 670, marginLeft: 60}}
+                        >
+                          <View style={styles.scheduleWeek}>
+                            {schedule.slice (1).map ((day, index_2) => {
                               return (
                                 <View
                                   key={
-                                    'schedule_' +
-                                      index_1 +
-                                      '_day_' +
-                                      0 +
-                                      '_block_' +
-                                      index_3
+                                    'schedule_' + index_1 + '_day_' + index_2
                                   }
                                   style={[
-                                    styles.scheduleBlock,
-                                    block.type == 'time'
-                                      ? {
-                                          width: 60,
-                                          height: 70,
-                                        }
-                                      : {
-                                          width: 60,
-                                          height: 40,
-                                        },
+                                    styles.scheduleDay,
+                                    index_2 == 0 ? {width: 70} : {width: 130},
                                   ]}
                                 >
-                                  {getBlock (
-                                    block,
-                                    this.courseMap,
-                                    this.colorMap
-                                  )}
+                                  {day.map ((block, index_3) => {
+                                    return (
+                                      <View
+                                        key={
+                                          'schedule_' +
+                                            index_1 +
+                                            '_day_' +
+                                            index_2 +
+                                            '_block_' +
+                                            index_3
+                                        }
+                                        style={[
+                                          styles.scheduleBlock,
+                                          {
+                                            height: block.type == 'block'
+                                              ? block.block.block_span * 70 +
+                                                  (block.block.block_span - 1) *
+                                                    10
+                                              : 70,
+                                          },
+                                          block.type == 'title'
+                                            ? {
+                                                height: 40,
+                                              }
+                                            : {},
+                                        ]}
+                                      >
+                                        {getBlock (
+                                          block,
+                                          this.courseMap,
+                                          this.colorMap,
+                                          this.navigate
+                                        )}
+                                      </View>
+                                    );
+                                  })}
                                 </View>
                               );
                             })}
                           </View>
-                          <ScrollView
-                            showsHorizontalScrollIndicator={false}
-                            horizontal={true}
-                            style={{width: width - 70}}
-                            contentContainerStyle={{width: 670, marginLeft: 60}}
-                          >
-                            <View style={styles.scheduleWeek}>
-                              {schedule.slice (1).map ((day, index_2) => {
-                                return (
-                                  <View
-                                    key={
-                                      'schedule_' + index_1 + '_day_' + index_2
-                                    }
-                                    style={[
-                                      styles.scheduleDay,
-                                      index_2 == 0 ? {width: 70} : {width: 130},
-                                    ]}
-                                  >
-                                    {day.map ((block, index_3) => {
-                                      return (
-                                        <View
-                                          key={
-                                            'schedule_' +
-                                              index_1 +
-                                              '_day_' +
-                                              index_2 +
-                                              '_block_' +
-                                              index_3
-                                          }
-                                          style={[
-                                            styles.scheduleBlock,
-                                            {
-                                              height: block.type == 'block'
-                                                ? block.block.block_span * 70 +
-                                                    (block.block.block_span -
-                                                      1) *
-                                                      10
-                                                : 70,
-                                            },
-                                            block.type == 'title'
-                                              ? {
-                                                  height: 40,
-                                                }
-                                              : {},
-                                          ]}
-                                        >
-                                          {getBlock (
-                                            block,
-                                            this.courseMap,
-                                            this.colorMap
-                                          )}
-                                        </View>
-                                      );
-                                    })}
-                                  </View>
-                                );
-                              })}
-                            </View>
-                          </ScrollView>
-                        </View>
-                      );
-                    })
-                  : <Text
-                      style={{
-                        textAlign: 'center',
-                        fontSize: 18,
-                        fontWeight: '500',
-                        marginTop: 20,
-                        color: global.user.getTertiaryTextColor(),
-                        opacity: 0.7,
-                      }}
-                    >
-                      No semesters currently active!
-                    </Text>}
-              </View>}
-          <View
-            style={[
-              boxShadows.boxShadow2,
-              styles.choiceBar,
-              {marginBottom: 30},
-            ]}
-          >
-            <Touchable onPress={() => this.changeScheduleType ('image')}>
-              <View
-                style={[
-                  styles.choiceOption,
-                  this.state.scheduleType == 'image'
-                    ? styles.choiceOptionSelected
-                    : {},
-                ]}
-              >
-                <Text
-                  style={{
-                    fontSize: 18,
-                    fontWeight: '500',
-                    color: this.state.scheduleType == 'image'
-                      ? 'white'
-                      : 'black',
-                  }}
-                >
-                  Image
-                </Text>
-              </View>
-            </Touchable>
-            <Touchable onPress={() => this.changeScheduleType ('schedule')}>
-              <View
-                style={[
-                  styles.choiceOption,
-                  this.state.scheduleType == 'schedule'
-                    ? styles.choiceOptionSelected
-                    : {},
-                ]}
-              >
-                <Text
-                  style={{
-                    fontSize: 18,
-                    fontWeight: '500',
-                    color: this.state.scheduleType !== 'image'
-                      ? 'white'
-                      : 'black',
-                  }}
-                >
-                  Schedule
-                </Text>
-              </View>
-            </Touchable>
-          </View>
-        {/* </ScrollView> */}
+                        </ScrollView>
+                      </View>
+                    );
+                  })
+                : <Text
+                    style={{
+                      textAlign: 'center',
+                      fontSize: 18,
+                      fontWeight: '500',
+                      marginTop: 20,
+                      color: global.user.getTertiaryTextColor (),
+                      opacity: 0.7,
+                    }}
+                  >
+                    No semesters currently active!
+                  </Text>}
+            </View>}
         <ImageViewerModal ref={this.imageViewerModal} parent={this} />
       </View>
     );

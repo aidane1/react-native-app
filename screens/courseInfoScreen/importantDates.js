@@ -72,6 +72,7 @@ import Collapsible from 'react-native-collapsible';
 // import ChatRoom from './chatroom';
 
 import {ifIphoneX} from 'react-native-iphone-x-helper';
+import {Platform} from '@unimodules/core';
 
 const width = Dimensions.get ('window').width; //full width
 const height = Dimensions.get ('window').height; //full height
@@ -272,14 +273,25 @@ export class ImportantDateModal extends React.Component {
     this.create = React.createRef ();
   }
   componentWillMount () {
-    this.keyboardWillShowSub = Keyboard.addListener (
-      'keyboardWillShow',
-      this.keyboardWillShow
-    );
-    this.keyboardWillHideSub = Keyboard.addListener (
-      'keyboardWillHide',
-      this.keyboardWillHide
-    );
+    if (Platform.OS == 'ios') {
+      this.keyboardWillShowSub = Keyboard.addListener (
+        'keyboardWillShow',
+        this.keyboardWillShow
+      );
+      this.keyboardWillHideSub = Keyboard.addListener (
+        'keyboardWillHide',
+        this.keyboardWillHide
+      );
+    } else {
+      this.keyboardWillShowSub = Keyboard.addListener (
+        'keyboardDidShow',
+        this.keyboardWillShow
+      );
+      this.keyboardWillHideSub = Keyboard.addListener (
+        'keyboardDidHide',
+        this.keyboardWillHide
+      );
+    }
   }
   componentWillUnmount () {
     this.keyboardWillShowSub.remove ();
@@ -420,7 +432,7 @@ export class ImportantDateModal extends React.Component {
               <View style={styles.assignmentModalHeader}>
                 <Text style={{color: '#174ea6', fontSize: 16}}>Note</Text>
                 <Touchable
-                  onPress={this.props.parent.closeNoteModal}
+                  onPress={this.props.parent.closeDateModal}
                   hitSlop={{top: 20, left: 20, bottom: 20, right: 20}}
                 >
                   <XIcon size={30} color={global.user.getPrimaryTextColor ()} />
