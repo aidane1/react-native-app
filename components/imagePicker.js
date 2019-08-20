@@ -36,7 +36,7 @@ import {CameraIcon, PhotoIcon} from '../classes/icons';
 
 import {ScrollView, TextInput, FlatList} from 'react-native-gesture-handler';
 
-import Touchable from 'react-native-platform-touchable';
+import Touchable from './react-native-platform-touchable';
 
 import * as ImagePicker from 'expo-image-picker';
 
@@ -140,7 +140,7 @@ export default class ImageBar extends React.Component {
       if (this.props.aspect) settings['aspect'] = this.props.aspect;
       if (this.props.allowsEditing) settings['allowsEditing'] = true;
       let result = await ImagePicker.launchImageLibraryAsync (settings);
-      console.log(result);
+      console.log (result);
       if (result.uri) {
         result.id = new Date ().getTime ();
         this.setState (state => ({
@@ -151,7 +151,7 @@ export default class ImageBar extends React.Component {
         this.sendResourseToServer (result)
           .then (res => res.json ())
           .then (json => {
-            console.log(json);
+            console.log (json);
             if (json.status == 'ok') {
               this.onImageLoaded (json.body);
               this.setState (state => ({

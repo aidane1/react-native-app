@@ -26,7 +26,7 @@ import {
   SchoolIcons,
 } from '../../classes/icons';
 
-import Touchable from 'react-native-platform-touchable';
+import Touchable from '../../components/react-native-platform-touchable';
 
 import ApexAPI from '../../http/api';
 
@@ -81,8 +81,13 @@ class Announcement extends React.Component {
     super (props);
   }
   openAnnouncement = () => {
-      this.props.navigation.navigate("Announcement", {announcement: this.props.announcement});
-  }
+    if (this.props.announcement._id !== '_') {
+      this.props.navigation.navigate ('Announcement', {
+        announcement: this.props.announcement,
+      });
+    } else {
+    }
+  };
   render () {
     return (
       <Touchable onPress={this.openAnnouncement}>
@@ -107,11 +112,14 @@ class Announcement extends React.Component {
                 color: global.user.getSecondaryTextColor (),
               }}
             >
-              {moment (this.props.announcement.date_announced).format (
-                'MMMM Do, YYYY'
-              )}
+              {this.props.announcement._id !== '_'
+                ? moment (this.props.announcement.date_announced).format (
+                    'MMMM Do, YYYY'
+                  )
+                : 'No Announcements'}
             </Text>
-            <RightIcon style={{marginTop: 3}} size={30} color="orange" />
+            {this.props.announcement._id !== '_' &&
+              <RightIcon style={{marginTop: 3}} size={30} color="orange" />}
           </View>
         </View>
       </Touchable>
@@ -127,8 +135,6 @@ export default class AnnouncementsScreen extends React.Component {
       announcements: [],
       limit: 365,
     };
-    this.createQuestion = React.createRef ();
-    this.actionSheet = React.createRef ();
     this._isMounted = false;
   }
   static navigationOptions = ({navigation}) => {
@@ -166,7 +172,7 @@ export default class AnnouncementsScreen extends React.Component {
     this.setState ({refreshing: true}, () => {
       this.loadAnnouncements (this.state.limit, (err, body) => {
         if (err) {
-          this.setState ({refreshing: false, questions: []});
+          this.setState ({refreshing: false, announcements: []});
         } else {
           this.refreshingScrollView = true;
           this.setState ({refreshing: false, announcements: body});
@@ -231,27 +237,39 @@ export default class AnnouncementsScreen extends React.Component {
           title="Announcements"
         />
         <View style={[styles.bodyHolder, global.user.primaryTheme ()]}>
-          <FlatList
-            data={monthOrder}
-            onRefresh={this._onRefresh}
-            refreshing={false}
-            refreshControl={
-              <RefreshControl
-                refreshing={this.state.refreshing}
+          {this.state.announcements.length
+            ? <FlatList
+                data={monthOrder}
                 onRefresh={this._onRefresh}
+                refreshing={false}
+                refreshControl={
+                  <RefreshControl
+                    refreshing={this.state.refreshing}
+                    onRefresh={this._onRefresh}
+                  />
+                }
+                renderItem={({item, index}) => (
+                  <AnnouncementBlock
+                    parent={this}
+                    index={index}
+                    announcements={monthBlocks[item]}
+                    month={monthNames[item]}
+                    navigation={this.props.navigation}
+                  />
+                )}
+                keyExtractor={(item, index) => `Block_${index}`}
               />
-            }
-            renderItem={({item, index}) => (
-              <AnnouncementBlock
-                parent={this}
-                index={index}
-                announcements={monthBlocks[item]}
-                month={monthNames[item]}
-                navigation={this.props.navigation}
-              />
-            )}
-            keyExtractor={(item, index) => `Block_${index}`}
-          />
+            : <Text
+                style={{
+                  color: global.user.getSecondaryTextColor (),
+                  textAlign: 'center',
+                  fontSize: 18,
+                  marginTop: 50,
+                  padding: 20,
+                }}
+              >
+                No Announcements Yet! Announcements will be uploaded by the school to keep you up to date
+              </Text>}
         </View>
       </View>
     );

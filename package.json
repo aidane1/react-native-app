@@ -21,6 +21,7 @@
         "expo-speech": "~6.0.0",
         "image-to-base64": "^2.0.1",
         "moment": "^2.24.0",
+        "moment-timezone": "^0.5.26",
         "mongoose": "^5.6.7",
         "react": "16.8.3",
         "react-color": "^2.17.3",

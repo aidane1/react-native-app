@@ -39,7 +39,7 @@ import {Courses} from '../../classes/courses';
 
 import {boxShadows} from '../../constants/boxShadows';
 
-import Touchable from 'react-native-platform-touchable';
+import Touchable from '../../components/react-native-platform-touchable';
 
 import Collapsible from 'react-native-collapsible';
 
@@ -247,9 +247,6 @@ class AssignmentRow extends React.Component {
           this.props.last ? styles.assignmentRowLast : styles.assignmentRow
         }
       >
-        <View style={styles.assignmentCompleted}>
-          <CheckButton completed={this.props.assignment.completed == 'yes'} />
-        </View>
         <TouchableWithoutFeedback
           onPress={() => {
             this.props.openAssignment (this.props.assignment);

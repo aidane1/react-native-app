@@ -46,7 +46,9 @@ import {
 
 import Modal from 'react-native-modal';
 
-import moment from 'moment';
+// import moment from 'moment';
+
+import moment from 'moment-timezone';
 
 import HeaderBar from '../../components/header';
 
@@ -54,7 +56,7 @@ import {ScrollView, FlatList} from 'react-native-gesture-handler';
 
 import ParsedText from 'react-native-parsed-text';
 
-import Touchable from 'react-native-platform-touchable';
+import Touchable from '../../components/react-native-platform-touchable';
 
 import {boxShadows} from '../../constants/boxShadows';
 
@@ -162,80 +164,180 @@ class ChatBox extends React.Component {
       }
     });
   };
+  delete = () => {
+    let message = {
+      type: 'delete',
+      room: global.chatroomKey,
+      delete_id: this.props.message._id,
+    };
+    global.websocket.client.sendMessage (message);
+  };
+  deleteText = () => {
+    this.props.message.date = new Date (this.props.message.date);
+
+    let diff = new Date ().getTime () - this.props.message.date.getTime ();
+
+    if (diff < 10000 && this.props.message.username === global.user.username) {
+      Keyboard.dismiss ();
+      setTimeout (() => {
+        Alert.alert (
+          'Delete This Message?',
+          this.props.message.message,
+          [
+            {
+              text: 'Okay',
+              onPress: () => {
+                this.delete ();
+                // console.log(Object.keys(this.props));
+                this.props.parent.createChatBar.current.focus ();
+              },
+            },
+            {
+              text: 'Cancel',
+              onPress: () => {
+                console.log ('cancelled');
+              },
+              style: 'cancel',
+            },
+          ],
+          {cancelable: false}
+        );
+      }, 270);
+    }
+  };
   render () {
     if (this.props.showName) {
       return (
-        <View
-          style={{
-            flexDirection: 'row',
-            width,
-            paddingLeft: 5,
-            alignItems: 'flex-start',
-            marginTop: 10,
-          }}
-        >
-          {this.props.message.profile_picture !== ''
-            ? <Image
-                source={{
-                  uri: `https://www.apexschools.co${this.props.message.profile_picture}`,
-                }}
-                style={{
-                  width: 45,
-                  height: 45,
-                  borderRadius: 22.5,
-                  overflow: 'hidden',
-                  marginTop: 5,
-                }}
-              />
-            : <AccountIcon
-                size={45}
-                color={global.user.getPrimaryTextColor ()}
-              />}
-          {/* <AccountIcon size={45} color={global.user.getPrimaryTextColor ()} /> */}
-          <View style={ChatRoomStyles.chatBoxHolder}>
-            <View style={{flexDirection: 'row', alignItems: 'flex-end'}}>
-              <Text
-                style={[
-                  ChatRoomStyles.chatBoxUsername,
-                  global.user.primaryTextColor (),
-                ]}
-              >
-                {this.props.message.username}
-              </Text>
-              <Text
-                style={[
-                  ChatRoomStyles.chatBoxTime,
-                  global.user.tertiaryTextColor (),
-                ]}
-              >
-                {moment (this.props.message.date).calendar ()}
-              </Text>
-            </View>
-            <View style={[ChatRoomStyles.chatBox]}>
-              <ParsedText
-                style={{
-                  fontSize: 13,
-                  opacity: 0.9,
-                  fontWeight: '200',
-                  color: global.user.getPrimaryTextColor (),
-                }}
-                parse={[
-                  {
-                    type: 'url',
-                    style: {
-                      fontWeight: '500',
-                      textDecorationLine: 'underline',
+        <Touchable onLongPress={this.deleteText}>
+          <View
+            style={{
+              flexDirection: 'row',
+              width,
+              paddingLeft: 5,
+              alignItems: 'flex-start',
+              marginTop: 10,
+            }}
+          >
+            {this.props.message.profile_picture !== ''
+              ? <Image
+                  source={{
+                    uri: `https://www.apexschools.co${this.props.message.profile_picture}`,
+                  }}
+                  style={{
+                    width: 45,
+                    height: 45,
+                    borderRadius: 22.5,
+                    overflow: 'hidden',
+                    marginTop: 5,
+                  }}
+                />
+              : <AccountIcon
+                  size={45}
+                  color={global.user.getPrimaryTextColor ()}
+                />}
+            {/* <AccountIcon size={45} color={global.user.getPrimaryTextColor ()} /> */}
+            <View style={ChatRoomStyles.chatBoxHolder}>
+              <View style={{flexDirection: 'row', alignItems: 'flex-end'}}>
+                <Text
+                  style={[
+                    ChatRoomStyles.chatBoxUsername,
+                    global.user.primaryTextColor (),
+                  ]}
+                >
+                  {this.props.message.username}
+                </Text>
+                <Text
+                  style={[
+                    ChatRoomStyles.chatBoxTime,
+                    global.user.tertiaryTextColor (),
+                  ]}
+                >
+                  {moment (this.props.message.date).calendar ()}
+                </Text>
+              </View>
+              <View style={[ChatRoomStyles.chatBox]}>
+                <ParsedText
+                  style={{
+                    fontSize: 13,
+                    opacity: 0.9,
+                    fontWeight: '200',
+                    color: global.user.getPrimaryTextColor (),
+                  }}
+                  parse={[
+                    {
+                      type: 'url',
+                      style: {
+                        fontWeight: '500',
+                        textDecorationLine: 'underline',
+                      },
+                      onPress: this.handleURLPress,
                     },
-                    onPress: this.handleURLPress,
-                  },
-                ]}
-              >
-                {this.props.message.message}
-              </ParsedText>
-              {this.props.message.resources.map ((resource, index, array) => {
-                return (
-                  <View style={boxShadows.boxShadow4} key={resource._id}>
+                  ]}
+                >
+                  {this.props.message.message}
+                </ParsedText>
+                {this.props.message.resources.map ((resource, index, array) => {
+                  return (
+                    <View style={boxShadows.boxShadow4} key={resource._id}>
+                      <Touchable
+                        onPress={() => {
+                          this.openImageViewer (array, index);
+                        }}
+                      >
+                        <Image
+                          source={{
+                            uri: `https://www.apexschools.co${resource.path}`,
+                          }}
+                          style={{
+                            width: width * 0.6,
+                            height: resource.height /
+                              resource.width *
+                              width *
+                              0.6,
+                            alignSelf: 'center',
+                            marginTop: 10,
+                            marginBottom: 10,
+                            marginRight: 25,
+                          }}
+                        />
+                      </Touchable>
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
+          </View>
+
+        </Touchable>
+      );
+    } else {
+      return (
+        <Touchable onLongPress={this.deleteText}>
+          <View
+            style={{
+              flexDirection: 'row',
+              width,
+              paddingLeft: 50,
+              alignItems: 'flex-start',
+              marginTop: 0,
+            }}
+          >
+            <View style={ChatRoomStyles.chatBoxHolder}>
+              <View style={[ChatRoomStyles.chatBox, {marginTop: 0}]}>
+                <Text
+                  style={{
+                    fontSize: 13,
+                    opacity: 0.9,
+                    fontWeight: '200',
+                    color: global.user.getPrimaryTextColor (),
+                  }}
+                >
+                  {this.props.message.message}
+                </Text>
+                {this.props.message.resources.map ((resource, index, array) => {
+                  return (
                     <Touchable
+                      key={'image_' + index}
                       onPress={() => {
                         this.openImageViewer (array, index);
                       }}
@@ -257,63 +359,12 @@ class ChatBox extends React.Component {
                         }}
                       />
                     </Touchable>
-                  </View>
-                );
-              })}
+                  );
+                })}
+              </View>
             </View>
           </View>
-        </View>
-      );
-    } else {
-      return (
-        <View
-          style={{
-            flexDirection: 'row',
-            width,
-            paddingLeft: 50,
-            alignItems: 'flex-start',
-            marginTop: 0,
-          }}
-        >
-          <View style={ChatRoomStyles.chatBoxHolder}>
-            <View style={[ChatRoomStyles.chatBox, {marginTop: 0}]}>
-              <Text
-                style={{
-                  fontSize: 13,
-                  opacity: 0.9,
-                  fontWeight: '200',
-                  color: global.user.getPrimaryTextColor (),
-                }}
-              >
-                {this.props.message.message}
-              </Text>
-              {this.props.message.resources.map ((resource, index, array) => {
-                return (
-                  <Touchable
-                    key={'image_' + index}
-                    onPress={() => {
-                      this.openImageViewer (array, index);
-                    }}
-                  >
-                    <Image
-                      source={{
-                        uri: `https://www.apexschools.co${resource.path}`,
-                      }}
-                      style={{
-                        width: width * 0.6,
-                        height: resource.height / resource.width * width * 0.6,
-                        alignSelf: 'center',
-                        marginTop: 10,
-                        marginBottom: 10,
-                        marginRight: 25,
-                      }}
-                    />
-                  </Touchable>
-                );
-              })}
-            </View>
-          </View>
-        </View>
+        </Touchable>
       );
     }
   }
@@ -440,6 +491,11 @@ class CreateChatBar extends React.Component {
       this.props.updateTyping (false);
     }
     this.setState ({value: text, typing});
+  };
+  focus = () => {
+    setTimeout (() => {
+      this.text.current.focus ();
+    }, 300);
   };
   render () {
     this.state.usersTyping = this.state.usersTyping.filter (
@@ -721,6 +777,7 @@ export default class ChatRoom extends React.Component {
   };
 
   showMessage = message => {
+    // console.log({message});
     if (this._isMounted) {
       if (message.type == 'typing') {
         this.createChatBar.current.setState ({usersTyping: message.users});
@@ -728,8 +785,15 @@ export default class ChatRoom extends React.Component {
         if (message.request == 'users-typing') {
           this.createChatBar.current.setState ({usersTyping: message.users});
         }
+      } else if (message.type == 'delete') {
+        // console.log (message);
+        this.setState (({chats}) => {
+          return {
+            chats: chats.filter (chat => chat._id != message._id),
+          };
+        });
       } else {
-        console.log (message);
+        // console.log (message);
         this.setState (state => ({
           chats: [...state.chats, message],
         }));
@@ -1114,6 +1178,7 @@ export default class ChatRoom extends React.Component {
                             key={'chat_' + index}
                             sent={global.user.username == chat.username}
                             message={chat}
+                            parent={this}
                           />
                         );
                       })
@@ -1142,7 +1207,7 @@ export default class ChatRoom extends React.Component {
                 behavior={'height'}
                 enabled={true}
                 // keyboardVerticalOffset={ifIphoneX (80, 60)}
-                keyboardVerticalOffset={-height/2-60}
+                keyboardVerticalOffset={-height / 2 - 60}
               >
                 <ScrollView
                   ref={this.scrollView}
@@ -1199,6 +1264,7 @@ export default class ChatRoom extends React.Component {
                             key={'chat_' + index}
                             sent={global.user.username == chat.username}
                             message={chat}
+                            parent={this}
                           />
                         );
                       })
@@ -1269,19 +1335,19 @@ const ChatRoomStyles = StyleSheet.create ({
   },
   createChatText: {
     width: width - 100,
-    height: 47,
+    height: ifIphoneX (65, 53),
     fontSize: 16,
   },
   photoChat: {
     width: 40,
-    height: 47,
+    height: ifIphoneX (65, 53),
     flexDirection: 'column',
     justifyContent: 'center',
     alignItems: 'center',
   },
   sendChat: {
     width: 60,
-    height: 47,
+    height: ifIphoneX (65, 53),
     flexDirection: 'column',
     justifyContent: 'center',
     alignItems: 'center',

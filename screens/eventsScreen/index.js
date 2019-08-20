@@ -100,6 +100,16 @@ export default class EventScreen extends React.Component {
           eventBlocks[currentMonth] = [event];
         }
       });
+    } else {
+      eventBlocks[new Date ().getMonth ()] = [
+        {
+          school_in: true,
+          title: 'No Events!',
+          event_date: new Date (),
+          time: 'now',
+        },
+      ];
+      monthOrder.push (new Date ().getMonth ());
     }
     this.eventBlocks = eventBlocks;
     this.monthOrder = monthOrder;

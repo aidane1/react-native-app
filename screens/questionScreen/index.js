@@ -34,7 +34,7 @@ import moment from 'moment';
 
 import {boxShadows} from '../../constants/boxShadows';
 
-import Touchable from 'react-native-platform-touchable';
+import Touchable from '../../components/react-native-platform-touchable';
 
 import ApexAPI from '../../http/api';
 

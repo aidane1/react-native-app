@@ -10,7 +10,7 @@ import {
 
 import {LeftIcon, EmptyIcon, UpIcon, DownIcon} from '../../classes/icons';
 
-import Touchable from 'react-native-platform-touchable';
+import Touchable from '../../components/react-native-platform-touchable';
 
 import HeaderBar from '../../components/header';
 
@@ -611,6 +611,47 @@ export default class TutorialScreen extends React.Component {
                   title: 'Schedule Configuration',
                   body: [
                     'Change the colour & name of the blocks in your schedule. These changes do not effect other students',
+                  ],
+                },
+              ]}
+            />
+            <TutorialSection
+              header="Visually Impared"
+              sections={[
+                {
+                  title: 'Use',
+                  body: [
+                    'The visually impared section is sorted in to 4 main blocks. 3 blocks read out information, while the bottom blocks control the date',
+                    'Tap on a block to have it read out information to you',
+                    'All readings will be prefaced by the current date and time',
+                  ],
+                },
+                {
+                  title: 'Today',
+                  body: [
+                    'Reads out the current schedule day, current class, and next class',
+                  ],
+                },
+                {
+                  title: 'Courses',
+                  body: ["Reads out the entire day's courses"],
+                },
+                {
+                  title: 'Events',
+                  body: ['Reads out any upcoming events'],
+                },
+                {
+                  title: 'Backwards',
+                  body: [
+                    'On a single tap, it will move the date of information read out one calendar day backwards',
+                    'On a long tap, it will move the read date backwards until released',
+                  ],
+                },
+                {
+                  title: 'Forwards',
+                  body: [
+                    'On a single tap, it will move the date of information read out one calendar day forwards',
+                    'On a long tap, it will move the read date forwards until released',
                   ],
                 },
               ]}

@@ -14,6 +14,12 @@ class IconBlock {
   constructor (icon) {}
 }
 
+export class LinkIcon extends React.Component {
+  render () {
+    return <AntDesign color="white" name="link" size={16} {...this.props} />;
+  }
+}
+
 export class WeekIcon extends React.Component {
   render () {
     return (

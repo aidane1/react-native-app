@@ -24,7 +24,7 @@ import {Courses} from '../../classes/courses';
 
 import {boxShadows} from '../../constants/boxShadows';
 
-import Touchable from 'react-native-platform-touchable';
+import Touchable from '../../components/react-native-platform-touchable';
 
 import {Day} from '../../classes/days';
 
@@ -334,6 +334,8 @@ export default class ChatroomScreen extends React.Component {
         global.resourcePath = `/chatrooms/courses/${id}`;
         global.chatroomName = `${global.courseInfoCourse.course}`;
         this.props.navigation.navigate ('PureChatroom');
+      } else {
+        this.props.navigation.navigate ('Courses');
       }
     } catch (e) {
       console.log (e);
@@ -357,7 +359,7 @@ export default class ChatroomScreen extends React.Component {
   };
   _navigateToSchool = async (page, grade) => {
     try {
-      global.chatroomKey = `school_${global.school.id}`
+      global.chatroomKey = `school_${global.school.id}`;
       global.textPath = `texts?find_fields=key&key=school_${global.school.id}&order_by=date&order_direction=-1&populate=resources`;
       global.chatroomName = `${grade}`;
       global.resourcePath = `/chatrooms/school/`;
@@ -386,6 +388,19 @@ export default class ChatroomScreen extends React.Component {
         isReal: true,
       };
     });
+    if (courseList.length === 0) {
+      courseList = [
+        {
+          course: 'No Courses',
+          category: 'other',
+          teacher: 'Free',
+          semester: 'All Year',
+          block: 'Empty',
+          id: '_',
+          isReal: false,
+        },
+      ];
+    }
     return (
       <View style={[styles.container, global.user.primaryTheme ()]}>
         <HeaderBar

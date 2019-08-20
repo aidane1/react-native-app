@@ -22,6 +22,7 @@ import tutorialScreen from '../screens/tutorialScreen/index';
 import NotificationScreen from '../screens/notificationsScreen/index';
 import CourseConfigScreen from '../screens/courseConfigScreen/index';
 import TranscriptScreen from '../screens/transcriptScreen/index';
+import LinkScreen from '../screens/linksScreen/index';
 import {createAppContainer, createStackNavigator} from 'react-navigation';
 
 const MainNavigator = createStackNavigator (
@@ -50,6 +51,7 @@ const MainNavigator = createStackNavigator (
     Notifications: {screen: NotificationScreen, lazy: true},
     CourseConfig: {screen: CourseConfigScreen, lazy: true},
     Transcript: {screen: TranscriptScreen, lazy: true},
+    Links: {screen: LinkScreen, lazy: true},
   },
   {
     initialRouteName: 'Loading',

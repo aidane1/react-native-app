@@ -1,14 +1,14 @@
 {
   "expo": {
-    "name": "schoolr",
-    "slug": "schoolr",
+    "name": "Schoolr",
+    "slug": "Schoolr",
     "privacy": "public",
     "sdkVersion": "34.0.0",
     "platforms": [
       "ios",
       "android"
     ],
-    "version": "1.0.0",
+    "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "splash": {
@@ -25,13 +25,15 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.AidanEglin.schoolr",
+      "buildNumber": "1.03",
       "infoPlist": {
         "NSCameraUsageDescription": "This app uses the camera to take pictures of your schedule, notes, and assignments",
         "NSPhotoLibraryUsageDescription": "This app uses the camera roll to upload photos of assignments and notes"
       }
     },
     "android": {
-      "package": "com.AidanEglin.schoolr"
+      "package": "com.AidanEglin.schoolr",
+      "versionCode": 6
     },
     "description": ""
   },

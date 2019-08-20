@@ -52,7 +52,7 @@ import {ScrollView, TextInput} from 'react-native-gesture-handler';
 
 import {boxShadows} from '../../constants/boxShadows';
 
-import Touchable from 'react-native-platform-touchable';
+import Touchable from '../../components/react-native-platform-touchable';
 
 import {User} from '../../classes/user';
 

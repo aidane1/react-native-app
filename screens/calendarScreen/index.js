@@ -16,7 +16,7 @@ import {
 
 import Modal from 'react-native-modal';
 
-import Touchable from 'react-native-platform-touchable';
+import Touchable from '../../components/react-native-platform-touchable';
 
 import {boxShadows} from '../../constants/boxShadows';
 

@@ -39,7 +39,7 @@ import {School, DayBlock} from '../../classes/school';
 
 import {User} from '../../classes/user';
 
-import Touchable from 'react-native-platform-touchable';
+import Touchable from '../../components/react-native-platform-touchable';
 
 import ApexAPI from '../../http/api';
 
@@ -75,6 +75,10 @@ class UsernameInput extends React.Component {
   onBlur = () => {
     this.setState ({focused: false});
   };
+  clear = () => {
+    this.setState ({text: ''});
+    this.props.updateText ({username: ''});
+  };
   render () {
     if (this.state.focused) {
       return (
@@ -98,6 +102,7 @@ class UsernameInput extends React.Component {
             ]}
             inputContainerStyle={{borderBottomWidth: 0}}
             onChangeText={text => this.enterText (text)}
+            value={this.state.text}
           />
         </View>
       );
@@ -117,6 +122,7 @@ class UsernameInput extends React.Component {
             containerStyle={styles.textInput}
             inputContainerStyle={{borderBottomWidth: 0}}
             onChangeText={text => this.enterText (text)}
+            value={this.state.text}
           />
         </View>
       );
@@ -141,6 +147,10 @@ class PasswordInput extends React.Component {
   };
   onBlur = () => {
     this.setState ({focused: false});
+  };
+  clear = () => {
+    this.setState ({text: ''});
+    this.props.updateText ({password: ''});
   };
   render () {
     if (this.state.focused) {
@@ -168,6 +178,7 @@ class PasswordInput extends React.Component {
             ]}
             inputContainerStyle={{borderBottomWidth: 0}}
             onChangeText={text => this.enterText (text)}
+            value={this.state.text}
           />
         </View>
       );
@@ -190,6 +201,7 @@ class PasswordInput extends React.Component {
             containerStyle={styles.textInput}
             inputContainerStyle={{borderBottomWidth: 0}}
             onChangeText={text => this.enterText (text)}
+            value={this.state.text}
           />
         </View>
       );
@@ -239,9 +251,11 @@ class LoginButton extends React.Component {
     let password = this.props.inputs[1].current.state.text;
     let school = this.props.inputs[2].current.state.id;
     this.setState ({username, password, school, active: false});
+
     ApexAPI.authenticate (username, password, school)
       .then (res => res.json ())
       .then (async response => {
+        console.log (response.status);
         if (response.status == 'ok') {
           global.courses = await Courses._saveToStorage (
             constructCourseList (response.body.courses)
@@ -329,7 +343,10 @@ class LoginButton extends React.Component {
           });
           this.props.navigation.dispatch (resetAction);
         } else {
-          this.props.navigation.navigate ('Login');
+          // this.props.inputs[0].current.clear ();
+          this.props.inputs[1].current.clear ();
+          this.props.screenProps.message.current.error (response.body.error);
+          // this.props.navigation.navigate ('Login');
         }
       })
       .catch (e => {
@@ -565,6 +582,7 @@ export default class LoginScreen extends React.Component {
               <LoginButton
                 ref={this.loginButton}
                 navigation={this.props.navigation}
+                screenProps={this.props.screenProps}
                 inputs={[this.username, this.password, this.school]}
               />
             </Animated.View>

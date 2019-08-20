@@ -14,7 +14,7 @@ import {
   DatePickerIOS,
 } from 'react-native';
 
-import Touchable from 'react-native-platform-touchable';
+import Touchable from '../../components/react-native-platform-touchable';
 
 import {Course, Courses} from '../../classes/courses';
 
@@ -108,7 +108,8 @@ class CourseRow extends React.Component {
                       global.user.secondaryTextColor (),
                     ]}
                   >
-                    {global.user.block_names[this.props.block] || this.props.course}
+                    {global.user.block_names[this.props.block] ||
+                      this.props.course}
                   </Text>
                 </View>
                 <View>
@@ -164,7 +165,8 @@ class CourseRow extends React.Component {
                       global.user.secondaryTextColor (),
                     ]}
                   >
-                    {global.user.block_names[this.props.block] || this.props.course}
+                    {global.user.block_names[this.props.block] ||
+                      this.props.course}
                   </Text>
                 </View>
                 <View>
@@ -297,7 +299,32 @@ export default class LinksScreenTile extends React.Component {
       ),
     }));
   };
-  openDaySelectAndroid = () => {};
+  openDaySelectAndroid = async () => {
+    try {
+      console.log ('yeet');
+      const {action, year, month, day} = await DatePickerAndroid.open ({
+        // Use `new Date()` for current date.
+        // May 25 2020. Month 0 is January.
+        date: new Date (),
+        mode: 'calendar',
+      });
+      console.log ({action, year, month, day});
+      if (action !== DatePickerAndroid.dismissedAction) {
+        this.props.parent.setState (state => ({
+          currentDate: new Date (
+            year,
+            month,
+            day,
+            state.currentDate.getHours (),
+            state.currentDate.getMinutes ()
+          ),
+        }));
+        // Selected year, month (0-11), day
+      }
+    } catch (e) {
+      console.log (e);
+    }
+  };
 
   forwardOneDay = () => {
     let {currentDate} = this.props.parent.state;
@@ -341,7 +368,11 @@ export default class LinksScreenTile extends React.Component {
           ]}
         >
           <Touchable
-            onPress={this.openDaySelectIOS}
+            onPress={
+              Platform.OS == 'ios'
+                ? this.openDaySelectIOS
+                : this.openDaySelectAndroid
+            }
             hitSlop={{top: 20, left: 20, bottom: 20, right: 20}}
           >
             <View style={{flexDirection: 'row', alignItems: 'center'}}>

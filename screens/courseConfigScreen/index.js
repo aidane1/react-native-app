@@ -38,7 +38,7 @@ import {boxShadows} from '../../constants/boxShadows';
 
 import Modal from 'react-native-modal';
 
-import Touchable from 'react-native-platform-touchable';
+import Touchable from '../../components/react-native-platform-touchable';
 
 import {TextField} from 'react-native-material-textfield';
 

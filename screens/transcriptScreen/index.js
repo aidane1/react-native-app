@@ -40,7 +40,7 @@ import {Courses} from '../../classes/courses';
 
 import {boxShadows} from '../../constants/boxShadows';
 
-import Touchable from 'react-native-platform-touchable';
+import Touchable from '../../components/react-native-platform-touchable';
 
 import Collapsible from 'react-native-collapsible';
 

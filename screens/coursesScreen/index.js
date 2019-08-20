@@ -32,7 +32,7 @@ import {LinearGradient} from 'expo-linear-gradient';
 
 import {boxShadows} from '../../constants/boxShadows';
 
-import Touchable from 'react-native-platform-touchable';
+import Touchable from '../../components/react-native-platform-touchable';
 
 import Collapsible from 'react-native-collapsible';
 
@@ -981,16 +981,37 @@ export default class CoursesScreen extends React.Component {
           title="Courses"
         />
         <View style={styles.bodyHolder}>
-          <ScrollView
-            ref={this.scrollView}
-            horizontal={true}
-            style={styles.slideView}
-            scrollEnabled={false}
-          >
-            {this.slides.map (x => {
-              return x;
-            })}
-          </ScrollView>
+          {this.slides.length > 0
+            ? <ScrollView
+                ref={this.scrollView}
+                horizontal={true}
+                style={styles.slideView}
+                scrollEnabled={false}
+              >
+                {this.slides.map (x => {
+                  return x;
+                })}
+              </ScrollView>
+            : <View
+                style={{
+                  width,
+                  height: height - ifIphoneX (80 - 60, 60 - 45),
+                  backgroundColor: global.user.getPrimaryTheme (),
+                }}
+              >
+                <Text
+                  style={{
+                    color: global.user.getSecondaryTextColor (),
+                    textAlign: 'center',
+                    fontSize: 18,
+                    marginTop: 50,
+                    padding: 20,
+                  }}
+                >
+                  No Courses Yet! Courses are uploaded at the start of the school year
+                </Text>
+              </View>}
+
         </View>
         <View style={[boxShadows.boxShadow7, {zIndex: 5}]}>
           <LinearGradient

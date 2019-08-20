@@ -30,7 +30,7 @@ import Modal from 'react-native-modal';
 
 import {boxShadows} from '../../constants/boxShadows';
 
-import Touchable from 'react-native-platform-touchable';
+import Touchable from '../../components/react-native-platform-touchable';
 
 import ApexAPI from '../../http/api';
 
@@ -562,8 +562,8 @@ class Question extends React.Component {
                         backgroundColor: '#292a30',
                       }
                     : {
-                      backgroundColor: "#000000"
-                    },
+                        backgroundColor: '#000000',
+                      },
             ]}
           >
             <ScrollView
@@ -1057,26 +1057,41 @@ export default class QuestionsScreen extends React.Component {
           title="Forum"
         />
         <View style={[styles.bodyHolder, global.user.primaryTheme ()]}>
-          <FlatList
-            data={this.state.questions.length != 0 ? this.state.questions : []}
-            onRefresh={this._onRefresh}
-            refreshing={false}
-            refreshControl={
-              <RefreshControl
-                refreshing={this.state.refreshing}
+          {this.state.questions.length
+            ? <FlatList
+                data={
+                  this.state.questions.length != 0 ? this.state.questions : []
+                }
                 onRefresh={this._onRefresh}
+                refreshing={false}
+                refreshControl={
+                  <RefreshControl
+                    refreshing={this.state.refreshing}
+                    onRefresh={this._onRefresh}
+                  />
+                }
+                renderItem={({item, index}) => (
+                  <Question
+                    showActionSheet={this.showActionSheet}
+                    parent={this}
+                    index={index}
+                    question={item}
+                  />
+                )}
+                keyExtractor={(item, index) => item._id}
               />
-            }
-            renderItem={({item, index}) => (
-              <Question
-                showActionSheet={this.showActionSheet}
-                parent={this}
-                index={index}
-                question={item}
-              />
-            )}
-            keyExtractor={(item, index) => item._id}
-          />
+            : <Text
+                style={{
+                  color: global.user.getSecondaryTextColor (),
+                  textAlign: 'center',
+                  fontSize: 18,
+                  marginTop: 50,
+                  padding: 20,
+                }}
+              >
+                No Questions Yet! Create a question to get help from your classmates
+              </Text>}
+
         </View>
         <CreateQuestion
           parent={this}

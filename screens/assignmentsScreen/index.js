@@ -24,7 +24,7 @@ import {Courses} from '../../classes/courses';
 
 import {boxShadows} from '../../constants/boxShadows';
 
-import Touchable from 'react-native-platform-touchable';
+import Touchable from '../../components/react-native-platform-touchable';
 
 import {Day} from '../../classes/days';
 
@@ -64,7 +64,9 @@ class DayList extends React.Component {
       );
     }
     return (
-      <View style={[styles.dayList, {borderColor: global.user.getBorderColor()}]}>
+      <View
+        style={[styles.dayList, {borderColor: global.user.getBorderColor ()}]}
+      >
         {rowLists}
       </View>
     );
@@ -144,11 +146,16 @@ class CourseRow extends React.Component {
               ? this.props._navigateToPage ('CourseInfo', this.props.id)
               : () => {}}
         >
-          <View style={[styles.courseRow, global.user.secondaryTheme()]}>
+          <View style={[styles.courseRow, global.user.secondaryTheme ()]}>
             <CourseIcon color={icon[1]}>
               <GenericIcon icon={icon[0]} color="black" size={20} />
             </CourseIcon>
-            <View style={[styles.courseRowInfo, {borderBottomColor: global.user.getBorderColor()}]}>
+            <View
+              style={[
+                styles.courseRowInfo,
+                {borderBottomColor: global.user.getBorderColor ()},
+              ]}
+            >
               <View style={styles.courseRowStack}>
                 <View>
                   <Text
@@ -204,6 +211,8 @@ export default class ChatroomScreen extends React.Component {
       global.courseInfoCourse = await Courses._retrieveCourseById (id);
       if (global.courseInfoCourse.id != '_') {
         this.props.navigation.navigate (page);
+      } else {
+        this.props.navigation.navigate("Courses");
       }
     } catch (e) {
       console.log (e);
@@ -234,6 +243,19 @@ export default class ChatroomScreen extends React.Component {
         isReal: true,
       };
     });
+    if (courseList.length === 0) {
+      courseList = [
+        {
+          course: 'No Courses',
+          category: 'other',
+          teacher: 'Free',
+          semester: 'All Year',
+          block: 'Empty',
+          id: '_',
+          isReal: false,
+        },
+      ];
+    }
     return (
       <View style={[styles.container, global.user.primaryTheme ()]}>
         <HeaderBar
@@ -323,7 +345,7 @@ const styles = StyleSheet.create ({
     fontSize: 17,
   },
   dayList: {
-    borderColor: "rgb(210,210,210)",
+    borderColor: 'rgb(210,210,210)',
     borderBottomWidth: StyleSheet.hairlineWidth * 2,
     borderTopWidth: StyleSheet.hairlineWidth * 2,
     marginTop: 10,

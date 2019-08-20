@@ -20,7 +20,7 @@ import ParsedText from 'react-native-parsed-text';
 
 import {boxShadows} from '../../constants/boxShadows';
 
-import Touchable from 'react-native-platform-touchable';
+import Touchable from '../../components/react-native-platform-touchable';
 
 import {Courses} from '../../classes/courses';
 
@@ -34,7 +34,6 @@ const height = Dimensions.get ('window').height; //full height
 
 class GradientBlock extends React.Component {
   render () {
-    console.log (this.props);
     return (
       <Touchable
         style={[styles.gradientBlock, boxShadows.boxShadow4]}

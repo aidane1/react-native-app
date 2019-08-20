@@ -31,6 +31,7 @@ import {
   NotificationIcon,
   PdfIcon,
   QuestionMarkIcon,
+  LinkIcon,
 } from '../../classes/icons';
 
 import {
@@ -49,7 +50,7 @@ import {ScrollView} from 'react-native-gesture-handler';
 
 import {boxShadows} from '../../constants/boxShadows';
 
-import Touchable from 'react-native-platform-touchable';
+import Touchable from '../../components/react-native-platform-touchable';
 
 import {ifIphoneX} from 'react-native-iphone-x-helper';
 
@@ -395,11 +396,18 @@ export default class AccountScreen extends React.Component {
               />
               <CourseRow
                 color={'#b1d7f9'}
+                icon={<LinkIcon size={20} color={'black'} />}
+                text={'Links'}
+                onPress={() => this._navigateToPage ('Links')}
+                last={false}
+              />
+              {/* <CourseRow
+                color={'#b1d7f9'}
                 icon={<SchoolAssignmentsIcon size={20} color={'black'} />}
                 text={'School Assignments'}
                 onPress={() => this._navigateToPage ('SchoolAssignments')}
                 last={false}
-              />
+              /> */}
               <CourseRow
                 color={'#7d8af0'}
                 icon={<PdfIcon size={20} color={'black'} />}

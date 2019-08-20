@@ -26,6 +26,10 @@ import {
 
 import HeaderBar from '../../components/header';
 
+import * as Permissions from 'expo-permissions';
+
+import {Notifications} from 'expo';
+
 import HomeScreenTile from './homeIndex';
 
 import LinkScreenTile from './courseIndex';
@@ -36,7 +40,7 @@ import ActivityScreenTile from './acitvityIndex';
 
 import TabBar from '../../components/tabBar';
 
-import Touchable from 'react-native-platform-touchable';
+import Touchable from '../../components/react-native-platform-touchable';
 
 import {AccountIcon, EmptyIcon, RefreshIcon} from '../../classes/icons';
 
@@ -66,7 +70,9 @@ import Constants from 'expo-constants';
 
 import * as Speech from 'expo-speech';
 
-import {FloatingAction} from 'react-native-floating-action';
+import {
+  FloatingAction,
+} from '../../components/react-native-floating-action/index';
 
 import {StackActions, NavigationActions} from 'react-navigation';
 
@@ -121,6 +127,8 @@ export default class HomeScreen extends React.Component {
     this.events;
     this.assignments;
     this.courses;
+
+    this.message = React.createRef ();
   }
 
   loadHelpBanner = async () => {
@@ -190,27 +198,46 @@ export default class HomeScreen extends React.Component {
     }
   }
 
+  loadRoomsPush = async () => {
+    const {status: existingStatus} = await Permissions.getAsync (
+      Permissions.NOTIFICATIONS
+    );
+    let finalStatus = existingStatus;
+
+    let chatrooms = global.user.courses.map (course => `course_${course}`);
+    if (global.districtInfo.grade) {
+      chatrooms.push (`grade_${global.school.id}-${global.districtInfo.grade}`);
+    }
+
+    let sendObject = {
+      chatrooms,
+    };
+
+    if (existingStatus === 'granted') {
+      sendObject['push_token'] = await Notifications.getExpoPushTokenAsync ();
+    }
+
+    let api = new ApexAPI (global.user);
+
+    api
+      .put (`users/${global.user.id}`, sendObject)
+      .then (data => data.json ())
+      .then (data => {
+        // console.log(data);
+      });
+  };
+
   componentDidMount () {
     this.loadHelpBanner ();
     this.loadCoursesBanner ();
+    this.loadRoomsPush ();
 
     let api = new ApexAPI ({
       'x-api-key': global.user['x-api-key'],
       school: global.user['school'],
       'x-id-key': global.user['x-id-key'],
     });
-    let chatrooms = global.user.courses.map (course => `course_${course}`);
-    if (global.districtInfo.grade) {
-      chatrooms.push (`grade_${global.school.id}-${global.districtInfo.grade}`);
-    }
-    api
-      .put (`users/${global.user.id}`, {
-        chatrooms,
-      })
-      .then (data => data.json ())
-      .then (data => {
-        // console.log(data);
-      });
+
     if (global.user.courses.length) {
       api
         .get (`topics?reference_course=${global.user.courses.join (',')}`)
@@ -458,7 +485,7 @@ export default class HomeScreen extends React.Component {
     try {
       const actions = [
         {
-          text: 'Courses',
+          text: 'Select Courses',
           // icon: require ('./images/ic_accessibility_white.png'),
           icon: <CoursesIcon size={22} style={{marginTop: 3}} />,
           name: 'Courses',
@@ -815,13 +842,14 @@ export default class HomeScreen extends React.Component {
             ? null
             : <FloatingAction
                 actions={actions}
-                distanceToEdge={ifIphoneX (70, 50)}
+                distanceToEdge={ifIphoneX (80, 65)}
+                // style={{position: "absolute", bottom: 200}}
+                // position={"right"}
                 floatingIcon={<MoreIcon size={30} color="white" />}
                 onPressItem={name => {
                   this.props.navigation.navigate (name);
                 }}
               />}
-
         </View>
       );
     } catch (e) {

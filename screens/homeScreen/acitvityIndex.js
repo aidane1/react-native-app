@@ -14,7 +14,7 @@ import {
   DatePickerIOS,
 } from 'react-native';
 
-import Touchable from 'react-native-platform-touchable';
+import Touchable from '../../components/react-native-platform-touchable';
 
 import {Course, Courses} from '../../classes/courses';
 

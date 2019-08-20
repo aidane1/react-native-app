@@ -28,7 +28,7 @@ import {
 
 import {boxShadows} from '../../constants/boxShadows';
 
-import Touchable from 'react-native-platform-touchable';
+import Touchable from '../../components/react-native-platform-touchable';
 
 import {LinearGradient} from 'expo-linear-gradient';
 
@@ -75,7 +75,7 @@ class GradientBlock extends React.Component {
   }
   handleURLPress = (url, matchIndex) => {
     Linking.canOpenURL (url).then (supported => {
-      console.log(supported);
+      console.log (supported);
       if (supported) {
         Linking.openURL (url);
       } else {
@@ -180,7 +180,7 @@ export default class NotificationsScreen extends React.Component {
     this.setState ({refreshing: true}, () => {
       this.loadNotifications ((err, body) => {
         if (err) {
-          this.setState ({refreshing: false, questions: []});
+          this.setState ({refreshing: false, notifications: []});
         } else {
           this.refreshingScrollView = true;
           this.setState ({refreshing: false, notifications: body});
@@ -245,27 +245,40 @@ export default class NotificationsScreen extends React.Component {
           title="Notifications"
         />
         <View style={[styles.bodyHolder, global.user.primaryTheme ()]}>
-          <FlatList
-            data={monthOrder}
-            onRefresh={this._onRefresh}
-            refreshing={false}
-            refreshControl={
-              <RefreshControl
-                refreshing={this.state.refreshing}
+          {this.state.notifications.length
+            ? <FlatList
+                data={monthOrder}
                 onRefresh={this._onRefresh}
+                refreshing={false}
+                refreshControl={
+                  <RefreshControl
+                    refreshing={this.state.refreshing}
+                    onRefresh={this._onRefresh}
+                  />
+                }
+                renderItem={({item, index}) => (
+                  <MonthBlock
+                    parent={this}
+                    index={index}
+                    notifications={monthBlocks[item]}
+                    month={monthNames[item]}
+                    navigation={this.props.navigation}
+                  />
+                )}
+                keyExtractor={(item, index) => `Block_${index}`}
               />
-            }
-            renderItem={({item, index}) => (
-              <MonthBlock
-                parent={this}
-                index={index}
-                notifications={monthBlocks[item]}
-                month={monthNames[item]}
-                navigation={this.props.navigation}
-              />
-            )}
-            keyExtractor={(item, index) => `Block_${index}`}
-          />
+            : <Text
+                style={{
+                  color: global.user.getSecondaryTextColor (),
+                  textAlign: 'center',
+                  fontSize: 18,
+                  marginTop: 50,
+                  padding: 20,
+                }}
+              >
+                No Notifications Yet! Notifications will be sent out by the office
+              </Text>}
+
         </View>
       </View>
     );

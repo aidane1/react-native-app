@@ -34,7 +34,7 @@ import ActivityScreenTile from './acitvityIndex';
 
 import TabBar from '../../components/tabBar';
 
-import Touchable from 'react-native-platform-touchable';
+import Touchable from '../../components/react-native-platform-touchable';
 
 import {boxShadows} from '../../constants/boxShadows';
 
@@ -89,7 +89,7 @@ export default class VisualPage extends React.Component {
   }
 
   readOut = section => {
-    let speech = `Current Time: ${moment (this.props.date).format ('h:mm a')}: `;
+    let speech = `Current Time: ${moment (this.props.date).format ('h:mm a')}: on : ${moment (this.props.date).format ('MMMM Do, YYYY')}: `;
     if (section == 'today') {
       let timesOne = this.props.current.secondary.split (' - ');
       let timesTwo = this.props.next.secondary.split (' - ');

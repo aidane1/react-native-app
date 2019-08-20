@@ -14,7 +14,7 @@ import {Asset} from 'expo-asset';
 
 import {ScrollView} from 'react-native-gesture-handler';
 
-import Touchable from 'react-native-platform-touchable';
+import Touchable from '../../components/react-native-platform-touchable';
 
 import {CloseCircleIcon, WeekIcon, PhotoIcon} from '../../classes/icons';
 
@@ -652,7 +652,7 @@ export default class ScheduleScreenTile extends React.Component {
                           showsHorizontalScrollIndicator={false}
                           horizontal={true}
                           style={{width: width - 70}}
-                          contentContainerStyle={{width: 670, marginLeft: 60}}
+                          contentContainerStyle={{width: 670, marginLeft: 0}}
                         >
                           <View style={styles.scheduleWeek}>
                             {schedule.slice (1).map ((day, index_2) => {
@@ -736,6 +736,7 @@ const styles = StyleSheet.create ({
     marginTop: 0,
     marginBottom: 40,
     marginRight: 30,
+    marginLeft: 60,
   },
   scheduleDay: {
     flexDirection: 'column',

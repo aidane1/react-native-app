@@ -31,7 +31,7 @@ import {
 
 import {ScrollView} from 'react-native-gesture-handler';
 
-import Touchable from 'react-native-platform-touchable';
+import Touchable from '../../components/react-native-platform-touchable';
 
 import {boxShadows} from '../../constants/boxShadows';
 

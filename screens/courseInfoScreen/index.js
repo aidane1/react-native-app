@@ -48,7 +48,7 @@ import {Note, Notes} from '../../classes/notes';
 
 import {Topic, Topics} from '../../classes/topics';
 
-import Touchable from 'react-native-platform-touchable';
+import Touchable from '../../components/react-native-platform-touchable';
 
 import Modal from 'react-native-modal';
 
