@@ -22,6 +22,8 @@ import {
   CompassIcon,
   MoreIcon,
   CoursesIcon,
+  LinkIcon,
+  HomeIcon,
 } from '../../classes/icons';
 
 import HeaderBar from '../../components/header';
@@ -98,6 +100,8 @@ function formatTime (time) {
 export default class HomeScreen extends React.Component {
   static navigationOptions = ({navigation}) => {
     return {
+      drawerLabel: 'Home',
+      drawerIcon: <HomeIcon color="black"/>,
       header: null,
     };
   };
@@ -492,18 +496,18 @@ export default class HomeScreen extends React.Component {
           position: 0,
         },
         {
-          text: 'School Forum',
-          // icon: require ('./images/ic_accessibility_white.png'),
-          icon: <QuestionIcon size={22} />,
-          name: 'Questions',
-          position: 2,
-        },
-        {
           text: 'Chatrooms',
           // icon: require ('./images/ic_language_white.png'),
           icon: <ChatIcon size={22} style={{marginTop: 3}} />,
           name: 'Chatrooms',
           position: 1,
+        },
+        {
+          text: 'School Forum',
+          // icon: require ('./images/ic_accessibility_white.png'),
+          icon: <QuestionIcon size={22} />,
+          name: 'Questions',
+          position: 2,
         },
         {
           text: 'My Classes',
@@ -513,11 +517,18 @@ export default class HomeScreen extends React.Component {
           position: 3,
         },
         {
+          text: 'Links',
+          // icon: require ('./images/ic_accessibility_white.png'),
+          icon: <LinkIcon size={22} style={{marginTop: 3}} />,
+          name: 'Links',
+          position: 4,
+        },
+        {
           text: 'Help',
           // icon: require ('./images/ic_room_white.png'),
           icon: <QuestionMarkIcon size={22} />,
           name: 'Tutorial',
-          position: 3,
+          position: 5,
         },
       ];
       let {currentDate} = this.state;
@@ -763,23 +774,27 @@ export default class HomeScreen extends React.Component {
           <HeaderBar
             iconLeft={
               <Touchable
+                // onPress={() => this.props.navigation.navigate ('Account')}
+                // onPress={() => {
+                //   console.log (this.props.navigation);
+                // }}
+                onPress={this.props.navigation.openDrawer}
+                hitSlop={{top: 40, bottom: 40, left: 40, right: 40}}
+              >
+                <CompassIcon
+                  size={32}
+                  style={{paddingLeft: 8, paddingRight: 10, paddingTop: 10}}
+                />
+              </Touchable>
+            }
+            iconRight={
+              <Touchable
                 onPress={() => this.props.navigation.replace ('Home')}
                 hitSlop={{top: 40, bottom: 40, left: 40, right: 40}}
               >
                 <RefreshIcon
                   size={28}
                   style={{paddingLeft: 10, paddingRight: 20, paddingTop: 10}}
-                />
-              </Touchable>
-            }
-            iconRight={
-              <Touchable
-                onPress={() => this.props.navigation.navigate ('Account')}
-                hitSlop={{top: 40, bottom: 40, left: 40, right: 40}}
-              >
-                <CompassIcon
-                  size={32}
-                  style={{paddingLeft: 8, paddingRight: 10, paddingTop: 10}}
                 />
               </Touchable>
             }
@@ -838,7 +853,7 @@ export default class HomeScreen extends React.Component {
                 </View>
                 <TabBar tapFunction={this} />
               </View>}
-          {global.user.visuallyImpared
+          {/* {global.user.visuallyImpared
             ? null
             : <FloatingAction
                 actions={actions}
@@ -849,7 +864,7 @@ export default class HomeScreen extends React.Component {
                 onPressItem={name => {
                   this.props.navigation.navigate (name);
                 }}
-              />}
+              />} */}
         </View>
       );
     } catch (e) {

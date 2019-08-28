@@ -39,6 +39,11 @@ export class User {
       activities: false,
     };
     this.theme = user.theme || 'Dark';
+    this.scheduled_dark_theme = user.scheduled_dark_theme || false;
+    this.scheduled_start_hour = user.scheduled_start_hour || 20;
+    this.scheduled_end_hour = user.scheduled_end_hour || 7;
+    this.scheduled_start_minute = user.scheduled_start_minute || 0;
+    this.scheduled_end_minute = user.scheduled_end_minute || 30;
     this.accountId = user.accountId || '_';
     this.trueDark = user.trueDark || false;
     this.visuallyImpared = user.visuallyImpared || false;
@@ -71,6 +76,33 @@ export class User {
       day_4: [],
       day_5: [],
     };
+
+    if (this.scheduled_dark_theme) {
+      let date = new Date ();
+      let sumNow = date.getHours () * 60 + date.getMinutes ();
+      let sumStart =
+        this.scheduled_start_hour * 60 + this.scheduled_start_minute;
+      let sumEnd = this.scheduled_end_hour * 60 + this.scheduled_end_minute;
+      if (sumNow >= sumStart || sumNow <= sumEnd) {
+        this.theme = 'Dark';
+      } else {
+        this.theme = 'Light';
+      }
+    }
+    setInterval (() => {
+      if (this.scheduled_dark_theme) {
+        let date = new Date ();
+        let sumNow = date.getHours () * 60 + date.getMinutes ();
+        let sumStart =
+          this.scheduled_start_hour * 60 + this.scheduled_start_minute;
+        let sumEnd = this.scheduled_end_hour * 60 + this.scheduled_end_minute;
+        if (sumNow >= sumStart || sumNow <= sumEnd) {
+          this.theme = 'Dark';
+        } else {
+          this.theme = 'Light';
+        }
+      }
+    }, 60000);
   }
   toString () {
     return {
@@ -100,6 +132,11 @@ export class User {
       block_colors: this.block_colors || {},
       block_names: this.block_names || {},
       theme: this.theme || 'Light',
+      scheduled_dark_theme: this.scheduled_dark_theme || false,
+      scheduled_start_hour: this.scheduled_start_hour || 20,
+      scheduled_end_hour: this.scheduled_end_hour || 8,
+      scheduled_start_hour: this.scheduled_start_minute || 0,
+      scheduled_end_hour: this.scheduled_end_hour || 30,
       trueDark: this.trueDark || false,
       visuallyImpared: this.visuallyImpared || false,
       profile_picture: this.profile_picture,
@@ -129,6 +166,8 @@ export class User {
     };
   }
   getPrimaryTheme = () => {
+    console.log ('theme read');
+    console.log (this.theme);
     if (this.theme == 'Light') {
       return '#f0f0f0';
     } else {
@@ -147,7 +186,7 @@ export class User {
         return '#000000';
       } else {
         // return '#1b1d29';
-        return "#1b1b1b";
+        return '#1b1b1b';
       }
     }
   };
@@ -187,11 +226,14 @@ export class User {
   getBorderColor = () => {
     if (this.theme == 'Light') {
       return 'rgba(150,150,150, 0.9)';
+      // return "#f3f3f3";
     } else {
       if (this.trueDark) {
-        return 'rgba(80, 80, 80, 0.9)';
+        // return 'rgba(80, 80, 80, 0.9)';
+        return `#1d1d1d`;
       } else {
-        return 'rgba(120, 120, 120, 0.9)';
+        // return 'rgba(120, 120, 120, 0.9)';
+        return '#2f3035';
       }
     }
   };
@@ -214,7 +256,7 @@ export class User {
         return {backgroundColor: '#000000'};
       } else {
         // return {backgroundColor: '#1b1d29'};
-        return {backgroundColor: "#1b1b1b"};
+        return {backgroundColor: '#1b1b1b'};
       }
     }
   };
@@ -254,11 +296,14 @@ export class User {
   borderColor = () => {
     if (this.theme == 'Light') {
       return {borderColor: 'rgba(150,150,150, 0.9)'};
+      // return {borderColor:"#f3f3f3"};
     } else {
       if (this.trueDark) {
-        return {borderColor: 'rgba(80, 80, 80, 0.9)'};
+        // return {borderColor: 'rgba(80, 80, 80, 0.9)'};
+        return {borderColor: `#1d1d1d`};
       } else {
-        return {borderColor: 'rgba(120, 120, 120, 0.9)'};
+        // return {borderColor: 'rgba(120, 120, 120, 0.9)'};
+        return {borderColor: '#2f3035'};
       }
     }
   };
@@ -338,7 +383,7 @@ export class User {
     }
   };
   static _setHelpState = async state => {
-    console.log({state});
+    console.log ({state});
     try {
       await AsyncStorage.setItem ('help', state ? 'true' : 'false');
       return state;

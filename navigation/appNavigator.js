@@ -23,7 +23,12 @@ import NotificationScreen from '../screens/notificationsScreen/index';
 import CourseConfigScreen from '../screens/courseConfigScreen/index';
 import TranscriptScreen from '../screens/transcriptScreen/index';
 import LinkScreen from '../screens/linksScreen/index';
+import FileScreen from '../screens/FilesScreen/index';
+import PollScreen from '../screens/pollScreen/index';
+
 import {createAppContainer, createStackNavigator} from 'react-navigation';
+
+import transitionConfig from './transitionConfig';
 
 const MainNavigator = createStackNavigator (
   {
@@ -52,9 +57,13 @@ const MainNavigator = createStackNavigator (
     CourseConfig: {screen: CourseConfigScreen, lazy: true},
     Transcript: {screen: TranscriptScreen, lazy: true},
     Links: {screen: LinkScreen, lazy: true},
+    Files: {screen: FileScreen, lazy: true},
+    Polls: {screen: PollScreen, lazy: true},
+    // Polls: {screen: PollNavigator},
   },
   {
     initialRouteName: 'Loading',
+    // transitionConfig,
   }
 );
 

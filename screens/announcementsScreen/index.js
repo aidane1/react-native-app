@@ -227,7 +227,7 @@ export default class AnnouncementsScreen extends React.Component {
       <View style={[styles.container, global.user.primaryTheme ()]}>
         <HeaderBar
           iconLeft={
-            <Touchable onPress={() => this.props.navigation.goBack ()}>
+            <Touchable onPress={() => this.props.navigation.navigate ("Home")}>
               <LeftIcon size={28} />
             </Touchable>
           }

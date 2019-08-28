@@ -1,0 +1,29 @@
+{
+  "name": "expo-svg-uri",
+  "version": "1.0.1",
+  "description": "Render an SVG Image",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thongdn-it/expo-svg-uri.git"
+  },
+  "homepage": "https://github.com/thongdn-it/expo-svg-uri#readme",
+  "keywords": [
+    "expo",
+    "svg",
+    "url",
+    "uri"
+  ],
+  "author": {
+    "name": "Thong Dang",
+    "email": "thongdn.it@gmail.com",
+    "url": "https://github.com/thongdn-it"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "xmldom": "^0.1.27"
+  },
+  "peerDependencies": {
+    "expo": "^31.0.5"
+  }
+}

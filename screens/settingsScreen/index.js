@@ -5,7 +5,9 @@ import {
   Dimensions,
   Image,
   ActivityIndicator,
-  TouchableWithoutFeedback,
+  DatePickerAndroid,
+  TimePickerAndroid,
+  DatePickerIOS,
   Text,
   Switch,
   Animated,
@@ -63,6 +65,8 @@ import ApexAPI from '../../http/api';
 import {Notifications} from 'expo';
 
 import * as Permissions from 'expo-permissions';
+
+import FormatHours from '../../constants/formatHours';
 
 import {StackActions, NavigationActions} from 'react-navigation';
 import Collapsible from 'react-native-collapsible';
@@ -197,6 +201,127 @@ class CourseRow extends React.Component {
             </Text>
             {this.props.control}
           </View>
+        </View>
+      );
+    }
+  }
+}
+
+class IOSDateSheet extends React.Component {
+  constructor (props) {
+    super (props);
+    this.state = {
+      isBackdropVisible: false,
+      date: new Date (),
+    };
+  }
+  setDate = date => {
+    this.setState ({date});
+    this.props.updateDate (date.getHours (), date.getMinutes ());
+  };
+  render () {
+    return (
+      <View>
+        <Modal
+          style={{
+            margin: 0,
+            paddingBottom: 0,
+            flexDirection: 'column',
+            justifyContent: 'flex-end',
+          }}
+          animationIn="slideInUp"
+          animationOut="slideOutDown"
+          isVisible={this.state.isBackdropVisible}
+          backdropColor={'black'}
+          onBackdropPress={() => this.setState ({isBackdropVisible: false})}
+          propagateSwipe={true}
+        >
+          <DatePickerIOS
+            onDateChange={this.setDate}
+            date={this.state.date}
+            style={{
+              backgroundColor: 'white',
+            }}
+            mode={'time'}
+          />
+        </Modal>
+      </View>
+    );
+  }
+}
+
+class DateCourseRow extends React.Component {
+  render () {
+    if (this.props.last) {
+      return (
+        <View style={{backgroundColor: global.user.getPrimaryTheme ()}}>
+          <Touchable
+            onPress={this.props.openDate}
+            style={[
+              styles.courseRow,
+              {backgroundColor: global.user.getSecondaryTheme ()},
+            ]}
+          >
+            <View
+              style={[
+                styles.courseRowInfo,
+                {borderBottomColor: 'rgba(0,0,0,0)'},
+              ]}
+            >
+              <Text
+                style={[
+                  styles.courseRowText,
+                  {color: global.user.getSecondaryTextColor ()},
+                ]}
+              >
+                {this.props.text}
+              </Text>
+              <Text
+                style={[
+                  styles.courseRowText,
+                  {color: global.user.getSecondaryTextColor (), fontSize: 18},
+                ]}
+              >
+                {this.props.date}
+              </Text>
+            </View>
+          </Touchable>
+        </View>
+      );
+    } else {
+      return (
+        <View style={global.user.primaryTheme ()}>
+          <Touchable
+            onPress={this.props.openDate}
+            style={[
+              styles.courseRow,
+              {backgroundColor: global.user.getSecondaryTheme ()},
+            ]}
+          >
+            <View
+              style={[
+                styles.courseRowInfo,
+                {borderBottomColor: global.user.getBorderColor ()},
+              ]}
+            >
+              <Text
+                style={[
+                  styles.courseRowText,
+                  {color: global.user.getSecondaryTextColor ()},
+                ]}
+              >
+                {this.props.text}
+              </Text>
+              <Text
+                style={[
+                  styles.courseRowText,
+                  {color: global.user.getSecondaryTextColor (), fontSize: 18},
+                ]}
+              >
+                {this.props.date}
+              </Text>
+            </View>
+          </Touchable>
         </View>
       );
     }
@@ -510,11 +635,23 @@ export default class SettingsScreen extends React.Component {
     let tertiaryTextColor = global.user.getTertiaryTextColor ();
     tertiaryTextColor = primaryTextColor.substring (1, 7);
 
+    this.iosSheet = React.createRef ();
+
     this.state = {
       profile_picture: global.user.profile_picture,
       notifications: global.user.notifications,
 
       theme: global.user.theme,
+
+      scheduled_dark_theme: global.user.scheduled_dark_theme,
+
+      scheduled_start_hour: global.user.scheduled_start_hour,
+
+      scheduled_end_hour: global.user.scheduled_end_hour,
+
+      scheduled_start_minute: global.user.scheduled_start_minute,
+
+      scheduled_end_minute: global.user.scheduled_end_minute,
 
       grade: global.districtInfo.grade || 9,
 
@@ -548,12 +685,144 @@ export default class SettingsScreen extends React.Component {
     };
     this.scrollView = React.createRef ();
     this.imagePicker = React.createRef ();
+
+    this.editing = 'start';
   }
 
   static navigationOptions = ({navigation}) => {
     return {
       header: null,
     };
+  };
+  openDateIOS = () => {
+    let date = new Date ();
+    if (this.editing === 'start') {
+      date = new Date (
+        date.getFullYear (),
+        date.getMonth (),
+        date.getDate (),
+        this.state.scheduled_start_hour,
+        this.state.scheduled_start_minute
+      );
+    } else {
+      date = new Date (
+        date.getFullYear (),
+        date.getMonth (),
+        date.getDate (),
+        this.state.scheduled_end_hour,
+        this.state.scheduled_end_minute
+      );
+    }
+    this.iosSheet.current.setState ({isBackdropVisible: true, date});
+  };
+  openDateAndroid = async () => {
+    try {
+      const {action, hour, minute} = await TimePickerAndroid.open ({
+        hour: this.state.scheduled_start_hour,
+        minute: this.state.scheduled_start_minute,
+        is24Hour: false, // Will display '2 PM'
+      });
+      if (action !== TimePickerAndroid.dismissedAction) {
+        this.updateDate (hour, minute);
+        // Selected hour (0-23), minute (0-59)
+      }
+    } catch (e) {
+      console.log (e);
+    }
+  };
+  openDate = date => {
+    this.editing = date;
+    if (Platform.OS == 'ios') {
+      this.openDateIOS ();
+    } else {
+      this.openDateAndroid ();
+    }
+  };
+  updateDate = async (hours, minutes) => {
+    if (this.editing === 'start') {
+      global.user['scheduled_start_hour'] = hours;
+      global.user['scheduled_start_minute'] = minutes;
+
+      let date = new Date ();
+      let sumNow = date.getHours () * 60 + date.getMinutes ();
+      let sumStart = hours * 60 + minutes;
+      let sumEnd =
+        this.state.scheduled_end_hour * 60 + this.state.scheduled_end_minute;
+      if (sumNow >= sumStart || sumNow <= sumEnd) {
+        global.user.theme = 'Dark';
+      } else {
+        global.user.theme = 'Light';
+      }
+
+      await User._saveToStorage (global.user);
+
+      let num = global.user.getPrimaryTheme ();
+      num = num.substring (1, 7);
+
+      Animated.timing (this.state.primaryTheme, {
+        toValue: parseInt (num, 16),
+        // easing: Easing.bezier (0.2, 0.73, 0.33, 0.99),
+        duration: 330,
+        delay: 0,
+      }).start ();
+
+      let secondaryTheme = global.user.getSecondaryTheme ();
+      secondaryTheme = secondaryTheme.substring (1, 7);
+
+      Animated.timing (this.state.secondaryTheme, {
+        toValue: parseInt (secondaryTheme, 16),
+        // easing: Easing.bezier (0.2, 0.73, 0.33, 0.99),
+        duration: 330,
+        delay: 0,
+      }).start ();
+
+      this.setState ({
+        scheduled_start_hour: hours,
+        scheduled_start_minute: minutes,
+      });
+    } else {
+      global.user['scheduled_end_hour'] = hours;
+      global.user['scheduled_end_minute'] = minutes;
+
+      let date = new Date ();
+      let sumNow = date.getHours () * 60 + date.getMinutes ();
+      let sumStart =
+        this.state.scheduled_start_hour * 60 +
+        this.state.scheduled_start_minute;
+      let sumEnd = hours * 60 + minutes;
+      if (sumNow >= sumStart || sumNow <= sumEnd) {
+        global.user.theme = 'Dark';
+      } else {
+        global.user.theme = 'Light';
+      }
+
+      await User._saveToStorage (global.user);
+
+      let num = global.user.getPrimaryTheme ();
+      num = num.substring (1, 7);
+
+      Animated.timing (this.state.primaryTheme, {
+        toValue: parseInt (num, 16),
+        // easing: Easing.bezier (0.2, 0.73, 0.33, 0.99),
+        duration: 330,
+        delay: 0,
+      }).start ();
+
+      let secondaryTheme = global.user.getSecondaryTheme ();
+      secondaryTheme = secondaryTheme.substring (1, 7);
+
+      Animated.timing (this.state.secondaryTheme, {
+        toValue: parseInt (secondaryTheme, 16),
+        // easing: Easing.bezier (0.2, 0.73, 0.33, 0.99),
+        duration: 330,
+        delay: 0,
+      }).start ();
+
+      this.setState ({
+        scheduled_end_hour: hours,
+        scheduled_end_minute: minutes,
+      });
+    }
   };
   onImageRecieved = result => {
     // console.log (result);
@@ -577,6 +846,46 @@ export default class SettingsScreen extends React.Component {
   };
   selectProfileImage = () => {
     this.imagePicker.current.setState ({isBackdropVisible: true});
+  };
+  switchScheduled = async val => {
+    global.user['scheduled_dark_theme'] = val;
+
+    if (val == true) {
+      let date = new Date ();
+      let sumNow = date.getHours () * 60 + date.getMinutes ();
+      let sumStart =
+        global.user.scheduled_start_hour * 60 +
+        global.user.scheduled_start_minute;
+      let sumEnd =
+        global.user.scheduled_end_hour * 60 + global.user.scheduled_end_minute;
+      if (sumNow >= sumStart || sumNow <= sumEnd) {
+        global.user.theme = 'Dark';
+      } else {
+        global.user.theme = 'Light';
+      }
+      let num = global.user.getPrimaryTheme ();
+      num = num.substring (1, 7);
+
+      Animated.timing (this.state.primaryTheme, {
+        toValue: parseInt (num, 16),
+        // easing: Easing.bezier (0.2, 0.73, 0.33, 0.99),
+        duration: 330,
+        delay: 0,
+      }).start ();
+
+      let secondaryTheme = global.user.getSecondaryTheme ();
+      secondaryTheme = secondaryTheme.substring (1, 7);
+
+      Animated.timing (this.state.secondaryTheme, {
+        toValue: parseInt (secondaryTheme, 16),
+        // easing: Easing.bezier (0.2, 0.73, 0.33, 0.99),
+        duration: 330,
+        delay: 0,
+      }).start ();
+    }
+    await User._saveToStorage (global.user);
+
+    this.setState ({scheduled_dark_theme: val});
   };
   toggleSettings = async (setting, value) => {
     // console.log (setting);
@@ -725,13 +1034,6 @@ export default class SettingsScreen extends React.Component {
     let secondaryTheme = global.user.getSecondaryTheme ();
     secondaryTheme = secondaryTheme.substring (1, 7);
 
-    let primaryTextColor = global.user.getPrimaryTextColor ();
-    primaryTextColor = primaryTextColor.substring (1, 7);
-    let secondaryTextColor = global.user.getSecondaryTextColor ();
-    secondaryTextColor = primaryTextColor.substring (1, 7);
-    let tertiaryTextColor = global.user.getTertiaryTextColor ();
-    tertiaryTextColor = primaryTextColor.substring (1, 7);
-
     Animated.timing (this.state.secondaryTheme, {
       toValue: parseInt (secondaryTheme, 16),
       // easing: Easing.bezier (0.2, 0.73, 0.33, 0.99),
@@ -745,8 +1047,6 @@ export default class SettingsScreen extends React.Component {
     let api = new ApexAPI (global.user);
 
     this.updateColors ();
-
-    console.log (this.state.backgroundColor);
     this.setState ({theme});
     // this.setState ({theme}, () => {
     //   api
@@ -998,24 +1298,57 @@ export default class SettingsScreen extends React.Component {
                 },
               ]}
             >
-              {['Light', 'Dark'].map ((option, index, array) => {
-                return (
-                  <Touchable
-                    key={'row_' + index}
-                    onPress={() => this.updateTheme (option)}
-                  >
-                    <CourseRow
-                      text={option}
-                      last={index + 1 == array.length}
-                      control={
-                        this.state.theme == option
-                          ? <CheckMarkIcon color="#ffbb54" size={22} />
-                          : <View />
-                      }
+              <CourseRow
+                text={'Scheduled Dark'}
+                control={
+                  <Switch
+                    value={this.state.scheduled_dark_theme}
+                    onValueChange={val => this.switchScheduled (val)}
+                  />
+                }
+                last={false}
+              />
+              {this.state.scheduled_dark_theme
+                ? <View>
+                    <DateCourseRow
+                      text={'Start'}
+                      last={false}
+                      openDate={() => this.openDate ('start')}
+                      date={FormatHours._formatTime (
+                        this.state.scheduled_start_hour,
+                        this.state.scheduled_start_minute,
+                        true
+                      )}
                     />
-                  </Touchable>
-                );
-              })}
+                    <DateCourseRow
+                      text={'End'}
+                      last={true}
+                      openDate={() => this.openDate ('end')}
+                      date={FormatHours._formatTime (
+                        this.state.scheduled_end_hour,
+                        this.state.scheduled_end_minute,
+                        true
+                      )}
+                    />
+                  </View>
+                : ['Light', 'Dark'].map ((option, index, array) => {
+                    return (
+                      <Touchable
+                        key={'row_' + index}
+                        onPress={() => this.updateTheme (option)}
+                      >
+                        <CourseRow
+                          text={option}
+                          last={index + 1 == array.length}
+                          control={
+                            this.state.theme == option
+                              ? <CheckMarkIcon color="#ffbb54" size={22} />
+                              : <View />
+                          }
+                        />
+                      </Touchable>
+                    );
+                  })}
             </Animated.View>
 
           </ButtonSection>
@@ -1190,6 +1523,7 @@ export default class SettingsScreen extends React.Component {
           ref={this.imagePicker}
           onImageLoaded={this.onImageRecieved}
         />
+        <IOSDateSheet ref={this.iosSheet} updateDate={this.updateDate} />
       </Animated.View>
     );
   }

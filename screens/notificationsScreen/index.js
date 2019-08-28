@@ -98,7 +98,7 @@ class GradientBlock extends React.Component {
       >
         <LinearGradient
           // colors={['#ffa799', '#fc8d8d']}
-          colors={['#67b71a', '#508e14']}
+          colors={['hsl(91, 75%, 41%)', 'hsl(111, 75%, 41%)']}
           style={{
             borderRadius: 5,
             paddingTop: 10,

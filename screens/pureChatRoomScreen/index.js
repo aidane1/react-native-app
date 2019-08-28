@@ -887,7 +887,7 @@ export default class ChatRoom extends React.Component {
       })
       .then (data => data.json ())
       .then (data => {
-        // console.log(data);
+        
       })
       .catch (e => {
         console.log (e);
@@ -896,6 +896,7 @@ export default class ChatRoom extends React.Component {
   componentDidMount () {
     this._isMounted = true;
     AppState.addEventListener ('change', this._handleAppStateChange);
+    console.log("Im gonna do it");
     this.removeChatroomKey ();
     global.websocket.client.sendMessage ({
       type: 'request',

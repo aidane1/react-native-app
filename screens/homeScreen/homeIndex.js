@@ -40,7 +40,7 @@ class GradientBlock extends React.Component {
         onPress={() => this.props.navigateToPage ('CourseInfo', this.props.id)}
       >
         <LinearGradient
-          colors={['#e8865c', '#e86e5c']}
+          colors={['hsl(18, 75%, 64%)', 'hsl(8, 75%, 64%)']}
           // colors={['#e64b90', '#d81e72']}
           style={[styles.gradientBlockChild]}
         >
@@ -79,7 +79,7 @@ class EventBlock extends React.Component {
       >
         <LinearGradient
           // colors={['#5cc0e8', '#5c9be8']}
-          colors={['#5c9be8', '#3b87e3']}
+          colors={['hsl(213, 75%, 64%)', 'hsl(233, 75%, 64%)']}
           style={styles.gradientBlockChild}
         >
           <View style={[styles.blockBody, {flexDirection: 'column'}]}>
@@ -196,7 +196,7 @@ class NotificationBlock extends React.Component {
         ]}
       >
         <LinearGradient
-          colors={['#67b71a', '#508e14']}
+          colors={['hsl(91, 75%, 41%)', 'hsl(111, 75%, 41%)']}
           style={{
             borderRadius: 5,
             paddingTop: 10,

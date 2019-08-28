@@ -14,6 +14,27 @@ class IconBlock {
   constructor (icon) {}
 }
 
+export class PollIcon extends React.Component {
+  render () {
+    return (
+      <MaterialCommunityIcons
+        color="white"
+        name="poll"
+        size={16}
+        {...this.props}
+      />
+    );
+  }
+}
+
+export class FilesIcon extends React.Component {
+  render () {
+    return (
+      <FontAwesome color="white" name="files-o" size={16} {...this.props} />
+    );
+  }
+}
+
 export class LinkIcon extends React.Component {
   render () {
     return <AntDesign color="white" name="link" size={16} {...this.props} />;

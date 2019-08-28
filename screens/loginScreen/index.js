@@ -255,7 +255,6 @@ class LoginButton extends React.Component {
     ApexAPI.authenticate (username, password, school)
       .then (res => res.json ())
       .then (async response => {
-        console.log (response.status);
         if (response.status == 'ok') {
           global.courses = await Courses._saveToStorage (
             constructCourseList (response.body.courses)
@@ -337,11 +336,39 @@ class LoginButton extends React.Component {
           );
 
           await User._setLoginState (true);
+
           const resetAction = StackActions.reset ({
             index: 0,
             actions: [NavigationActions.navigate ({routeName: 'Loading'})],
           });
-          this.props.navigation.dispatch (resetAction);
+
+          if (global.user.courses.length === 0) {
+            let api = new ApexAPI (global.user);
+            console.log (global.school.district);
+            api
+              .get (
+                `schedule?username=${global.districtInfo.districtUsername}&password=${global.districtInfo.districtPassword}&district=${global.school.district}`
+              )
+              .then (data => data.json ())
+              .then (async data => {
+                if (data.status == 'ok') {
+                  if (data.body.length > 0) {
+                    global.user.courses = data.body.map (course => course._id);
+                    global.user = await User._saveToStorage (global.user);
+                    this.props.navigation.dispatch (resetAction);
+                  } else {
+                    this.props.navigation.dispatch (resetAction);
+                  }
+                } else {
+                  this.props.navigation.dispatch (resetAction);
+                }
+              })
+              .catch (e => {
+                this.props.navigation.dispatch (resetAction);
+              });
+          } else {
+            this.props.navigation.dispatch (resetAction);
+          }
         } else {
           // this.props.inputs[0].current.clear ();
           this.props.inputs[1].current.clear ();

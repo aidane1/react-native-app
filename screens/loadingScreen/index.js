@@ -41,7 +41,7 @@ import {Topic, Topics} from '../../classes/topics';
 
 import ApexAPI from '../../http/api';
 
-import {StackActions, NavigationActions} from 'react-navigation';
+import {StackActions, NavigationActions, DrawerActions} from 'react-navigation';
 
 import * as Permissions from 'expo-permissions';
 
@@ -363,6 +363,56 @@ export default class LoadingScreen extends React.Component {
       require ('../../assets/current-class.png'),
       require ('../../assets/events.png'),
       require ('../../assets/notifications.png'),
+      require ('../../assets/svg/7z.png'),
+      require ('../../assets/svg/aac.png'),
+      require ('../../assets/svg/ai.png'),
+      require ('../../assets/svg/archive.png'),
+      require ('../../assets/svg/arj.png'),
+      require ('../../assets/svg/audio.png'),
+      require ('../../assets/svg/avi.png'),
+      require ('../../assets/svg/css.png'),
+      require ('../../assets/svg/csv.png'),
+      require ('../../assets/svg/dbf.png'),
+      require ('../../assets/svg/doc.png'),
+      require ('../../assets/svg/dwg.png'),
+      require ('../../assets/svg/exe.png'),
+      require ('../../assets/svg/fla.png'),
+      require ('../../assets/svg/flac.png'),
+      require ('../../assets/svg/gif.png'),
+      require ('../../assets/svg/html.png'),
+      require ('../../assets/svg/iso.png'),
+      require ('../../assets/svg/jpg.png'),
+      require ('../../assets/svg/js.png'),
+      require ('../../assets/svg/json.png'),
+      require ('../../assets/svg/mdf.png'),
+      require ('../../assets/svg/mp2.png'),
+      require ('../../assets/svg/mp3.png'),
+      require ('../../assets/svg/mp4.png'),
+      require ('../../assets/svg/mxf.png'),
+      require ('../../assets/svg/nrg.png'),
+      require ('../../assets/svg/pdf.png'),
+      require ('../../assets/svg/png.png'),
+      require ('../../assets/svg/ppt.png'),
+      require ('../../assets/svg/psd.png'),
+      require ('../../assets/svg/rar.png'),
+      require ('../../assets/svg/rtf.png'),
+      require ('../../assets/svg/svg.png'),
+      require ('../../assets/svg/text.png'),
+      require ('../../assets/svg/tiff.png'),
+      require ('../../assets/svg/txt.png'),
+      require ('../../assets/svg/unknown.png'),
+      require ('../../assets/svg/video.png'),
+      require ('../../assets/svg/wav.png'),
+      require ('../../assets/svg/wma.png'),
+      require ('../../assets/svg/xls.png'),
+      require ('../../assets/svg/xml.png'),
+      require ('../../assets/svg/zip.png'),
+      require ('../../assets/poll-image-1.jpg'),
+      require ('../../assets/poll-image-2.jpg'),
+      require ('../../assets/poll-image-3.jpg'),
+      require ('../../assets/poll-image-4.jpg'),
+      require ('../../assets/poll-image-5.jpg'),
+      require ('../../assets/account_background.jpg'),
     ]);
     const fontAssets = cacheFonts ([
       FontAwesome.font,
@@ -383,6 +433,7 @@ export default class LoadingScreen extends React.Component {
   }
   _loadLocalNotifications = async () => {
     // let date = new Date (2019, 8, 20, 7, 19);
+
     let date = new Date ();
     setInterval (async () => {
       try {
@@ -560,7 +611,6 @@ export default class LoadingScreen extends React.Component {
           }
         } else if (notification.data.action == 'message') {
         } else if (notification.data.action == 'announcement') {
-          // console.log(notification.data.announcement);
           let api = new ApexAPI (global.user);
           api
             .get (
@@ -632,6 +682,29 @@ export default class LoadingScreen extends React.Component {
             });
             this.props.navigation.dispatch (resetAction);
           }
+        } else if (notification.data.action == 'post') {
+          let api = new ApexAPI (global.user);
+          api
+            .get (
+              `posts/${notification.data.announcement}`
+            )
+            .then (data => data.json ())
+            .then (data => {
+              console.log (data);
+              if (data.status == 'ok') {
+                const resetAction = StackActions.reset ({
+                  index: 1,
+                  actions: [
+                    NavigationActions.navigate ({routeName: 'Home'}),
+                    NavigationActions.navigate ({
+                      routeName: 'Question',
+                      params: {question: data.body},
+                    }),
+                  ],
+                });
+                this.props.navigation.dispatch (resetAction);
+              }
+            });
         }
       }
     } catch (e) {
@@ -737,13 +810,20 @@ export default class LoadingScreen extends React.Component {
 
         if (hasViewedTutorial) {
           this._loadLocalNotifications ();
+          // const resetAction = StackActions.reset ({
+          //   index: 0,
+          //   actions: [
+          //     NavigationActions.navigate ({
+          //       routeName: 'Home',
+          //     }),
+          //   ],
+          // });
+          //
+          // this.props.navigation.dispatch (resetAction);
+
           const resetAction = StackActions.reset ({
             index: 0,
-            actions: [
-              NavigationActions.navigate ({
-                routeName: 'Home',
-              }),
-            ],
+            actions: [NavigationActions.navigate ({routeName: 'Home'})],
           });
           this.props.navigation.dispatch (resetAction);
         } else {

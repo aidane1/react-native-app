@@ -13,6 +13,7 @@ import {
   Picker,
   Alert,
   DatePickerIOS,
+  DatePickerAndroid,
 } from 'react-native';
 
 import HeaderBar from '../../components/header';
@@ -406,8 +407,37 @@ export class ImportantDateModal extends React.Component {
   toggleTypeSelector = () => {
     this.setState ({typeExtended: !this.state.typeExtended});
   };
+  openDaySelectAndroid = async () => {
+    try {
+      const {action, year, month, day} = await DatePickerAndroid.open ({
+        // Use `new Date()` for current date.
+        // May 25 2020. Month 0 is January.
+        date: new Date (),
+        mode: 'calendar',
+      });
+      console.log ({action, year, month, day});
+      if (action !== DatePickerAndroid.dismissedAction) {
+        this.setState (state => ({
+          dateValue: new Date (
+            year,
+            month,
+            day,
+            state.dateValue.getHours (),
+            state.dateValue.getMinutes ()
+          ),
+        }));
+        // Selected year, month (0-11), day
+      }
+    } catch (e) {
+      console.log (e);
+    }
+  };
   toggleDateSelector = () => {
-    this.setState ({dateExtended: !this.state.dateExtended});
+    if (Platform.OS == 'ios') {
+      this.setState ({dateExtended: !this.state.dateExtended});
+    } else {
+      this.openDaySelectAndroid ();
+    }
   };
   render () {
     return (
@@ -460,74 +490,101 @@ export class ImportantDateModal extends React.Component {
                     stateKey={'title'}
                   />
 
-                  <Touchable onPress={this.toggleTypeSelector}>
-                    <View
-                      style={{
-                        borderBottomWidth: 1,
-                        height: 50,
-                        paddingBottom: 8,
-                        borderBottomColor: global.user.getBorderColor (),
-                        flexDirection: 'row',
-                        alignItems: 'flex-end',
-                        justifyContent: 'space-between',
-                        marginTop: 20,
-                      }}
-                    >
-                      <Text
-                        style={{
-                          color: global.user.getTertiaryTextColor (),
-                          fontSize: 16,
-                        }}
-                      >
-                        Event Type
-                      </Text>
-                      <Text
-                        style={{
-                          color: global.user.getSecondaryTextColor (),
-                          fontSize: 16,
-                        }}
-                      >
-                        {this.state.typeValue}
-                      </Text>
-                    </View>
-                  </Touchable>
-                  <Collapsible collapsed={!this.state.typeExtended}>
-                    <View style={{backgroundColor: '#f5f5f5'}}>
-                      <Picker
-                        style={{height: 200}}
-                        selectedValue={this.state.typeValue}
-                        onValueChange={(itemValue, itemIndex) => {
-                          this.setState ({typeValue: itemValue});
-                        }}
-                      >
-                        <Picker.Item
-                          label="Exam"
-                          value="Exam"
-                          style={{color: 'white'}}
+                  {Platform.OS == 'ios'
+                    ? <Touchable onPress={this.toggleTypeSelector}>
+                        <View
+                          style={{
+                            borderBottomWidth: 1,
+                            height: 50,
+                            paddingBottom: 8,
+                            borderBottomColor: global.user.getBorderColor (),
+                            flexDirection: 'row',
+                            alignItems: 'flex-end',
+                            justifyContent: 'space-between',
+                            marginTop: 20,
+                          }}
+                        >
+                          <Text
+                            style={{
+                              color: global.user.getTertiaryTextColor (),
+                              fontSize: 16,
+                            }}
+                          >
+                            Event Type
+                          </Text>
+                          <Text
+                            style={{
+                              color: global.user.getSecondaryTextColor (),
+                              fontSize: 16,
+                            }}
+                          >
+                            {this.state.typeValue}
+                          </Text>
+                        </View>
+                      </Touchable>
+                    : <View>
+                        <Dropdown
+                          label="Event Type"
+                          onChangeText={text => {
+                            console.log (text);
+                            this.setState ({typeValue: text});
+                          }}
+                          animationDuration={100}
+                          textColor={global.user.getSecondaryTextColor ()}
+                          baseColor={global.user.getTertiaryTextColor ()}
+                          pickerStyle={[
+                            global.user.primaryTheme (),
+                            {flexGrow: 1},
+                          ]}
+                          style={{flexGrow: 1}}
+                          data={[
+                            {label: 'Exam', value: 'Exam'},
+                            {label: 'Test', value: 'Test'},
+                            {label: 'Quiz', value: 'Quiz'},
+                            {label: 'Field Trip', value: 'Field Trip'},
+                            {label: 'Rehersal', value: 'Rehersal'},
+                          ]}
                         />
-                        <Picker.Item
-                          label="Test"
-                          value="Test"
-                          style={{color: 'white'}}
-                        />
-                        <Picker.Item
-                          label="Quiz"
-                          value="Quiz"
-                          style={{color: 'white'}}
-                        />
-                        <Picker.Item
-                          label="Field Trip"
-                          value="Field Trip"
-                          style={{color: 'white'}}
-                        />
-                        <Picker.Item
-                          label="Rehersal"
-                          value="Rehersal"
-                          style={{color: 'white'}}
-                        />
-                      </Picker>
-                    </View>
-                  </Collapsible>
+                      </View>}
+                  {Platform.OS == 'ios'
+                    ? <Collapsible collapsed={!this.state.typeExtended}>
+                        <View style={{backgroundColor: '#f5f5f5'}}>
+                          <Picker
+                            style={{height: 200}}
+                            selectedValue={this.state.typeValue}
+                            onValueChange={(itemValue, itemIndex) => {
+                              this.setState ({typeValue: itemValue});
+                            }}
+                          >
+                            <Picker.Item
+                              label="Exam"
+                              value="Exam"
+                              style={{color: 'white'}}
+                            />
+                            <Picker.Item
+                              label="Test"
+                              value="Test"
+                              style={{color: 'white'}}
+                            />
+                            <Picker.Item
+                              label="Quiz"
+                              value="Quiz"
+                              style={{color: 'white'}}
+                            />
+                            <Picker.Item
+                              label="Field Trip"
+                              value="Field Trip"
+                              style={{color: 'white'}}
+                            />
+                            <Picker.Item
+                              label="Rehersal"
+                              value="Rehersal"
+                              style={{color: 'white'}}
+                            />
+                          </Picker>
+                        </View>
+                      </Collapsible>
+                    : null}
 
                   <Touchable onPress={this.toggleDateSelector}>
                     <View
@@ -560,21 +617,23 @@ export class ImportantDateModal extends React.Component {
                       </Text>
                     </View>
                   </Touchable>
-                  <Collapsible collapsed={!this.state.dateExtended}>
-                    <View style={{backgroundColor: '#f5f5f5'}}>
-                      <DatePickerIOS
-                        style={{height: 200}}
-                        onDateChange={date => {
-                          this.setState ({dateValue: date});
-                        }}
-                        date={this.state.dateValue}
-                        style={{
-                          backgroundColor: '#f5f5f5',
-                        }}
-                        mode={'date'}
-                      />
-                    </View>
-                  </Collapsible>
+                  {Platform.OS == 'ios'
+                    ? <Collapsible collapsed={!this.state.dateExtended}>
+                        <View style={{backgroundColor: '#f5f5f5'}}>
+                          <DatePickerIOS
+                            style={{height: 200}}
+                            onDateChange={date => {
+                              this.setState ({dateValue: date});
+                            }}
+                            date={this.state.dateValue}
+                            style={{
+                              backgroundColor: '#f5f5f5',
+                            }}
+                            mode={'date'}
+                          />
+                        </View>
+                      </Collapsible>
+                    : null}
 
                   <Text
                     style={{

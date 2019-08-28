@@ -31,7 +31,7 @@ class EventBlock extends React.Component {
       <View style={[styles.gradientBlock, boxShadows.boxShadow4]}>
         <LinearGradient
           // colors={['#5cc0e8', '#5c9be8']}
-          colors={['#5c9be8', '#3b87e3']}
+          colors={['hsl(213, 75%, 64%)', 'hsl(233, 75%, 64%)']}
           style={styles.gradientBlockChild}
         >
           <View style={[styles.blockBody, {flexDirection: 'column'}]}>

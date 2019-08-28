@@ -32,6 +32,8 @@ import {
   PdfIcon,
   QuestionMarkIcon,
   LinkIcon,
+  FilesIcon,
+  PollIcon,
 } from '../../classes/icons';
 
 import {
@@ -56,6 +58,14 @@ import {ifIphoneX} from 'react-native-iphone-x-helper';
 
 const width = Dimensions.get ('window').width; //full width
 const height = Dimensions.get ('window').height; //full height
+
+function hslString (num, max) {
+  if (global.user.theme === 'dark') {
+    return `hsl(${num / max * 360}, 57%, 63%)`;
+  } else {
+    return `hsl(${num / max * 360}, 100%, 75%)`;
+  }
+}
 
 class CourseIconBlock extends React.Component {
   render () {
@@ -195,6 +205,8 @@ export default class AccountScreen extends React.Component {
     this.setState ({loading: false});
   }
   render () {
+    let current = 0;
+    let max = 15;
     return (
       <View style={[styles.container, global.user.primaryTheme ()]}>
         <HeaderBar
@@ -299,7 +311,7 @@ export default class AccountScreen extends React.Component {
             </ButtonSection>
             <ButtonSection header={'STATIC INFORMATION'}>
               <CourseRow
-                color={'#ef8b8b'}
+                color={hslString (current++, max)}
                 icon={<CourseIcon size={20} color={'black'} />}
                 text={'Courses'}
                 last={false}
@@ -322,7 +334,7 @@ export default class AccountScreen extends React.Component {
               />
 
               <CourseRow
-                color={'#e8a266'}
+                color={hslString (current++, max)}
                 icon={<CalendarIcon size={20} color={'black'} />}
                 text={'Calendar'}
                 last={false}
@@ -344,7 +356,7 @@ export default class AccountScreen extends React.Component {
                 }}
               />
               <CourseRow
-                color={'#e8b266'}
+                color={hslString (current++, max)}
                 icon={<EventsIcon size={20} color={'black'} />}
                 text={'Events'}
                 last={true}
@@ -354,7 +366,7 @@ export default class AccountScreen extends React.Component {
             </ButtonSection>
             <ButtonSection header={'COMMUNAL'}>
               <CourseRow
-                color={'#ebe07c'}
+                color={hslString (current++, max)}
                 icon={<ChatIcon size={20} color={'black'} />}
                 text={'Chatrooms'}
                 last={false}
@@ -362,7 +374,7 @@ export default class AccountScreen extends React.Component {
               />
 
               <CourseRow
-                color={'#afffad'}
+                color={hslString (current++, max)}
                 icon={<QuestionIcon size={20} color={'black'} />}
                 text={'School Forum'}
                 last={false}
@@ -371,7 +383,7 @@ export default class AccountScreen extends React.Component {
               />
 
               <CourseRow
-                color={'#42f5bc'}
+                color={hslString (current++, max)}
                 icon={<AssignmentsIcon size={20} color={'black'} />}
                 text={'My Classes'}
                 onPress={() => this._navigateToPage ('Assignments')}
@@ -379,26 +391,49 @@ export default class AccountScreen extends React.Component {
               />
 
             </ButtonSection>
+            <ButtonSection header={'SCHOOL RESOURCES'}>
+              <CourseRow
+                color={hslString (current++, max)}
+                icon={<LinkIcon size={20} color={'black'} />}
+                text={'Links'}
+                onPress={() => this._navigateToPage ('Links')}
+                last={false}
+              />
+              <CourseRow
+                color={hslString (current++, max)}
+                icon={<FilesIcon size={20} color={'black'} />}
+                text={'Files'}
+                onPress={() => this._navigateToPage ('Files')}
+                last={false}
+              />
+              <CourseRow
+                color={hslString (current++, max)}
+                icon={<PollIcon size={20} color={'black'} />}
+                text={'Polls'}
+                onPress={() => this._navigateToPage ('Polls')}
+                last={true}
+              />
+              {/* <CourseRow
+                color={'#b1d7f9'}
+                icon={<SchoolAssignmentsIcon size={20} color={'black'} />}
+                text={'School Assignments'}
+                onPress={() => this._navigateToPage ('SchoolAssignments')}
+                last={false}
+              /> */}
+            </ButtonSection>
             <ButtonSection header={'SCHOOL CONNECTION'}>
               <CourseRow
-                color={'#7fdbf0'}
+                color={hslString (current++, max)}
                 icon={<MegaPhoneIcon size={20} color={'black'} />}
                 text={'Announcements'}
                 onPress={() => this._navigateToPage ('Announcements')}
                 last={false}
               />
               <CourseRow
-                color={'#adedf7'}
+                color={hslString (current++, max)}
                 icon={<NotificationIcon size={20} color={'black'} />}
                 text={'Notifications'}
                 onPress={() => this._navigateToPage ('Notifications')}
-                last={false}
-              />
-              <CourseRow
-                color={'#b1d7f9'}
-                icon={<LinkIcon size={20} color={'black'} />}
-                text={'Links'}
-                onPress={() => this._navigateToPage ('Links')}
                 last={false}
               />
               {/* <CourseRow
@@ -409,16 +444,17 @@ export default class AccountScreen extends React.Component {
                 last={false}
               /> */}
               <CourseRow
-                color={'#7d8af0'}
+                color={hslString (current++, max)}
                 icon={<PdfIcon size={20} color={'black'} />}
                 text={'Transcript'}
                 onPress={() => this._navigateToPage ('Transcript')}
                 last={true}
               />
             </ButtonSection>
+
             <ButtonSection header={'PRIVATE'}>
               <CourseRow
-                color={'#b2b1f9'}
+                color={hslString (current++, max)}
                 icon={<CourseConfigIcon size={20} color={'black'} />}
                 text={'Course Names & Colours'}
                 onPress={() => {
@@ -427,7 +463,7 @@ export default class AccountScreen extends React.Component {
                 last={false}
               />
               <CourseRow
-                color={'#d7b1f9'}
+                color={hslString (current++, max)}
                 icon={<BeforeSchoolIcon size={20} color={'black'} />}
                 text={'Before School Activities'}
                 onPress={() => {
@@ -441,7 +477,7 @@ export default class AccountScreen extends React.Component {
                 last={false}
               />
               <CourseRow
-                color={'#f6b1f9'}
+                color={hslString (current++, max)}
                 icon={<LunchTimeIcon size={20} color={'black'} />}
                 text={'Lunchtime Activities'}
                 onPress={() => {
@@ -455,7 +491,7 @@ export default class AccountScreen extends React.Component {
                 last={false}
               />
               <CourseRow
-                color={'#ce7ff5'}
+                color={hslString (current++, max)}
                 icon={<AfterSchoolIcon size={20} color={'black'} />}
                 text={'After School Activities'}
                 onPress={() => {

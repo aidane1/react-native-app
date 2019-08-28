@@ -44,6 +44,8 @@ import Swipeable from 'react-native-swipeable-row';
 
 import ActionSheet from 'react-native-actionsheet';
 
+import {NavigationActions} from 'react-navigation';
+
 import * as Haptics from 'expo-haptics';
 
 const width = Dimensions.get ('window').width; //full width
@@ -1036,7 +1038,7 @@ export default class QuestionsScreen extends React.Component {
         <HeaderBar
           iconLeft={
             <Touchable
-              onPress={() => this.props.navigation.goBack ()}
+              onPress={() => this.props.navigation.navigate ("Home")}
               style={{paddingLeft: 0, paddingRight: 45}}
             >
               <LeftIcon size={28} />

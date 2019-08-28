@@ -2389,6 +2389,13 @@ expo-sqlite@~6.0.0:
     "@types/websql" "^0.0.27"
     lodash "^4.17.11"
 
+expo-svg-uri@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/expo-svg-uri/-/expo-svg-uri-1.0.1.tgz#cb40fa72b9f5906a70b30ac27c11715af2ef4b96"
+  integrity sha512-Mto/BJxOHYcyi69wvD7ky4lptR9igX9Vuj9LYG4CUOCchFZOOwV2iUJIxh3eqnmgi0gMzJwYThDKp6ske4u/Kg==
+  dependencies:
+    xmldom "^0.1.27"
+
 expo-web-browser@~6.0.0:
   version "6.0.0"
   resolved "https://registry.yarnpkg.com/expo-web-browser/-/expo-web-browser-6.0.0.tgz#63a59d4c02cd7ba47faa6a2eb04decb1a1ab2a32"
@@ -4778,6 +4785,11 @@ preserve@^0.2.0:
   resolved "https://registry.yarnpkg.com/preserve/-/preserve-0.2.0.tgz#815ed1f6ebc65926f865b310c0713bcb3315ce4b"
   integrity sha1-gV7R9uvGWSb4ZbMQwHE7yzMVzks=
 
+pretty-file-icons@^2.2.1:
+  version "2.2.1"
+  resolved "https://registry.yarnpkg.com/pretty-file-icons/-/pretty-file-icons-2.2.1.tgz#31befaaf6ec5965c551ea01f8ef1d45de66a6c71"
+  integrity sha512-TAA6ExIzFmUUT8yOQIOBsI9GWVevlchGI+o0ELklT2v8Za1+duNciDO1lqD8bwvxp0ZLLAds8q9WorUsNuYSzg==
+
 pretty-format@24.0.0-alpha.6:
   version "24.0.0-alpha.6"
   resolved "https://registry.yarnpkg.com/pretty-format/-/pretty-format-24.0.0-alpha.6.tgz#25ad2fa46b342d6278bf241c5d2114d4376fbac1"
@@ -5216,6 +5228,11 @@ react-native-status-bar-height@^2.2.0:
   version "2.3.1"
   resolved "https://registry.yarnpkg.com/react-native-status-bar-height/-/react-native-status-bar-height-2.3.1.tgz#b92ce9112c2367290847ac11284d9d84a6330169"
   integrity sha512-m9nGKYfFn6ljF1abafzF5cFaD9JCzXwj7kNE9CuF+g0TgtItH70eY2uHaCV9moENTftqd5XIS3Cx0mf4WfistA==
+
+react-native-svg@^9.6.4:
+  version "9.6.4"
+  resolved "https://registry.yarnpkg.com/react-native-svg/-/react-native-svg-9.6.4.tgz#f9ceb228efd07317a5f9c378c6b9c5e13ff50cd0"
+  integrity sha512-6SlbGx0vlXHyDPQXSpX+8o6bNjxKFNJsISoboAkR7YWW6hdnkMg/HJXCgT6oJC0/ClKtSO7ZPrQcK4HR65kDNg==
 
 react-native-swipeable-row@^0.8.1:
   version "0.8.1"
@@ -6539,7 +6556,7 @@ xmldoc@^0.4.0:
   dependencies:
     sax "~1.1.1"
 
-xmldom@0.1.x:
+xmldom@0.1.x, xmldom@^0.1.27:
   version "0.1.27"
   resolved "https://registry.yarnpkg.com/xmldom/-/xmldom-0.1.27.tgz#d501f97b3bdb403af8ef9ecc20573187aadac0e9"
   integrity sha1-1QH5ezvbQDr4757MIFcxh6rawOk=
