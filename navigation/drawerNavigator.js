@@ -25,6 +25,7 @@ import TranscriptScreen from '../screens/transcriptScreen/index';
 import LinkScreen from '../screens/linksScreen/index';
 import FileScreen from '../screens/FilesScreen/index';
 import PollScreen from '../screens/pollScreen/index';
+import FeedbackScreen from '../screens/feedbackScreen/index';
 
 import {
   createAppContainer,
@@ -62,6 +63,7 @@ import {
   FilesIcon,
   PollIcon,
   HomeIcon,
+  FeedBackIcon,
 } from '../classes/icons';
 
 import {
@@ -72,7 +74,8 @@ import {
   View,
   Image,
   Animated,
-  StatusBar
+  StatusBar,
+  Platform,
 } from 'react-native';
 import {
   TouchableOpacity,
@@ -580,6 +583,24 @@ class CustomDrawerContentComponent extends Component {
                 }
               />
             </DrawerSection>
+            <DrawerSection label="FEEDBACK">
+              <DrawerItem
+                label="Feedback"
+                route={'Feedback'}
+                navigation={props.navigation}
+                icon={
+                  <FeedBackIcon
+                    size={22}
+                    color={
+                      global.user.theme === 'Light'
+                        ? 'rgba(20,20,30,0.8)'
+                        : 'rgba(235,235,245,0.8)'
+                    }
+                  />
+                }
+              />
+
+            </DrawerSection>
             <DrawerSection label="LOGOUT">
               <DrawerItem
                 label="Logout"
@@ -814,6 +835,7 @@ const DrawerNavigator = createDrawerNavigator (
     Links: {screen: LinkScreen, lazy: true},
     Files: {screen: FileScreen, lazy: true},
     Polls: {screen: PollScreen, lazy: true},
+    Feedback: {screen: FeedbackScreen, lazy: true},
   },
   {
     initialRouteName: 'Home',
@@ -847,15 +869,17 @@ DrawerNavigator.router.getStateForAction = (action, state) => {
   switch (action.type) {
     case 'Navigation/OPEN_DRAWER':
     case 'Navigation/DRAWER_OPENED':
-      StatusBar.setHidden (true, 'none');
+      if (Platform.OS == 'android') {
+        StatusBar.setHidden (true, 'none');
+      }
       break;
-
     case 'Navigation/CLOSE_DRAWER':
     case 'Navigation/DRAWER_CLOSED':
-      StatusBar.setHidden (true, 'none');
+      if (Platform.OS == 'android') {
+        StatusBar.setHidden (true, 'none');
+      }
       break;
   }
-
   return defaultGetStateForAction (action, state);
 };
 
@@ -888,6 +912,7 @@ const StackNavigator = createStackNavigator (
     Links: {screen: LinkScreen, lazy: true},
     Files: {screen: FileScreen, lazy: true},
     Polls: {screen: PollScreen, lazy: true},
+    Feedback: {screen: FeedbackScreen, lazy: true},
   },
   {
     initialRouteName: 'Loading',

@@ -50,13 +50,16 @@ class TabButton extends React.Component {
             ]}
           >
             <View style={styles.tabBarIcon}>
-              {[<ActivityIcon />, <HomeIcon />, <CoursesIcon />][
-                ['Activity', 'Home', 'Courses'].indexOf (this.props.title)
-              ] || <HomeIcon />}
+              {[
+                <ActivityIcon size={22} />,
+                <HomeIcon size={22} />,
+                <CoursesIcon size={22} />,
+              ][['Activity', 'Home', 'Courses'].indexOf (this.props.title)] ||
+                <HomeIcon />}
             </View>
-            <Text style={styles.tabButtonText}>
+            {/* <Text style={styles.tabButtonText}>
               {this.props.title}
-            </Text>
+            </Text> */}
           </View>
         </TouchableWithoutFeedback>
       );
@@ -65,13 +68,16 @@ class TabButton extends React.Component {
         <TouchableWithoutFeedback onPress={this.handleClick}>
           <View style={[styles.tabButton]}>
             <View style={styles.tabBarIcon}>
-              {[<ActivityIcon />, <HomeIcon />, <CoursesIcon />][
-                ['Activity', 'Home', 'Courses'].indexOf (this.props.title)
-              ] || <HomeIcon />}
+              {[
+                <ActivityIcon size={22} />,
+                <HomeIcon size={22} />,
+                <CoursesIcon size={22} />,
+              ][['Activity', 'Home', 'Courses'].indexOf (this.props.title)] ||
+                <HomeIcon />}
             </View>
-            <Text style={styles.tabButtonText}>
+            {/* <Text style={styles.tabButtonText}>
               {this.props.title}
-            </Text>
+            </Text> */}
           </View>
         </TouchableWithoutFeedback>
       );
@@ -116,6 +122,7 @@ export default class TabBar extends React.Component {
       <View
         style={[
           {width: width, ...ifIphoneX ({height: 60}, {height: 45}), zIndex: 5},
+          {opacity: 1},
           boxShadows.boxShadow7,
         ]}
       >

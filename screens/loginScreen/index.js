@@ -250,6 +250,7 @@ class LoginButton extends React.Component {
     let username = this.props.inputs[0].current.state.text;
     let password = this.props.inputs[1].current.state.text;
     let school = this.props.inputs[2].current.state.id;
+    console.log ({username, password, school});
     this.setState ({username, password, school, active: false});
 
     ApexAPI.authenticate (username, password, school)
@@ -403,7 +404,6 @@ class SchoolPicker extends React.Component {
   constructor (props) {
     super (props);
     this.props = props;
-    this.props.schools = this.props.schools || [];
     this.state = {
       school: '_',
     };
@@ -422,16 +422,18 @@ class SchoolPicker extends React.Component {
             selectedValue={this.state.school}
             style={styles.picker}
             onValueChange={(itemValue, itemIndex) => {
+              // console.log (itemValue, itemIndex);
               let currentSchool = this.props.schools[0];
               for (var i = 0; i < this.props.schools.length; i++) {
                 if (this.props.schools[i]._id == itemValue) {
                   currentSchool = this.props.schools[i];
                 }
               }
+              console.log(itemValue);
               this.setState ({school: itemValue});
               this.props.display.current.setState ({
                 schoolIndex: itemIndex,
-                id: currentSchool.id,
+                id: currentSchool._id,
               });
             }}
           >
@@ -620,7 +622,7 @@ export default class LoginScreen extends React.Component {
           name="modal"
           ref={this.modal}
           display={this.school}
-          schools={this.state.schools}
+          schools={this.state.schools || []}
         />
       </View>
     );

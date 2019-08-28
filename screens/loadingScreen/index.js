@@ -686,7 +686,7 @@ export default class LoadingScreen extends React.Component {
           let api = new ApexAPI (global.user);
           api
             .get (
-              `posts/${notification.data.announcement}`
+              `posts/${notification.data.announcement}?populate=resources`
             )
             .then (data => data.json ())
             .then (data => {

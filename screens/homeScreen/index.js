@@ -24,6 +24,7 @@ import {
   CoursesIcon,
   LinkIcon,
   HomeIcon,
+  MenuFoldIcon,
 } from '../../classes/icons';
 
 import HeaderBar from '../../components/header';
@@ -87,6 +88,8 @@ import {
   constructEventList,
 } from '../../data-parsing/server-parser';
 
+import PageTile from './pageTile';
+
 const width = Dimensions.get ('window').width; //full width
 const height = Dimensions.get ('window').height; //full height
 
@@ -101,7 +104,7 @@ export default class HomeScreen extends React.Component {
   static navigationOptions = ({navigation}) => {
     return {
       drawerLabel: 'Home',
-      drawerIcon: <HomeIcon color="black"/>,
+      drawerIcon: <HomeIcon color="black" />,
       header: null,
     };
   };
@@ -781,8 +784,8 @@ export default class HomeScreen extends React.Component {
                 onPress={this.props.navigation.openDrawer}
                 hitSlop={{top: 40, bottom: 40, left: 40, right: 40}}
               >
-                <CompassIcon
-                  size={32}
+                <MenuFoldIcon
+                  size={26}
                   style={{paddingLeft: 8, paddingRight: 10, paddingTop: 10}}
                 />
               </Touchable>
@@ -815,6 +818,42 @@ export default class HomeScreen extends React.Component {
                 parent={this}
               />
             : <View>
+
+                {/* <ScrollView
+                  style={styles.bodyHolder}
+                  contentContainerStyle={{
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                  }}
+                  scrollEnabled={false}
+                >
+                  <PageTile title={'Home'}>
+                    <HomeScreenTile
+                      assignments={assignments}
+                      dayTitle={dayTitle}
+                      current={current}
+                      next={next}
+                      parent={this}
+                      events={this.events}
+                    />
+                  </PageTile>
+                  <PageTile title={'Courses'}>
+                    <LinkScreenTile
+                      parent={this}
+                      navigation={this.props.navigation}
+                      courseList={courseList}
+                    />
+                  </PageTile>
+                  <PageTile title={'Activity'}>
+                    <ActivityScreenTile
+                      parent={this}
+                      courseMap={this.courseMap}
+                      navigation={this.props.navigation}
+                      courseList={courseList}
+                    />
+                  </PageTile>
+                </ScrollView> */}
+
                 <View style={styles.bodyHolder}>
                   <ScrollView
                     horizontal={true}
@@ -852,6 +891,7 @@ export default class HomeScreen extends React.Component {
                   </ScrollView>
                 </View>
                 <TabBar tapFunction={this} />
+
               </View>}
           {/* {global.user.visuallyImpared
             ? null
@@ -894,6 +934,14 @@ const styles = StyleSheet.create ({
         height: height - 60 - 45,
       }
     ),
+    // ...ifIphoneX (
+    //   {
+    //     height: height - 80,
+    //   },
+    //   {
+    //     height: height - 60,
+    //   }
+    // ),
     zIndex: 1,
   },
   slideView: {

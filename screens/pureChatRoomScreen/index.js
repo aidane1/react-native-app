@@ -393,18 +393,21 @@ class CreateChatBar extends React.Component {
         this.keyboardWillHide
       );
     } else {
-      // this.keyboardWillShowSub = Keyboard.addListener (
-      //   'keyboardDidShow',
-      //   this.keyboardWillShow
-      // );
-      // this.keyboardWillHideSub = Keyboard.addListener (
-      //   'keyboardDidHide',
-      //   this.keyboardWillHide
-      // );
+      this.keyboardWillShowSub = Keyboard.addListener (
+        'keyboardDidShow',
+        this.keyboardWillShow
+      );
+      this.keyboardWillHideSub = Keyboard.addListener (
+        'keyboardDidHide',
+        this.keyboardWillHide
+      );
     }
   }
   componentWillUnmount () {
     if (Platform.OS == 'ios') {
+      this.keyboardWillShowSub.remove ();
+      this.keyboardWillHideSub.remove ();
+    } else {
       this.keyboardWillShowSub.remove ();
       this.keyboardWillHideSub.remove ();
     }
@@ -752,8 +755,8 @@ export default class ChatRoom extends React.Component {
     this.state = {
       chats: [],
       images: [],
-      // height: new Animated.Value (ifIphoneX (height - 80, height - 60)),
-      height: new Animated.Value (200),
+      height: new Animated.Value (ifIphoneX (height - 80, height - 60)),
+      // height: new Animated.Value (200),
       appState: AppState.currentState,
       updated: false,
       refreshing: false,
@@ -886,9 +889,7 @@ export default class ChatRoom extends React.Component {
         key: global.chatroomKey,
       })
       .then (data => data.json ())
-      .then (data => {
-        
-      })
+      .then (data => {})
       .catch (e => {
         console.log (e);
       });
@@ -896,7 +897,7 @@ export default class ChatRoom extends React.Component {
   componentDidMount () {
     this._isMounted = true;
     AppState.addEventListener ('change', this._handleAppStateChange);
-    console.log("Im gonna do it");
+    console.log ('Im gonna do it');
     this.removeChatroomKey ();
     global.websocket.client.sendMessage ({
       type: 'request',
@@ -968,20 +969,21 @@ export default class ChatRoom extends React.Component {
     }
   };
   compactAndroidScrollView = event => {
-    // console.log (event.endCoordinates);
-    // console.log (height);
-    // Animated.timing (this.state.height, {
-    //   toValue: event.endCoordinates.screenY - 60,
-    //   easing: Easing.bezier (0.2, 0.73, 0.33, 0.99),
-    //   duration: 280,
-    //   delay: 50,
-    // }).start (() => {
-    //   this.scrollView.current.scrollTo ({
-    //     x: 0,
-    //     y: this.scrollViewHeight,
-    //     animated: 'true',
-    //   });
-    // });
+    console.log ('cunts');
+    console.log (event.endCoordinates);
+    console.log (height);
+    Animated.timing (this.state.height, {
+      toValue: 200,
+      // easing: Easing.bezier (0.2, 0.73, 0.33, 0.99),
+      duration: 0,
+      delay: 0,
+    }).start (() => {
+      this.scrollView.current.scrollTo ({
+        x: 0,
+        y: this.scrollViewHeight,
+        animated: 'true',
+      });
+    });
     // if (this.scrollToBottom) {
     //   this.scrollView.current.scrollToEnd ({animated: true});
     // }
@@ -1203,18 +1205,18 @@ export default class ChatRoom extends React.Component {
                   ref={this.createChatBar}
                 />
               </KeyboardAvoidingView>
-            : <KeyboardAvoidingView
-                style={[ChatRoomStyles.chatroom, global.user.primaryTheme ()]}
-                behavior={'height'}
-                enabled={true}
-                // keyboardVerticalOffset={ifIphoneX (80, 60)}
-                keyboardVerticalOffset={-height / 2 - 60}
+            : <Animated.View
+                style={[
+                  ChatRoomStyles.chatroom,
+                  global.user.primaryTheme (),
+                  {height: this.state.height},
+                ]}
               >
                 <ScrollView
                   ref={this.scrollView}
                   onScroll={this.onScroll}
                   keyboardDismissMode="on-drag"
-                  keyboardShouldPersistTaps={'always'}
+                  // keyboardShouldPersistTaps={'always'}
                   scrollEventThrottle={25}
                   onContentSizeChange={(contentWidth, contentHeight) => {
                     if (this.scrollToBottom) {
@@ -1290,7 +1292,7 @@ export default class ChatRoom extends React.Component {
                   parent={this}
                   ref={this.createChatBar}
                 />
-              </KeyboardAvoidingView>}
+              </Animated.View>}
 
         </View>
         <ImageViewerModal ref={this.imageViewerModal} parent={this} />

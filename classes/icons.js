@@ -27,6 +27,22 @@ export class PollIcon extends React.Component {
   }
 }
 
+export class MenuFoldIcon extends React.Component {
+  render () {
+    return (
+      <AntDesign color="white" name="menu-unfold" size={16} {...this.props} />
+    );
+  }
+}
+
+export class FeedBackIcon extends React.Component {
+  render () {
+    return (
+      <MaterialIcons color="white" name="feedback" size={16} {...this.props} />
+    );
+  }
+}
+
 export class FilesIcon extends React.Component {
   render () {
     return (
