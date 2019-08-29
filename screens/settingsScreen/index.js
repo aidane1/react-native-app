@@ -618,6 +618,97 @@ class InteractionTokens extends React.Component {
   }
 }
 
+class DistrictInput extends React.Component {
+  constructor (props) {
+    super (props);
+    this.state = {
+      districtUsername: this.props.districtUsername,
+      districtPassword: this.props.districtPassword,
+      grade: this.props.grade,
+    };
+  }
+  updateText = (key, val) => {
+    let update = {};
+    update[key] = val;
+    this.setState (update);
+    this.props.updateText (key, val);
+  };
+  render () {
+    return (
+      <View>
+        <CourseRow
+          text={'Username'}
+          value={this.state.username}
+          control={
+            <TextInput
+              multiline={false}
+              value={this.state.districtUsername}
+              placeholderTextColor={global.user.getTertiaryTextColor ()}
+              onChangeText={text => this.updateText ('districtUsername', text)}
+              style={{
+                fontSize: 20,
+                color: global.user.getSecondaryTextColor (),
+                opacity: 0.9,
+                alignSelf: 'stretch',
+                textAlign: 'right',
+                flexGrow: 1,
+              }}
+              placeholder="Username"
+            />
+          }
+          last={false}
+        />
+        <CourseRow
+          text={'Password'}
+          value={this.state.password}
+          control={
+            <TextInput
+              secureTextEntry={true}
+              multiline={false}
+              placeholderTextColor={global.user.getTertiaryTextColor ()}
+              value={this.state.districtPassword}
+              onChangeText={text => this.updateText ('districtPassword', text)}
+              style={{
+                fontSize: 20,
+                color: global.user.getSecondaryTextColor (),
+                opacity: 0.9,
+                alignSelf: 'stretch',
+                textAlign: 'right',
+                flexGrow: 1,
+              }}
+              placeholder="Password"
+            />
+          }
+          last={false}
+        />
+        <CourseRow
+          text={'Grade'}
+          value={this.state.grade}
+          control={
+            <TextInput
+              multiline={false}
+              placeholderTextColor={global.user.getTertiaryTextColor ()}
+              keyboardType={'number-pad'}
+              value={this.state.grade.toString ()}
+              onChangeText={text => this.updateText ('grade', text)}
+              style={{
+                fontSize: 20,
+                color: global.user.getSecondaryTextColor (),
+                opacity: 0.9,
+                alignSelf: 'stretch',
+                textAlign: 'right',
+                flexGrow: 1,
+              }}
+              placeholder="Grade"
+            />
+          }
+          last={true}
+        />
+      </View>
+    );
+  }
+}
+
 export default class SettingsScreen extends React.Component {
   constructor (props) {
     super (props);
@@ -1011,12 +1102,9 @@ export default class SettingsScreen extends React.Component {
         });
       }
     }
-    let state = {...this.state};
-    state[field] = value;
+    // this.state[field] = value;
     global.districtInfo[field] = value;
     global.districtInfo = await User._saveDistrictInfo (global.districtInfo);
-    // console.log (global.districtInfo);
-    this.setState (state);
   };
   updateColors = () => {
     let num = global.user.getPrimaryTheme ();
@@ -1079,12 +1167,6 @@ export default class SettingsScreen extends React.Component {
     this.props.navigation.dispatch (resetAction);
   };
   render () {
-    console.log (
-      this.state.secondaryTheme.interpolate ({
-        inputRange: [0, 16777215],
-        outputRange: ['#000000', '#ffffff'],
-      })
-    );
     return (
       <Animated.View
         style={[
@@ -1388,75 +1470,11 @@ export default class SettingsScreen extends React.Component {
                 },
               ]}
             >
-              <CourseRow
-                text={'Username'}
-                value={this.state.username}
-                control={
-                  <TextInput
-                    multiline={false}
-                    value={this.state.districtUsername}
-                    placeholderTextColor={global.user.getTertiaryTextColor ()}
-                    onChangeText={text =>
-                      this.updateText ('districtUsername', text)}
-                    style={{
-                      fontSize: 20,
-                      color: global.user.getSecondaryTextColor (),
-                      opacity: 0.9,
-                      alignSelf: 'stretch',
-                      textAlign: 'right',
-                      flexGrow: 1,
-                    }}
-                    placeholder="Username"
-                  />
-                }
-                last={false}
-              />
-              <CourseRow
-                text={'Password'}
-                value={this.state.password}
-                control={
-                  <TextInput
-                    secureTextEntry={true}
-                    multiline={false}
-                    placeholderTextColor={global.user.getTertiaryTextColor ()}
-                    value={this.state.districtPassword}
-                    onChangeText={text =>
-                      this.updateText ('districtPassword', text)}
-                    style={{
-                      fontSize: 20,
-                      color: global.user.getSecondaryTextColor (),
-                      opacity: 0.9,
-                      alignSelf: 'stretch',
-                      textAlign: 'right',
-                      flexGrow: 1,
-                    }}
-                    placeholder="Password"
-                  />
-                }
-                last={false}
-              />
-              <CourseRow
-                text={'Grade'}
-                value={this.state.grade}
-                control={
-                  <TextInput
-                    multiline={false}
-                    placeholderTextColor={global.user.getTertiaryTextColor ()}
-                    keyboardType={'number-pad'}
-                    value={this.state.grade.toString ()}
-                    onChangeText={text => this.updateText ('grade', text)}
-                    style={{
-                      fontSize: 20,
-                      color: global.user.getSecondaryTextColor (),
-                      opacity: 0.9,
-                      alignSelf: 'stretch',
-                      textAlign: 'right',
-                      flexGrow: 1,
-                    }}
-                    placeholder="Grade"
-                  />
-                }
-                last={true}
+              <DistrictInput
+                districtUsername={global.districtInfo.districtUsername}
+                districtPassword={global.districtInfo.districtPassword}
+                grade={global.districtInfo.grade}
+                updateText={this.updateText}
               />
             </Animated.View>
           </ButtonSection>

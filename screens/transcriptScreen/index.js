@@ -8,6 +8,7 @@ import {
   Text,
   Animated,
   WebView,
+  Platform,
 } from 'react-native';
 
 import HeaderBar from '../../components/header';
@@ -78,19 +79,20 @@ export default class SchoolAssignmentsScreen extends React.Component {
     // let api = new ApexAPI (global.user);
     // api
     //   .get (
-    //     `transcript?username=${global.user.username}&password=${global.user.password}&district=${global.school.district}`,
-    //     this.abortController
+    //     `https://www.apexschools.co/api/v1/transcript?username=${global.districtInfo.districtUsername}&password=${global.districtInfo.districtPassword}&district=${global.school.district}`,
     //   )
     //   .then (data => data.buffer ())
     //   .then (data => {
     //     console.log (data);
-    //     this.setState ({buffer: data.toString ('base64')});
+    //     // this.setState ({buffer: data.toString ('base64')});
     //   })
     //   .catch (e => {
     //     console.log (e);
     //   });
   }
   render () {
+    let string = `https%3A%2F%2Fapexschools.co%2Fapi%2Fv1%2Ftranscript%3Fusername%3D${global.districtInfo.districtUsername}%26password%3D${global.districtInfo.districtPassword}%26district%3D${global.school.district}`;
+    console.log(Platform.OS);
     return (
       <View style={[styles.container, global.user.primaryTheme ()]}>
         <HeaderBar
@@ -108,25 +110,30 @@ export default class SchoolAssignmentsScreen extends React.Component {
           {/* <WebView
             source={{
               html: `
-                <div id ="pdfView">
-                <embed class="form-control" src="data:application/pdf;base64,${this.state.buffer}"/>
+                <div style="width: 100px; height: 100px; background-color: red">
+
                 </div>`,
             }}
           /> */}
-          <WebView
-            style={{
-              width,
-              height: height - 60,
-            }}
-            source={{
-              uri: `https://www.apexschools.co/api/v1/transcript?username=${global.districtInfo.districtUsername}&password=${global.districtInfo.districtPassword}&district=${global.school.district}`,
-              headers: {
-                'x-api-key': global.user['x-api-key'],
-                'x-id-key': global.user['x-id-key'],
-                school: global.school['id'],
-              },
-            }}
-          />
+          {Platform.OS == 'ios'
+            ? <WebView
+                style={{
+                  width,
+                  height: height - 60,
+                }}
+                source={{
+                  uri: `https://www.apexschools.co/api/v1/transcript?username=${global.districtInfo.districtUsername}&password=${global.districtInfo.districtPassword}&district=${global.school.district}`,
+                }}
+              />
+            : <WebView
+                style={{
+                  width,
+                  height: height - 60,
+                }}
+                source={{
+                  uri: `http://docs.google.com/gview?embedded=true&url=${string}`,
+                }}
+              />}
         </View>
       </View>
     );

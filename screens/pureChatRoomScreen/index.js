@@ -16,6 +16,7 @@ import {
   RefreshControl,
   KeyboardAvoidingView,
   Easing,
+  Platform,
 } from 'react-native';
 
 import {
@@ -67,7 +68,8 @@ import ApexAPI from '../../http/api';
 import ImageBar from '../../components/imagePicker';
 
 import {ifIphoneX} from 'react-native-iphone-x-helper';
-import {Platform} from '@unimodules/core';
+
+import {NavigationEvents} from 'react-navigation';
 
 function cacheImages (images) {
   return images.map (image => {
@@ -506,6 +508,7 @@ class CreateChatBar extends React.Component {
     );
     return (
       <View style={{width, flexDirection: 'column', alignItems: 'center'}}>
+
         {this.state.usersTyping.length == 0
           ? <View />
           : <View
@@ -895,28 +898,44 @@ export default class ChatRoom extends React.Component {
       });
   };
   componentDidMount () {
-    this._isMounted = true;
-    AppState.addEventListener ('change', this._handleAppStateChange);
-    console.log ('Im gonna do it');
-    this.removeChatroomKey ();
-    global.websocket.client.sendMessage ({
-      type: 'request',
-      request: 'users-typing',
-      room: global.chatroomKey,
-    });
-    this.loadChats (this.state.limit, (err, body) => {
-      if (err) {
-        this.setState ({chats: [], updated: true});
-      } else {
-        this.setState ({chats: body, updated: true});
+    this.focusSubscription = this.props.navigation.addListener (
+      'willFocus',
+      payload => {
+        this.setState ({chats: []}, () => {
+          this._isMounted = true;
+          AppState.addEventListener ('change', this._handleAppStateChange);
+          this.removeChatroomKey ();
+          global.websocket.client.sendMessage ({
+            type: 'request',
+            request: 'users-typing',
+            room: global.chatroomKey,
+          });
+          this.loadChats (this.state.limit, (err, body) => {
+            if (err) {
+              this.setState ({chats: [], updated: true}, () => {
+                setTimeout (() => {
+                  this.scrollView.current.scrollToEnd ({animated: true});
+                }, 100);
+              });
+            } else {
+              this.setState ({chats: body, updated: true}, () => {
+                setTimeout (() => {
+                  this.scrollView.current.scrollToEnd ({animated: true});
+                }, 100);
+              });
+            }
+          });
+        });
       }
-    });
+    );
   }
   componentWillUnmount () {
     this._isMounted = false;
     AppState.removeEventListener ('change', this._handleAppStateChange);
     this.removeChatroomKey ();
     this.updateTyping (false);
+    this.focusSubscription.remove ();
+    // this.leaveSubsciption.remove ();
     this.props.navigation.goBack ();
   }
   _handleAppStateChange = nextAppState => {
@@ -969,9 +988,6 @@ export default class ChatRoom extends React.Component {
     }
   };
   compactAndroidScrollView = event => {
-    console.log ('cunts');
-    console.log (event.endCoordinates);
-    console.log (height);
     Animated.timing (this.state.height, {
       toValue: 200,
       // easing: Easing.bezier (0.2, 0.73, 0.33, 0.99),

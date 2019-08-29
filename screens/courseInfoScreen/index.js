@@ -2960,16 +2960,49 @@ export default class CourseInfoScreen extends React.Component {
     };
   };
 
+  componentWillUnmount () {
+    this.focusSubscription.remove ();
+    this.leaveSubsciption.remove ();
+  }
+
   componentDidMount () {
-    setTimeout (() => {
-      if (global.courseInfoPage == 'assignments') {
-        this.changePage (0);
-      } else if (global.courseInfoPage == 'notes') {
-        this.changePage (1);
-      } else if (global.courseInfoPage == 'importantDates') {
-        this.changePage (2);
+    this.leaveSubsciption = this.props.navigation.addListener (
+      'didBlur',
+      payload => {
+        this.setState ({assignments: [], notes: [], dates: [], pageIndex: []});
       }
-    }, 0);
+    );
+    this.focusSubscription = this.props.navigation.addListener (
+      'willFocus',
+      payload => {
+        this.course = global.courseInfoCourse;
+        this.setState (
+          {
+            assignments: Assignments._retrieveAssignmentsByCourse (
+              global.assignments,
+              this.course.id
+            ),
+            notes: Notes._retrieveNotesByCourse (global.notes, this.course.id),
+            dates: ImportantDates._retrieveDatesByCourse (
+              global.importantDates,
+              this.course.id
+            ),
+            pageIndex: 0,
+          },
+          () => {
+            setTimeout (() => {
+              if (global.courseInfoPage == 'assignments') {
+                this.changePage (0);
+              } else if (global.courseInfoPage == 'notes') {
+                this.changePage (1);
+              } else if (global.courseInfoPage == 'importantDates') {
+                this.changePage (2);
+              }
+            }, 0);
+          }
+        );
+      }
+    );
   }
 
   openModal = () => {

@@ -796,13 +796,13 @@ const AnnouncementNavigator = createStackNavigator (
 
 const DrawerNavigator = createDrawerNavigator (
   {
-    Home: {screen: HomeScreen, lazy: true},
+    Home: {screen: HomeScreen},
     Account: {screen: AccountScreen, lazy: true},
     Login: {screen: LoginScreen, lazy: true},
     Loading: {screen: LoadingScreen, lazy: true},
     Courses: {screen: CoursesScreen},
-    Events: {screen: EventsScreen, lazy: true},
-    Calendar: {screen: CalendarScreen, lazy: true},
+    Events: {screen: EventsScreen},
+    Calendar: {screen: CalendarScreen},
 
     Notes: {screen: NotesScreen, lazy: true},
 
@@ -812,7 +812,7 @@ const DrawerNavigator = createDrawerNavigator (
     // Chatrooms: {screen: ChatroomScreen, lazy: true},
 
     Chatrooms: {screen: ChatroomNavigator, lazy: true},
-    PureChatroom: {screen: PureChatroomScreen, lazy: true},
+    PureChatroom: {screen: PureChatroomScreen},
 
     Settings: {screen: SettingsScreen, lazy: true},
     SchoolAssignments: {screen: SchoolAssignmentsScreen, lazy: true},

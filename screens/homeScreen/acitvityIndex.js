@@ -30,6 +30,8 @@ import {Note, Notes} from '../../classes/notes';
 
 import {ImportantDate, ImportantDates} from '../../classes/importantDates';
 
+import { NavigationActions } from 'react-navigation';
+
 import {Event, Events} from '../../classes/events';
 
 import ApexAPI from '../../http/api';
@@ -584,6 +586,7 @@ export default class LinksScreenTile extends React.Component {
           ).sort ((a, b) => {
             return a.date.getTime () > b.date.getTime () ? -1 : 1;
           });
+          
           let topicsList = Topics._MakeCourseTopicList (
             courseMap[block].id,
             global.topics
@@ -613,6 +616,7 @@ export default class LinksScreenTile extends React.Component {
       });
     let notes = Object.keys (courseMap)
       .filter (block => {
+        
         let courseNotes = Notes._retrieveNotesByCourse (
           global.notes,
           courseMap[block].id
