@@ -67,7 +67,7 @@ export class Semesters {
               });
             } else {
               currentSemester[blocks[j]._id] = new Course ({
-                course: "LC's",
+                course: global.school.spareName,
                 block: blocks[j]._id,
               });
             }
@@ -95,7 +95,7 @@ export class Semesters {
       for (var j = 0; j < blocks.length; j++) {
         if (blocks[j][1] == 'changing') {
           currentMap[blocks[j][0]] = new Course ({
-            course: "LC's",
+            course: global.school.spareName,
             block: blocks[j][0],
           });
         } else {

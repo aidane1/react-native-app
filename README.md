@@ -1,0 +1,1 @@
+# Schoolr - The navigation app made by a student, for students

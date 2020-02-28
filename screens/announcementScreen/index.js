@@ -9,6 +9,7 @@ import {
   Keyboard,
   Easing,
   RefreshControl,
+  Platform,
 } from 'react-native';
 
 import HeaderBar from '../../components/header';
@@ -161,6 +162,10 @@ export default class AnnouncementScreen extends React.Component {
     };
   };
   render () {
+    let string = encodeURIComponent (
+      `https://www.apexschools.co${this.state.announcement.file_path}.pdf`
+    );
+    console.log (string);
     return (
       <View style={[styles.container, global.user.primaryTheme ()]}>
         <HeaderBar
@@ -174,7 +179,7 @@ export default class AnnouncementScreen extends React.Component {
           height={60}
           title="Announcement"
         />
-        <ScrollView style={styles.bodyHolder} bounces={false} >
+        <ScrollView style={styles.bodyHolder} bounces={false}>
           <View style={[styles.titleBlock, global.user.borderColor ()]}>
             <Text
               style={[styles.h1, {color: global.user.getPrimaryTextColor ()}]}
@@ -185,21 +190,37 @@ export default class AnnouncementScreen extends React.Component {
             </Text>
           </View>
           {global.user.pdf_announcements
-            ? <WebView
-                style={{
-                  width,
-                  height: height-ifIphoneX(170, 150)
-                  // flexGrow: 1, 
-                }}
-                source={{
-                  uri: `https://www.apexschools.co${this.state.announcement.file_path}.pdf`,
-                  headers: {
-                    'x-api-key': global.user['x-api-key'],
-                    'x-id-key': global.user['x-id-key'],
-                    school: global.school['id'],
-                  },
-                }}
-              />
+            ? Platform.OS == 'ios'
+                ? <WebView
+                    style={{
+                      width,
+                      height: height - ifIphoneX (170, 150),
+                      // flexGrow: 1,
+                    }}
+                    source={{
+                      uri: `https://www.apexschools.co${this.state.announcement.file_path}.pdf`,
+                      headers: {
+                        'x-api-key': global.user['x-api-key'],
+                        'x-id-key': global.user['x-id-key'],
+                        school: global.school['id'],
+                      },
+                    }}
+                  />
+                : <WebView
+                    style={{
+                      width,
+                      height: height - ifIphoneX (170, 150),
+                      // flexGrow: 1,
+                    }}
+                    source={{
+                      uri: `http://docs.google.com/gview?embedded=true&url=${string}`,
+                      headers: {
+                        'x-api-key': global.user['x-api-key'],
+                        'x-id-key': global.user['x-id-key'],
+                        school: global.school['id'],
+                      },
+                    }}
+                  />
             : <View
                 style={[
                   {

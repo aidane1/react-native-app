@@ -93,6 +93,8 @@ import PageTile from './pageTile';
 const width = Dimensions.get ('window').width; //full width
 const height = Dimensions.get ('window').height; //full height
 
+
+
 function formatUnit (hour, minute) {
   return `${(hour + 11) % 12 + 1}:${minute.toString ().length == 1 ? '0' + minute.toString () : minute}`;
 }
@@ -239,6 +241,9 @@ export default class HomeScreen extends React.Component {
     this.loadCoursesBanner ();
     this.loadRoomsPush ();
 
+
+    
+
     let api = new ApexAPI ({
       'x-api-key': global.user['x-api-key'],
       school: global.user['school'],
@@ -374,7 +379,8 @@ export default class HomeScreen extends React.Component {
     ApexAPI.authenticate (
       global.user.username,
       global.user.password,
-      global.school.id
+      global.school.id,
+      global.user.account_type,
     )
       .then (res => res.json ())
       .then (async response => {
@@ -394,6 +400,21 @@ export default class HomeScreen extends React.Component {
           global.dayMap = global.school['dayMap'];
           global.user.permission_level = response.body.permission_level;
           await User._saveToStorage (global.user);
+
+          let userCourses = await Courses._retrieveCoursesById(user.courses);
+
+          // console.log({user_courses: global.user.courses});
+
+          let semesterMap = await Semesters._createSemesterMap(
+            userCourses,
+            global.school.blocks
+          );
+
+          let dates = await Semesters._startAndEndDate();
+
+          global.dates = dates;
+
+          global.semesterMap = semesterMap;
           // global.user = await User._saveToStorage (
           //   constructUserObject ({
           //     grade: response.body.user.grade || global.user.grade || 9,
@@ -567,6 +588,7 @@ export default class HomeScreen extends React.Component {
       let todayTimes = today !== undefined
         ? global.school.rawSchedule['block_times']
         : [];
+
 
       // [{course, teacher, time, id, isReal}]
       let courseList = [];

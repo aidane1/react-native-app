@@ -372,6 +372,6 @@ const styles = StyleSheet.create ({
   },
   accessButtonText: {
     fontSize: 30,
-    fontWeight: '500',
+    fontWeight: 500,
   },
 });

@@ -14,6 +14,19 @@ class IconBlock {
   constructor (icon) {}
 }
 
+export class ArrangeIcon extends React.Component {
+  render () {
+    return (
+      <MaterialCommunityIcons
+        color="white"
+        name="arrange-bring-to-front"
+        size={16}
+        {...this.props}
+      />
+    );
+  }
+}
+
 export class PollIcon extends React.Component {
   render () {
     return (

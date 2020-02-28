@@ -91,7 +91,7 @@ class UsernameInput extends React.Component {
             inputStyle={{ fontSize: 24, fontWeight: "300" }}
             placeholderTextColor="black"
             font
-            placeholder="Username"
+            placeholder="Teacher Code"
             multiline={false}
             containerStyle={[
               styles.textInput,
@@ -117,86 +117,7 @@ class UsernameInput extends React.Component {
             inputStyle={{ fontSize: 24, fontWeight: "300" }}
             placeholderTextColor="black"
             font
-            placeholder="Username"
-            multiline={false}
-            containerStyle={styles.textInput}
-            inputContainerStyle={{ borderBottomWidth: 0 }}
-            onChangeText={text => this.enterText(text)}
-            value={this.state.text}
-          />
-        </View>
-      );
-    }
-  }
-}
-
-class PasswordInput extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      text: "",
-      focused: false
-    };
-  }
-  enterText = text => {
-    this.setState({ text: text });
-    this.props.updateText({ password: text });
-  };
-  onFocus = () => {
-    this.setState({ focused: true });
-  };
-  onBlur = () => {
-    this.setState({ focused: false });
-  };
-  clear = () => {
-    this.setState({ text: "" });
-    this.props.updateText({ password: "" });
-  };
-  render() {
-    if (this.state.focused) {
-      return (
-        <View style={styles.inputContainer}>
-          <PasswordIcon color="#ffe0e0" size={32} style={{ width: 40 }} />
-          <Input
-            secureTextEntry={true}
-            isSecure={true}
-            password={true}
-            onFocus={this.onFocus}
-            onBlur={this.onBlur}
-            autoCapitalize="none"
-            inputStyle={{ fontSize: 24, fontWeight: "300" }}
-            placeholderTextColor="black"
-            font
-            placeholder="Password"
-            multiline={false}
-            containerStyle={[
-              styles.textInput,
-              {
-                borderBottomColor: "#ffe0e0",
-                borderBottomWidth: StyleSheet.hairlineWidth * 3
-              }
-            ]}
-            inputContainerStyle={{ borderBottomWidth: 0 }}
-            onChangeText={text => this.enterText(text)}
-            value={this.state.text}
-          />
-        </View>
-      );
-    } else {
-      return (
-        <View style={styles.inputContainer}>
-          <PasswordIcon color="black" size={32} style={{ width: 40 }} />
-          <Input
-            secureTextEntry={true}
-            isSecure={true}
-            password={true}
-            onFocus={this.onFocus}
-            onBlur={this.onBlur}
-            autoCapitalize="none"
-            inputStyle={{ fontSize: 24, fontWeight: "300" }}
-            placeholderTextColor="black"
-            font
-            placeholder="Password"
+            placeholder="Teacher Code"
             multiline={false}
             containerStyle={styles.textInput}
             inputContainerStyle={{ borderBottomWidth: 0 }}
@@ -241,19 +162,16 @@ class LoginButton extends React.Component {
     this.props = props;
     this.state = {
       username: "",
-      password: "",
       school: "",
       active: false
     };
   }
   handleClick = () => {
     let username = this.props.inputs[0].current.state.text;
-    let password = this.props.inputs[1].current.state.text;
-    let school = this.props.inputs[2].current.state.id;
-    console.log({ username, password, school });
-    this.setState({ username, password, school, active: false });
+    let school = this.props.inputs[1].current.state.id;
+    this.setState({ username, school, active: false });
 
-    ApexAPI.authenticate(username, password, school)
+    ApexAPI.authenticate_school(username, school)
       .then(res => res.json())
       .then(async response => {
         if (response.status == "ok") {
@@ -269,15 +187,10 @@ class LoginButton extends React.Component {
           global.school = await School._saveToStorage(
             constructSchoolObject(response.body.school, response.body.blocks)
           );
-          // console.log ({
-          //   grade: response.body.user.grade || '9',
-          //   districtUsername: response.body.username,
-          //   districtPassword: password,
-          // });
           global.districtInfo = await User._saveDistrictInfo({
             grade: response.body.user.grade || "9",
             districtUsername: response.body.username,
-            districtPassword: password
+            districtPassword: "1"
           });
           // console.log (global.districtInfo);
           global.user = await User._saveToStorage(
@@ -299,7 +212,7 @@ class LoginButton extends React.Component {
                   ? response.body.user.pdf_announcements
                   : true,
               username: response.body.username,
-              password,
+              password: "1",
               "x-api-key": response.body["api_key"],
               "x-id-key": response.body["_id"],
               courses: response.body.user.courses,
@@ -342,37 +255,10 @@ class LoginButton extends React.Component {
             index: 0,
             actions: [NavigationActions.navigate({ routeName: "Loading" })]
           });
-
-          if (global.user.courses.length === 0) {
-            let api = new ApexAPI(global.user);
-            console.log(global.school.district);
-            api
-              .get(
-                `schedule?username=${global.districtInfo.districtUsername}&password=${global.districtInfo.districtPassword}&district=${global.school.district}`
-              )
-              .then(data => data.json())
-              .then(async data => {
-                if (data.status == "ok") {
-                  if (data.body.length > 0) {
-                    global.user.courses = data.body.map(course => course._id);
-                    global.user = await User._saveToStorage(global.user);
-                    this.props.navigation.dispatch(resetAction);
-                  } else {
-                    this.props.navigation.dispatch(resetAction);
-                  }
-                } else {
-                  this.props.navigation.dispatch(resetAction);
-                }
-              })
-              .catch(e => {
-                this.props.navigation.dispatch(resetAction);
-              });
-          } else {
-            this.props.navigation.dispatch(resetAction);
-          }
+          this.props.navigation.dispatch(resetAction);
         } else {
           // this.props.inputs[0].current.clear ();
-          this.props.inputs[1].current.clear();
+          this.props.inputs[0].current.clear();
           this.props.screenProps.message.current.error(response.body.error);
           // this.props.navigation.navigate ('Login');
         }
@@ -482,7 +368,6 @@ export default class LoginScreen extends React.Component {
   constructor(props) {
     super(props);
     this.username = React.createRef();
-    this.password = React.createRef();
     this.school = React.createRef();
     this.modal = React.createRef();
     this.loginButton = React.createRef();
@@ -490,8 +375,7 @@ export default class LoginScreen extends React.Component {
       isLoadingComplete: false,
       schools: [],
       height: new Animated.Value(0),
-      username: "",
-      password: ""
+      username: ""
     };
   }
   openModal = () => {
@@ -553,7 +437,7 @@ export default class LoginScreen extends React.Component {
   };
   updateText = text => {
     this.state[Object.keys(text)[0]] = text[Object.keys(text)[0]];
-    if (this.state.username && this.state.password) {
+    if (this.state.username) {
       this.loginButton.current.setState({ active: true });
     } else {
       this.loginButton.current.setState({ active: false });
@@ -593,11 +477,6 @@ export default class LoginScreen extends React.Component {
                 name="username"
                 ref={this.username}
               />
-              <PasswordInput
-                updateText={this.updateText}
-                name="password"
-                ref={this.password}
-              />
               <Touchable onPress={this.openModal}>
                 <SchoolInput
                   name="school"
@@ -609,7 +488,7 @@ export default class LoginScreen extends React.Component {
                 ref={this.loginButton}
                 navigation={this.props.navigation}
                 screenProps={this.props.screenProps}
-                inputs={[this.username, this.password, this.school]}
+                inputs={[this.username, this.school]}
               />
               <Touchable
                 style={{
@@ -617,9 +496,9 @@ export default class LoginScreen extends React.Component {
                   marginBottom: 50,
                   borderBottomWidth: 2,
                   borderBottomColor: "rgba(255,255,255,0.6)",
-                  paddingBottom: 3,
+                  paddingBottom: 3
                 }}
-                onPress={() => this.props.navigation.navigate("TeacherLogin")}
+                onPress={() => this.props.navigation.navigate("Login")}
               >
                 <Text
                   style={{
@@ -628,7 +507,7 @@ export default class LoginScreen extends React.Component {
                     fontWeight: "500"
                   }}
                 >
-                  Teacher Login
+                  Student Login
                 </Text>
               </Touchable>
             </Animated.View>

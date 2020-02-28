@@ -10,7 +10,9 @@ export class School {
     this.blocks = school.blocks;
     this.dayMap = school.dayMap;
     this.schedule = school.schedule;
-    this.spareName = school.spareName;
+    console.log({spareName: school.spareName || "Spare"});
+    console.log(school.spareName);
+    this.spareName = school.spareName || "Spare";
     this.id = school.id;
     this.dayTitles = school.dayTitles;
     this.rawSchedule = school.rawSchedule;

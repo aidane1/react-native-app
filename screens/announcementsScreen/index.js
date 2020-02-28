@@ -62,6 +62,7 @@ class AnnouncementBlock extends React.Component {
           }}
         >
           {this.props.announcements.map ((announcement, index) => {
+            console.log(index == this.props.announcements.length - 1);
             return (
               <Announcement
                 announcement={announcement}
@@ -99,7 +100,7 @@ class Announcement extends React.Component {
               borderColor: this.props.last
                 ? 'rgba(0,0,0,0}'
                 : global.user.getBorderColor (),
-              borderBottomWidth: StyleSheet.hairlineWidth,
+              borderBottomWidth: this.props.last ? 0 : StyleSheet.hairlineWidth,
               flexDirection: 'row',
               justifyContent: 'space-between',
               alignItems: 'center',

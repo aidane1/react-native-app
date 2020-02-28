@@ -170,7 +170,7 @@ function getBlock (block, courses, colorMap, navigate) {
     let course = courses[block.block.block];
     if (!course) {
       course = {
-        course: "LC's",
+        course: global.school.spareName,
         teacher: 'Free',
         category: 'other',
         id: '_',
