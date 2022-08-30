@@ -22,7 +22,7 @@
         "expo-svg-uri": "^1.0.1",
         "image-to-base64": "^2.0.1",
         "moment": "^2.24.0",
-        "moment-timezone": "^0.5.26",
+        "moment-timezone": "^0.5.35",
         "mongoose": "^5.6.7",
         "pretty-file-icons": "^2.2.1",
         "react": "16.8.3",
